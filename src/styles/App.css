@@ -1,0 +1,30 @@
+
+@layer components {
+    .site-container {
+        @apply w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12;
+    }
+
+    .site-section {
+        @apply py-14 md:py-20;
+    }
+
+    .section-pill {
+        @apply inline-block text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase text-brand bg-brand/10 rounded-full px-5 py-2 mb-6;
+    }
+
+    .btn-brand {
+        @apply inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full font-bold text-sm uppercase tracking-wide bg-brand text-white shadow-xl shadow-brand/20 hover:bg-brand-light hover:-translate-y-1 hover:shadow-2xl hover:shadow-brand/30 transition-all duration-300 no-underline;
+    }
+
+    .btn-gold {
+        @apply inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full font-bold text-sm uppercase tracking-wide bg-gold text-[#1a1a1a] shadow-xl shadow-gold/20 hover:bg-gold-dark hover:-translate-y-1 hover:shadow-2xl hover:shadow-gold/30 transition-all duration-300 no-underline;
+    }
+
+    .btn-ghost {
+        @apply inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full font-bold text-sm uppercase tracking-wide border-2 border-white/40 text-white backdrop-blur-md hover:bg-white hover:text-brand hover:-translate-y-1 hover:border-white transition-all duration-300 no-underline;
+    }
+
+    .card-premium {
+        @apply bg-white rounded-3xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] hover:-translate-y-2 transition-all duration-500 ease-out;
+    }
+}

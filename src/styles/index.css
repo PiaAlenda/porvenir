@@ -1,0 +1,51 @@
+@import "tailwindcss";
+@import "./App.css";
+
+/* ─── Web Fonts ─── */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+@theme {
+  --font-montserrat: "Montserrat", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  
+  --color-brand: #7a0d0b;
+  --color-brand-light: #9a1210;
+  --color-brand-dark: #5c0908;
+  --color-gold: #f5c518;
+  --color-gold-dark: #d4a800;
+  --color-site-bg: #f8f6f1;
+}
+
+@layer base {
+  html {
+    zoom: 1.25;
+  }
+  body {
+    @apply font-inter antialiased text-[#1a1a1a] bg-site-bg m-0;
+  }
+  h1, h2, h3, h4 {
+    @apply font-montserrat font-bold tracking-tight;
+  }
+
+  /* ─── Animations ─── */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-left {
+    from { opacity: 0; transform: translateX(-40px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-right {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .animate-fade-up { animation: fade-up 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  .animate-slide-left { animation: slide-left 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  .animate-slide-right { animation: slide-right 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+  /* ─── Utilities ─── */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
