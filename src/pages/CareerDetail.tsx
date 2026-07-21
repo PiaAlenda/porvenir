@@ -30,7 +30,7 @@ const CareerDetail = ({ careerId, onBack }: CareerDetailProps) => {
                 <div className="text-center p-10 bg-white rounded-3xl shadow-xl">
                     <h2 className="text-2xl font-black text-gray-900 mb-4">Carrera no encontrada</h2>
                     <p className="text-stone-500 mb-8">Lo sentimos, no pudimos encontrar la información solicitada.</p>
-                    <button onClick={onBack} className="btn-brand">Volver al inicio</button>
+                    <button onClick={onBack} className="btn-brand cursor-pointer">Volver al inicio</button>
                 </div>
             </div>
         );
@@ -83,7 +83,7 @@ const CareerDetail = ({ careerId, onBack }: CareerDetailProps) => {
             <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/80 backdrop-blur-md border-t border-stone-200/80 z-50">
                 <button
                     onClick={handleEnroll}
-                    className="w-full py-3 bg-[#4d0706] text-[#ffcc00] font-black uppercase tracking-widest text-[11px] rounded-xl flex items-center justify-center gap-2 hover:bg-[#300404] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-[#4d0706]/15"
+                    className="w-full py-3 bg-[#4d0706] text-[#ffcc00] font-black uppercase tracking-widest text-[11px] rounded-xl flex items-center justify-center gap-2 hover:bg-[#300404] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-[#4d0706]/15 cursor-pointer"
                 >
                     <FileEdit className="w-3.5 h-3.5" />
                     Inscribite Ahora

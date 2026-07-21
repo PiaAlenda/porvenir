@@ -127,7 +127,7 @@ const InfoForm = () => {
                                     </div>
                                     <h4 className="text-2xl font-black text-gray-900">¡Enviado con éxito!</h4>
                                     <p className="text-sm text-gray-500 font-medium">Un asesor se comunicará a la brevedad.</p>
-                                    <button onClick={() => setSubmitted(false)} className="text-[#4d0706] font-bold text-sm">Cargar otro formulario</button>
+                                    <button onClick={() => setSubmitted(false)} className="text-[#4d0706] font-bold text-sm cursor-pointer">Cargar otro formulario</button>
                                 </div>
                             ) : (
                                 <form className="space-y-4" onSubmit={handleSubmit}>

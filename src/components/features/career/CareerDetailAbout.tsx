@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { Clock, FileText, CheckCircle2, BookOpen } from "lucide-react";
+import { Clock, FileText, CheckCircle2, BookOpen, Play, X } from "lucide-react";
 import { type Career } from "@/config/careerData";
 
 // Detailed mapping of subject descriptions to make the syllabus look complete and professional
@@ -199,8 +199,84 @@ interface CareerDetailsGridProps {
     career: Career;
 }
 
-export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
+const CAREER_VIDEOS: Record<string, string> = {
+    "tec-metalmecanica": "/img/video metal mecanica.webm",
+    "tec-torneria-mecanica": "/img/torneria mecanica.mp4 OK.webm",
+    "tec-dibujo-publicitario": "/img/video dibujo.mp4 OK.webm",
+    "tec-administracion-contable": "/img/administracion contable.mp4 OK.webm",
+};
 
+const ExpandableVideo = ({ src, center }: { src: string; center?: boolean }) => {
+    const [open, setOpen] = useState(false);
+    const fullRef = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        if (open && fullRef.current) {
+            fullRef.current.play();
+        } else if (!open && fullRef.current) {
+            fullRef.current.pause();
+            fullRef.current.currentTime = 0;
+        }
+    }, [open]);
+
+    useEffect(() => {
+        const handleKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setOpen(false);
+        };
+        if (open) document.addEventListener("keydown", handleKey);
+        return () => document.removeEventListener("keydown", handleKey);
+    }, [open]);
+
+    return (
+        <>
+            <div className={`mt-3 space-y-1.5 ${center ? "flex flex-col items-center" : ""}`}>
+                <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider">
+                    Video explicativo de la carrera
+                </p>
+                <button
+                    onClick={() => setOpen(true)}
+                    className="inline-flex items-center gap-2 text-[11px] font-black text-[#4d0706] bg-stone-100 hover:bg-stone-200 border border-stone-200/60 px-4 py-2 rounded-full transition-all active:scale-95 cursor-pointer"
+                >
+                    <Play className="w-3.5 h-3.5 fill-[#4d0706]" />
+                    Ver video
+                </button>
+            </div>
+
+            {open && (
+                <div
+                    className="fixed inset-0 z-[999] bg-black/80 flex items-center justify-center p-4"
+                    onClick={() => setOpen(false)}
+                >
+                    <div
+                        className="relative w-full max-w-5xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="relative">
+                            <button
+                                onClick={() => setOpen(false)}
+                                className="absolute top-3 right-3 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors cursor-pointer"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                            <div className="relative">
+                                <video
+                                    ref={fullRef}
+                                    controls
+                                    className="w-full rounded-xl shadow-2xl max-h-[70vh]"
+                                >
+                                    <source src={src} type="video/webm" />
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+};
+
+export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
+    const careerVideo = CAREER_VIDEOS[career.id];
 
     return (
         <div className="w-full">
@@ -221,6 +297,7 @@ export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
                             </li>
                         ))}
                     </ul>
+                    {careerVideo && <ExpandableVideo src={careerVideo} center />}
                 </div>
 
                 {/* Cronograma de Cursada Card */}
@@ -271,6 +348,7 @@ export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
                             </li>
                         ))}
                     </ul>
+                    {careerVideo && <ExpandableVideo src={careerVideo} />}
                 </div>
 
                 {/* Requisitos (Mobile Only) */}

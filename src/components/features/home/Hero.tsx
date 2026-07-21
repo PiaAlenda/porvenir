@@ -33,7 +33,7 @@ const carouselSlides = [
         description: "Con más de 150 años de excelencia educativa, formamos profesionales que transforman la sociedad.",
         buttonText: "Nuestra Historia",
         href: "#nosotros",
-        bgImage: "/img/baner 1 medida nueva nueva 3.jpg.jpeg",
+        bgImage: "/img/baner 1 medida nueva nueva 4.jpg.jpeg",
     },
     {
         id: "distancia",
@@ -110,7 +110,7 @@ const Hero = ({ onNavigateAbout, onNavigateLocation, onNavigateToProgram }: Hero
                             transition={{ duration: 1 }}
                             className="absolute inset-0"
                         >
-                            <img src={slide.bgImage} alt="" className="w-full h-full object-[right_center] sm:object-cover brightness-[0.4]" />
+                            <img src={slide.bgImage} alt="" className="w-full h-full object-[74%_center] object-cover brightness-[0.4]" />
                             <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/20 to-black/60" />
                         </motion.div>
                     )
@@ -159,7 +159,7 @@ const Hero = ({ onNavigateAbout, onNavigateLocation, onNavigateToProgram }: Hero
                             <button
                                 key={index}
                                 onClick={() => setCurrentSlide(index)}
-                                className={`h-1.5 rounded-full transition-all duration-300 ${index === currentSlide ? "w-8 bg-gold" : "w-2 bg-white/20 hover:bg-white/40"}`}
+                                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${index === currentSlide ? "w-8 bg-gold" : "w-2 bg-white/20 hover:bg-white/40"}`}
                             />
                         ))}
                     </motion.div>
