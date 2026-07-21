@@ -13,7 +13,20 @@ const SUBJECT_DESCRIPTIONS: Record<string, string> = {
     "Herramientas de Corte": "Estudio de cinemática de corte, materiales de herramientas y optimización de vida útil.",
     "Procesos de Soldadura": "Técnicas avanzadas MIG, TIG y arco sumergido para estructuras de alta exigencia.",
     "Procesos Siderúrgicos": "Metalurgia extractiva, fundición y laminación de aleaciones industriales.",
-    "Taller Integrador": "Integración práctica de conocimientos en proyectos reales de taller metalmecánico.",
+    "Taller Integrador": "Integración práctica de conocimientos en proyectos reales de taller, combinando técnicas aprendidas en un entorno profesional.",
+    // Tornería Mecánica
+    "Mecanizado de Piezas Metálicas y No Metálicas": "Estudio de técnicas de mecanizado en torno para el trabajo con materiales ferrosos, no ferrosos y sintéticos, incluyendo selección de velocidades, avances y herramientas de corte.",
+    "Desbaste": "Técnicas de desbaste de materiales mediante arranque de viruta, uso de herramientas de corte y ajuste de parámetros de mecanizado para lograr formas y dimensiones preliminares.",
+    "Pulidos": "Métodos de pulido y acabado superficial de piezas mecanizadas, empleando abrasivos, lijas y compuestos para obtener tolerancias y rugosidades específicas.",
+    "Conos": "Procedimientos para el torneado de conos y superficies cónicas, cálculo de conicidad, uso de desplazamiento del carro superior y métodos de copiado.",
+    "Roscas": "Técnicas de roscado interior y exterior en torno, identificación de perfiles de rosca, cálculos de paso y profundidad, y verificación con calibres.",
+    "Soldadura": "Procesos de soldadura eléctrica y oxiacetilénica aplicados a la unión de piezas metálicas, incluyendo preparación de bordes, selección de electrodos y control de calidad.",
+    // Dibujo Publicitario
+    "Dibujo Artístico": "Fundamentos del dibujo artístico, trazo, proporción, composición y técnicas de representación visual aplicadas a la comunicación gráfica.",
+    "Figura Humana": "Estudio anatómico y proporcional de la figura humana, técnicas de encaje, canon y expresión del movimiento en el dibujo.",
+    "Técnicas de Sombreado y Pintado": "Métodos de sombreado, degradado, claroscuro y pintado con diferentes herramientas y soportes tradicionales y digitales.",
+    "Programas de Diseño": "Dominio de software de diseño gráfico vectorial y edición de imágenes para la producción de piezas visuales profesionales.",
+    "Creación de Piezas Gráficas": "Desarrollo de piezas de comunicación visual como afiches, folletos, banners, identidad corporativa y contenido para redes sociales.",
     // Programación
     "Algoritmos": "Fundamentos de lógica de programación y resolución de problemas algorítmicos complejos.",
     "Bases de Datos": "Diseño, modelado e implementación de bases de datos relacionales y no relacionales.",
@@ -26,6 +39,13 @@ const SUBJECT_DESCRIPTIONS: Record<string, string> = {
     "Administración I": "Principios básicos de organización, planificación y control dentro de la empresa.",
     "Contabilidad": "Registro de operaciones financieras, balances y análisis contable de las organizaciones.",
     "RH": "Administración del capital humano, relaciones laborales y compensaciones.",
+    // Administración Contable
+    "Auxiliar Administrativo": "Formación en tareas administrativas de oficina, archivo, atención al cliente, comunicación interna y manejo de documentación comercial y contable.",
+    "Liquidación de Sueldos": "Cálculo y confección de recibos de sueldo, cargas sociales, aportes patronales, convenios colectivos y presentación de declaraciones juradas.",
+    "Operador de PC": "Manejo de herramientas informáticas aplicadas a la administración, incluyendo planillas de cálculo, procesadores de texto y software contable.",
+    "Introducción a la Contabilidad": "Principios contables básicos, registración de operaciones, libro diario, libro mayor y confección de balances.",
+    "Liquidación de Impuestos": "Régimen impositivo nacional y provincial, cálculo y presentación de IVA, ganancias, ingresos brutos y demás tributos.",
+    "Administración de Comercios": "Gestión integral de comercios y PYMES, control de stock, facturación, costos, presupuestos y atención al proveedor.",
     // Diseño
     "Diseño I": "Fundamentos de composición visual, teoría del color y comunicación gráfica efectiva.",
     "Tipografía": "Estudio del diseño y uso de fuentes tipográficas para mejorar la legibilidad y estética visual.",
