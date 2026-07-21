@@ -208,14 +208,19 @@ const CAREER_VIDEOS: Record<string, string> = {
 
 const ExpandableVideo = ({ src, center }: { src: string; center?: boolean }) => {
     const [open, setOpen] = useState(false);
+    const [visible, setVisible] = useState(false);
     const fullRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
-        if (open && fullRef.current) {
-            fullRef.current.play();
-        } else if (!open && fullRef.current) {
-            fullRef.current.pause();
-            fullRef.current.currentTime = 0;
+        if (open) {
+            requestAnimationFrame(() => setVisible(true));
+            if (fullRef.current) fullRef.current.play();
+        } else {
+            setVisible(false);
+            if (fullRef.current) {
+                fullRef.current.pause();
+                fullRef.current.currentTime = 0;
+            }
         }
     }, [open]);
 
@@ -242,35 +247,37 @@ const ExpandableVideo = ({ src, center }: { src: string; center?: boolean }) => 
                 </button>
             </div>
 
-            {open && (
+            <div
+                className={`fixed inset-0 z-[999] flex items-center justify-center p-4 transition-all duration-300 ${
+                    visible ? "bg-black/80 opacity-100" : "bg-black/0 opacity-0 pointer-events-none"
+                }`}
+                onClick={() => setOpen(false)}
+            >
                 <div
-                    className="fixed inset-0 z-[999] bg-black/80 flex items-center justify-center p-4"
-                    onClick={() => setOpen(false)}
+                    className={`relative w-full max-w-5xl transition-all duration-300 ${
+                        visible ? "scale-100 opacity-100" : "scale-95 opacity-0"
+                    }`}
+                    onClick={(e) => e.stopPropagation()}
                 >
-                    <div
-                        className="relative w-full max-w-5xl"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                    <div className="relative">
+                        <button
+                            onClick={() => setOpen(false)}
+                            className="absolute top-3 right-3 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors cursor-pointer"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
                         <div className="relative">
-                            <button
-                                onClick={() => setOpen(false)}
-                                className="absolute top-3 right-3 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors cursor-pointer"
+                            <video
+                                ref={fullRef}
+                                controls
+                                className="w-full rounded-xl shadow-2xl max-h-[70vh]"
                             >
-                                <X className="w-4 h-4" />
-                            </button>
-                            <div className="relative">
-                                <video
-                                    ref={fullRef}
-                                    controls
-                                    className="w-full rounded-xl shadow-2xl max-h-[70vh]"
-                                >
-                                    <source src={src} type="video/webm" />
-                                </video>
-                            </div>
+                                <source src={src} type="video/webm" />
+                            </video>
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
         </>
     );
 };
