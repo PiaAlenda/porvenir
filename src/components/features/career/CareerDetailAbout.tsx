@@ -199,14 +199,14 @@ interface CareerDetailsGridProps {
     career: Career;
 }
 
-const CAREER_VIDEOS: Record<string, string> = {
+export const CAREER_VIDEOS: Record<string, string> = {
     "tec-metalmecanica": "/img/video metal mecanica.webm",
     "tec-torneria-mecanica": "/img/torneria mecanica.mp4 OK.webm",
     "tec-dibujo-publicitario": "/img/video dibujo.mp4 OK.webm",
     "tec-administracion-contable": "/img/administracion contable.mp4 OK.webm",
 };
 
-const ExpandableVideo = ({ src, center }: { src: string; center?: boolean }) => {
+export const ExpandableVideo = ({ src, center }: { src: string; center?: boolean }) => {
     const [open, setOpen] = useState(false);
     const [visible, setVisible] = useState(false);
     const fullRef = useRef<HTMLVideoElement>(null);
@@ -283,8 +283,6 @@ const ExpandableVideo = ({ src, center }: { src: string; center?: boolean }) => 
 };
 
 export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
-    const careerVideo = CAREER_VIDEOS[career.id];
-
     return (
         <div className="w-full">
             {/* DESKTOP LAYOUT (Matches the desktop screenshot exactly) */}
@@ -304,7 +302,6 @@ export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
                             </li>
                         ))}
                     </ul>
-                    {careerVideo && <ExpandableVideo src={careerVideo} center />}
                 </div>
 
                 {/* Cronograma de Cursada Card */}
@@ -355,7 +352,6 @@ export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
                             </li>
                         ))}
                     </ul>
-                    {careerVideo && <ExpandableVideo src={careerVideo} />}
                 </div>
 
                 {/* Requisitos (Mobile Only) */}

@@ -1,6 +1,7 @@
 import { Clock, MapPin, ArrowLeft, GraduationCap } from "lucide-react";
 import { useState } from "react";
 import { type Career } from "@/config/careerData";
+import { CAREER_VIDEOS, ExpandableVideo } from "@/components/features/career/CareerDetailAbout";
 
 interface CareerDetailHeroProps {
     career: Career;
@@ -81,6 +82,7 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                                 <span className="text-white font-bold text-xs">Modalidad {career.modality}</span>
                             </div>
                         </div>
+                        {CAREER_VIDEOS[career.id] && <ExpandableVideo src={CAREER_VIDEOS[career.id]} />}
                     </div>
 
                     <div className="hidden lg:col-span-4 lg:flex justify-center lg:justify-end">
