@@ -11,13 +11,14 @@ interface HomeProps {
   onNavigateToAbout: () => void;
   onNavigateToLocation: () => void;
   onBack?: () => void;
+  initialSelection?: { id: string; modality: "virtual" | "presencial" } | null;
 }
 
-const Home = ({ onNavigateToDetail, onNavigateToAbout, onNavigateToLocation }: HomeProps) => {
+const Home = ({ onNavigateToDetail, onNavigateToAbout, onNavigateToLocation, initialSelection }: HomeProps) => {
   const [selectedProgram, setSelectedProgram] = useState<{
     id: string;
     modality: "virtual" | "presencial";
-  } | null>(null);
+  } | null>(initialSelection ?? null);
 
   useEffect(() => {
     window.scrollTo(0, 0);

@@ -9,9 +9,10 @@ import CareerMobileQuickInfo from "@/components/features/career/CareerMobileQuic
 interface CareerDetailProps {
     careerId: string;
     onBack: () => void;
+    onBackToForm?: () => void;
 }
 
-const CareerDetail = ({ careerId, onBack }: CareerDetailProps) => {
+const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => {
     const career: Career | undefined = CAREER_DATA[careerId];
 
     useEffect(() => {
@@ -37,11 +38,7 @@ const CareerDetail = ({ careerId, onBack }: CareerDetailProps) => {
     }
 
     const handleEnroll = () => {
-        onBack();
-        setTimeout(() => {
-            const el = document.getElementById("inscripciones");
-            if (el) el.scrollIntoView({ behavior: "smooth" });
-        }, 150);
+        onBackToForm?.();
     };
 
     return (
