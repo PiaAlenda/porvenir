@@ -46,15 +46,17 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                             Volver al inicio
                         </button>
 
-                        <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 mb-4 lg:hidden">
+                        <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 mb-4 lg:hidden">
                             {imgError ? (
-                                <GraduationCap className="w-8 h-8 text-[#ffcc00]" />
+                                <div className="w-full h-full bg-white/10 flex items-center justify-center">
+                                    <GraduationCap className="w-8 h-8 text-[#ffcc00]" />
+                                </div>
                             ) : (
                                 <img
                                     src={`/icons/${career.id}.png`}
                                     alt={career.title}
                                     onError={() => setImgError(true)}
-                                    className="w-8 h-8 object-contain"
+                                    className="w-full h-full object-cover"
                                 />
                             )}
                         </div>
@@ -85,16 +87,7 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                         <div className="relative group">
                             <div className="absolute inset-0 bg-[#ffcc00] opacity-10 blur-2xl rounded-full group-hover:opacity-20 transition-opacity duration-500" />
 
-                            <div className="relative w-48 h-48 lg:w-56 lg:h-56 flex items-center justify-center">
-                                <svg
-                                    viewBox="0 0 100 100"
-                                    className="absolute inset-0 w-full h-full text-[#ffcc00] fill-transparent stroke-current stroke-[2.5]"
-                                    style={{ filter: "drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4))" }}
-                                >
-                                    <polygon points="50,3 93,28 93,78 50,97 7,78 7,28" />
-                                    <polygon points="50,9 88,31 88,74 50,91 12,74 12,31" className="opacity-40 stroke-[1]" />
-                                </svg>
-
+                            <div className="relative w-48 h-48 lg:w-56 lg:h-56 rounded-full bg-white/10 border-2 border-[#ffcc00]/30 flex items-center justify-center overflow-hidden shadow-lg shadow-black/30">
                                 {imgError ? (
                                     <GraduationCap className="z-10 w-20 h-20 lg:w-24 lg:h-24 text-[#ffcc00] transition-transform duration-500 group-hover:scale-110" />
                                 ) : (
@@ -102,7 +95,7 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                                         src={`/icons/${career.id}.png`}
                                         alt={career.title}
                                         onError={() => setImgError(true)}
-                                        className="z-10 w-28 h-28 lg:w-32 lg:h-32 object-contain transition-transform duration-500 group-hover:scale-110"
+                                        className="z-10 w-full h-full object-cover rounded-full transition-transform duration-500 group-hover:scale-110"
                                     />
                                 )}
                             </div>

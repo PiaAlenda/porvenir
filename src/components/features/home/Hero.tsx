@@ -33,7 +33,7 @@ const carouselSlides = [
         description: "Con más de 150 años de excelencia educativa, formamos profesionales que transforman la sociedad.",
         buttonText: "Nuestra Historia",
         href: "#nosotros",
-        bgImage: "/img/baner 1 medida nueva 2.jpg.jpeg",
+        bgImage: "/img/baner 1 medida nueva nueva 3.jpg.jpeg",
     },
     {
         id: "distancia",
@@ -110,7 +110,7 @@ const Hero = ({ onNavigateAbout, onNavigateLocation, onNavigateToProgram }: Hero
                             transition={{ duration: 1 }}
                             className="absolute inset-0"
                         >
-                            <img src={slide.bgImage} alt="" className="w-full h-full object-cover brightness-[0.4]" />
+                            <img src={slide.bgImage} alt="" className="w-full h-full object-[right_center] sm:object-cover brightness-[0.4]" />
                             <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/20 to-black/60" />
                         </motion.div>
                     )
@@ -120,12 +120,12 @@ const Hero = ({ onNavigateAbout, onNavigateLocation, onNavigateToProgram }: Hero
             <section className="relative z-10 min-h-[50vh] sm:min-h-[60vh] flex flex-col items-center justify-center px-4 py-8 sm:py-12">
                 <motion.div
                     key={currentSlide}
-                    className="max-w-4xl w-full flex flex-col items-center text-center space-y-5 sm:space-y-6 h-[280px] sm:h-[320px] justify-center"
+                    className="w-full max-w-[90vw] flex flex-col items-center text-center space-y-5 sm:space-y-6 h-[280px] sm:h-[320px] justify-center"
                     variants={containerVariants}
                     initial="hidden"
                     animate={isLoaded ? "visible" : "hidden"}
                 >
-                    <motion.h1 variants={itemVariants} className="text-4xl sm:text-6xl md:text-7xl font-black text-white leading-[1.1] sm:leading-[0.9] tracking-tighter">
+                    <motion.h1 variants={itemVariants} className="text-5xl sm:text-7xl md:text-8xl font-black text-white leading-[1.1] sm:leading-[0.9] tracking-tighter">
                         <span className="text-gold italic drop-shadow-[0_0_30px_rgba(245,197,24,0.2)]">
                             {carouselSlides[currentSlide].id === "institucion" ? (
                                 <>Tu Futuro está <span className="text-[#b91c1c]">Porvenir</span></>
@@ -139,7 +139,7 @@ const Hero = ({ onNavigateAbout, onNavigateLocation, onNavigateToProgram }: Hero
                         </span>
                     </motion.h1>
 
-                    <motion.p variants={itemVariants} className="max-w-xl text-sm sm:text-lg text-white leading-relaxed font-medium px-2">
+                    <motion.p variants={itemVariants} className="max-w-4xl text-sm sm:text-lg text-white leading-relaxed font-medium px-4">
                         {carouselSlides[currentSlide].description}
                     </motion.p>
 

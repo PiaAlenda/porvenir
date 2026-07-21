@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
-import { ChevronDown, CheckCircle2, GraduationCap } from "lucide-react"
+import { ChevronDown, CheckCircle2 } from "lucide-react"
 
 interface FormData {
     nombre: string
@@ -111,8 +111,8 @@ const InfoForm = () => {
                         <div className="bg-white rounded-[2.5rem] border border-gray-100 p-6 sm:p-12 shadow-2xl shadow-gray-200/40">
 
                             <div className="flex items-center gap-4 mb-8">
-                                <div className="w-12 h-12 rounded-xl bg-[#4d0706] text-[#ffcc00] flex items-center justify-center shrink-0">
-                                    <GraduationCap className="w-6 h-6" />
+                                <div className="w-12 h-12 rounded-xl bg-[#4d0706] flex items-center justify-center shrink-0 overflow-hidden">
+                                    <img src="/icons/escuela.png" alt="Escuela" className="w-8 h-8 object-contain" />
                                 </div>
                                 <div>
                                     <h3 className="text-lg sm:text-xl font-black text-gray-900 leading-none">¿Listo para empezar?</h3>

@@ -74,7 +74,7 @@ const Programs = ({ selection, onViewDetail }: ProgramsProps) => {
                                         className="cursor-pointer group flex flex-col items-center gap-1.5 lg:gap-2 p-2.5 lg:p-5 bg-gray-50/50 rounded-xl lg:rounded-2xl border border-gray-100 hover:bg-white hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5 transition-all duration-300 text-center w-full lg:bg-white lg:border-gray-200"
                                     >
                                         {/* Icon */}
-                                        <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-lg lg:rounded-full bg-white shadow-sm text-[#4d0706] flex items-center justify-center overflow-hidden shrink-0">
+                                        <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-full bg-white shadow-sm text-[#4d0706] flex items-center justify-center overflow-hidden shrink-0">
                                             {imgError[career.id] ? (
                                                 <GraduationCap className="w-4 h-4 lg:w-6 lg:h-6" />
                                             ) : (
@@ -82,7 +82,7 @@ const Programs = ({ selection, onViewDetail }: ProgramsProps) => {
                                                     src={`/icons/${career.id}.png`}
                                                     alt={career.title}
                                                     onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-cover rounded-full"
                                                 />
                                             )}
                                         </div>
