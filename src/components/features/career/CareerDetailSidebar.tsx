@@ -108,7 +108,7 @@ export const CareerTeachersList = ({ career }: TeachersListProps) => {
             </div>
 
             <div className={`grid ${gridCols} gap-5`}>
-                {paginatedTeachers.map((teacher: Teacher, idx: number) => (
+                {paginatedTeachers.map((teacher: Teacher) => (
                     <TeacherCard key={teacher.legajo} teacher={teacher} />
                 ))}
             </div>
