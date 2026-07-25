@@ -1,5 +1,5 @@
-import { GraduationCap, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { GraduationCap, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
 import { type Career, type Teacher } from "@/config/careerData";
 
 interface CohortCardProps {
@@ -73,10 +73,27 @@ function getProfileSrc(legajo: string): string {
 }
 
 export const CareerTeachersList = ({ career }: TeachersListProps) => {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    const itemsPerPage = isMobile ? 2 : 4;
     const teacherCount = career.teachers.length;
-    const MOBILE_LIMIT = 3;
-    const [showAll, setShowAll] = useState(false);
-    const visibleTeachers = showAll ? career.teachers : career.teachers.slice(0, MOBILE_LIMIT);
+    const totalPages = Math.ceil(teacherCount / itemsPerPage);
+
+    useEffect(() => {
+        if (currentPage > totalPages) setCurrentPage(1);
+    }, [totalPages, currentPage]);
+
+    const paginatedTeachers = career.teachers.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     const gridCols =
         teacherCount === 1
@@ -91,22 +108,33 @@ export const CareerTeachersList = ({ career }: TeachersListProps) => {
             </div>
 
             <div className={`grid ${gridCols} gap-5`}>
-                {visibleTeachers.map((teacher: Teacher, idx: number) => (
-                    <TeacherCard key={idx} teacher={teacher} />
+                {paginatedTeachers.map((teacher: Teacher, idx: number) => (
+                    <TeacherCard key={teacher.legajo} teacher={teacher} />
                 ))}
             </div>
 
-            {teacherCount > MOBILE_LIMIT && (
-                <div className="lg:hidden mt-4">
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 lg:gap-4 mt-6">
                     <button
-                        onClick={() => setShowAll((prev) => !prev)}
-                        className="w-full py-3 flex items-center justify-center gap-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-sm font-bold text-[#4d0706] transition-all duration-200 cursor-pointer"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="flex items-center gap-1.5 px-2 lg:px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-sm font-bold text-[#4d0706] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
                     >
-                        {showAll ? (
-                            <>Ver menos <ChevronUp className="w-4 h-4" /></>
-                        ) : (
-                            <>Ver más ({teacherCount - MOBILE_LIMIT} restantes) <ChevronDown className="w-4 h-4" /></>
-                        )}
+                        <ChevronLeft className="w-4 h-4" />
+                        <span className="hidden lg:inline">Anterior</span>
+                    </button>
+
+                    <span className="text-xs lg:text-sm font-bold text-stone-500">
+                        Pág. {currentPage} de {totalPages}
+                    </span>
+
+                    <button
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="flex items-center gap-1.5 px-2 lg:px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-sm font-bold text-[#4d0706] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
+                    >
+                        <span className="hidden lg:inline">Siguiente</span>
+                        <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
             )}

@@ -59,28 +59,32 @@ export const CAREER_DATA: Record<string, Career> = {
             {
                 name: "Alonzo, Ariel Alberto",
                 title: "Auxiliar Técnico Automotor",
-                legajo: "14594- L.8 - F. 106/107"
+                legajo: "14594- L.8 - F. 106/107",
+                image: "/profile/ariel.jpg"
             },
             {
                 name: "Becerra, Gustavo",
                 title: "Técnico en Automotores",
-                legajo: "11767- L.06- F. 184/185"
+                legajo: "11767- L.06- F. 184/185",
+                image: "/profile/becerra.jpg"
             },
             {
                 name: "Cabrera, Juan",
                 title: "Aux. Tec. en Mec. del Autom.",
-                legajo: "8459-L-5-F-126/127"
+                legajo: "8459-L-5-F-126/127",
+                image: "/profile/cabrera.jpg"
             },
             {
                 name: "Ghione, Santiago",
                 title: "Ingeniero Mecánico",
-                legajo: "13386 -L-7-F-168/169"
+                legajo: "13386 -L-7-F-168/169",
+                image: "/profile/santiago.jpg"
             },
             {
                 name: "Montiel, Andrés",
                 title: "Técnico Mecánico",
                 legajo: "10262- L.06- F.74/75",
-                image: "/profile/Profe Andres Montiel.webp"
+                image: "/profile/montiel.jpg"
             },
             {
                 name: "Olmedo, David",
@@ -189,13 +193,14 @@ export const CAREER_DATA: Record<string, Career> = {
             {
                 name: "Garro, Leonardo",
                 title: "Tec. en Equipos e Instal. Electromecanica",
-                legajo: "13544-L-7-F-186/187"
+                legajo: "13544-L-7-F-186/187",
+                image: "/profile/garro.jpg"
             },
             {
                 name: "Ortiz, Bruno",
                 title: "Auxiliar Tec. Tornero",
                 legajo: "1184-L-06, F-193/193",
-                image: "/profile/Profe Bruno Ortiz.jpg"
+                image: "/profile/ortiz.jpg"
             }
         ],
         schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
@@ -248,12 +253,13 @@ export const CAREER_DATA: Record<string, Career> = {
                 name: "Nuñez, María Elisa",
                 title: "Lic. en Comunicación Social",
                 legajo: "5639- L.4- F.42/43",
-                image: "/profile/Profe Elisa nueñez.jpg"
+                image: "/profile/elisa.jpg"
             },
             {
                 name: "Rojas, Sofia",
                 title: "Diseñador Gráfico",
-                legajo: "14787-L-8-F-128/129"
+                legajo: "14787-L-8-F-128/129",
+                image: "/profile/rojas.jpg"
             }
         ],
         schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
@@ -308,23 +314,32 @@ export const CAREER_DATA: Record<string, Career> = {
             {
                 name: "Aceituno, Guillermo",
                 title: "Tec. Programador Universitario",
-                legajo: "11849- L.6- F. 190/191"
+                legajo: "11849- L.6- F. 190/191",
+                image: "/profile/guillermo.jpg"
             },
             {
                 name: "Davila, Cecilia",
                 title: "Contador Público Nacional",
-                legajo: "9850- L. 6- F. 46/47"
+                legajo: "9850- L. 6- F. 46/47",
+                image: "/profile/cecilia.jpg"
             },
             {
                 name: "Diaz, Pablo",
                 title: "Contador Público Nacional",
-                legajo: "10503- L.6- F.92/93"
+                legajo: "10503- L.6- F.92/93",
+                image: "/profile/pablo.jpg"
             },
             {
                 name: "Nuñez, Rogelio",
                 title: "Contador Público Nacional",
                 legajo: "5342- L. 4- F. 10/11",
-                image: "/profile/Profe Rogelio nueñez.jpg"
+                image: "/profile/rogelio.jpg"
+            },
+            {
+                name: "Caballero, Juan Marcelo",
+                title: "Adm. de Empresas",
+                legajo: "9071-L.06-F.36/37",
+                image: "/profile/Marcelo.jpg"
             }
         ],
         schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
