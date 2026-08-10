@@ -144,7 +144,7 @@ export const CareerTeachersList = ({ career }: TeachersListProps) => {
 
 function TeacherCard({ teacher }: { teacher: Teacher }) {
     const [imgError, setImgError] = useState(false);
-    const profileSrc = teacher.image || getProfileSrc(teacher.legajo);
+    const profileSrc = teacher.image || (teacher.legajo ? getProfileSrc(teacher.legajo) : "");
 
     return (
         <div className="flex items-center gap-3 lg:gap-5 p-3 lg:p-5 rounded-xl border border-stone-100 hover:border-[#4d0706]/20 transition-all duration-300 hover:bg-stone-50/50 hover:scale-[1.02] cursor-default">
@@ -165,9 +165,11 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
             <div className="min-w-0">
                 <h4 className="font-black text-gray-900 text-sm lg:text-base leading-tight">{teacher.name}</h4>
                 <p className="text-xs lg:text-sm font-bold text-[#4d0706]/75 mt-1">{teacher.title}</p>
-                <p className="text-[10px] lg:text-xs font-semibold text-stone-400 mt-0.5">
-                    Legajo: {teacher.legajo}
-                </p>
+                {teacher.legajo && (
+                    <p className="text-[10px] lg:text-xs font-semibold text-stone-400 mt-0.5">
+                        Legajo: {teacher.legajo}
+                    </p>
+                )}
             </div>
         </div>
     );

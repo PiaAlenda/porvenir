@@ -6,7 +6,7 @@ export interface CareerSubject {
 export interface Teacher {
     name: string;
     title: string;
-    legajo: string;
+    legajo?: string;
     image?: string;
 }
 
@@ -352,6 +352,202 @@ export const CAREER_DATA: Record<string, Career> = {
             "Auxiliar en consultoras de Recursos Humanos",
             "Administración de comercios",
             "Docencia"
+        ]
+    },
+    "tec-refrigeracion-aire-acondicionado": {
+        id: "tec-refrigeracion-aire-acondicionado",
+        title: "Refrigeración y Aire Acondicionado",
+        icon: "Wrench",
+        description: "Habilidades y conocimiento en reparación de heladeras y aires acondicionados e instalación domiciliaria.",
+        longDescription: "Formación integral en refrigeración y aire acondicionado con enfoque en la reparación de heladeras y aires acondicionados y la instalación domiciliaria. Preparación para el desempeño en el servicio técnico y la instalación de equipos de refrigeración domiciliarios y comerciales.",
+        duration: "2 años",
+        modality: "Presencial",
+        perfilEgresado: [
+            "Reparación de heladeras y aires acondicionados",
+            "Instalación domiciliaria"
+        ],
+        syllabus: [
+            {
+                year: "1° Año",
+                subjects: [
+                    "Reparación de Heladeras y Aires Acondicionados",
+                    "Instalación Domiciliaria"
+                ]
+            }
+        ],
+        teachers: [
+            {
+                name: "Lain, Francisco Javier",
+                title: "Técnico Medio en Equip. e Instalac. Electromecan."
+            },
+            {
+                name: "Tores, Catriel",
+                title: "Téc. Medio en Equipos e Instal. Elect.",
+                legajo: "14057-L8-F44/45"
+            }
+        ],
+        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
+        inscriptionDate: "Septiembre 2026",
+        inscriptionFee: "$50.000",
+        inscriptionDocs: "Fotocopia de DNI",
+        salidaLaboral: [
+            "Reparación de heladeras y aires acondicionados",
+            "Instalación domiciliaria"
+        ]
+    },
+    "tec-industria-madera": {
+        id: "tec-industria-madera",
+        title: "Industria de la Madera",
+        icon: "Hammer",
+        description: "Habilidades y conocimiento en carpintería general, manipulación de herramientas y maquinarias, confección de mobiliarios en madera y MDF, diseño y realización de aberturas.",
+        longDescription: "Formación integral en industria de la madera con enfoque en carpintería general, manipulación de herramientas y maquinarias, confección de mobiliarios en madera y MDF, y diseño y realización de aberturas. Preparación para el desempeño en mueblerías, empresas constructoras y talleres de confección y diseño de mobiliario.",
+        duration: "2 años",
+        modality: "Presencial",
+        perfilEgresado: [
+            "Carpintería general",
+            "Manipulación de herramientas y maquinarias",
+            "Confección de mobiliarios en madera y MDF",
+            "Diseño y realización de aberturas"
+        ],
+        syllabus: [
+            {
+                year: "1° Año",
+                subjects: [
+                    "Carpintería General",
+                    "Manipulación de Herramientas y Maquinarias",
+                    "Confección de Mobiliarios en Madera y MDF",
+                    "Diseño y Realización de Aberturas"
+                ]
+            }
+        ],
+        teachers: [
+            {
+                name: "Fernandez, Mauricio",
+                title: "Auxiliar Tec. en Industria de la Mad.",
+                legajo: "1184-L-06, F-193/193"
+            },
+            {
+                name: "Molina, Ricardo Fabio",
+                title: "Profesional Técnico Carpintero",
+                legajo: "5963- L.4 - F.76/77"
+            },
+            {
+                name: "Rodriguez, Juan Ramon",
+                title: "PROF. TÉC.CARPINTERO – Cat. I y II",
+                legajo: "L: 05 Folio: 160/161"
+            }
+        ],
+        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
+        inscriptionDate: "Septiembre 2026",
+        inscriptionFee: "$50.000",
+        inscriptionDocs: "Fotocopia de DNI",
+        salidaLaboral: [
+            "Mueblería y confección de mobiliarios",
+            "Empresas constructoras",
+            "Diseño de mobiliario"
+        ]
+    },
+    "tec-gastronomia-profesional": {
+        id: "tec-gastronomia-profesional",
+        title: "Gastronomía Profesional",
+        icon: "ChefHat",
+        description: "Habilidades y conocimiento en panificación, técnicas de decorado, parrilla, conservas y cocina para celíacos y diabéticos.",
+        longDescription: "Formación integral en gastronomía profesional con enfoque en panificación, técnicas de decorado, parrilla, conservas y cocina para celíacos y diabéticos. Preparación para el desempeño en panaderías, restaurantes, cocina de alta montaña, cocinas industriales, pastelerías y emprendimientos personales.",
+        duration: "2 años",
+        modality: "Presencial",
+        perfilEgresado: [
+            "Panificación",
+            "Técnicas de decorado",
+            "Parrilla",
+            "Conservas",
+            "Cocina para celíacos y diabéticos"
+        ],
+        syllabus: [
+            {
+                year: "1° Año",
+                subjects: [
+                    "Panificación",
+                    "Técnicas de Decorado",
+                    "Parrilla",
+                    "Conservas",
+                    "Cocina para Celíacos y Diabéticos"
+                ]
+            }
+        ],
+        teachers: [
+            {
+                name: "Herrero, Mercedes",
+                title: "Tecnico Superior en Gastronomia",
+                legajo: "8673-L-05-F-146/147"
+            },
+            {
+                name: "Navas, Nélida",
+                title: "Tec.Univ.en Gestión Gastronómica",
+                legajo: "9352-L.06- F.10/11"
+            }
+        ],
+        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
+        inscriptionDate: "Septiembre 2026",
+        inscriptionFee: "$50.000",
+        inscriptionDocs: "Fotocopia de DNI",
+        salidaLaboral: [
+            "Panaderías",
+            "Restaurantes",
+            "Cocina de alta montaña",
+            "Cocinas industriales",
+            "Pastelerías",
+            "Emprendimientos personales"
+        ]
+    },
+    "tec-electronica-general-industrial": {
+        id: "tec-electronica-general-industrial",
+        title: "Electrónica General e Industrial",
+        icon: "Cpu",
+        description: "Especialización en audio y video, mantenimiento de PC, cálculos y dimensionamientos.",
+        longDescription: "Formación integral en electrónica general e industrial con especialización en audio y video, mantenimiento de PC y cálculos y dimensionamientos. Preparación para el desempeño en servicio y mantenimiento de PC, mantenimiento industrial, instalación y mantenimiento de sistemas de audio e imágenes y comercio de electrónica.",
+        duration: "2 años",
+        modality: "Presencial",
+        perfilEgresado: [
+            "Especialización en audio y video",
+            "Mantenimiento de PC",
+            "Cálculos y dimensionamientos"
+        ],
+        syllabus: [
+            {
+                year: "1° Año",
+                subjects: [
+                    "Especialización en Audio y Video",
+                    "Mantenimiento de PC",
+                    "Cálculos y Dimensionamientos"
+                ]
+            }
+        ],
+        teachers: [
+            {
+                name: "Calderón, Marcelo Fabián",
+                title: "Téc. Electrónico",
+                legajo: "5515 - L. 4 - F. 30/31"
+            },
+            {
+                name: "Rivas, Alejandro",
+                title: "Ingeniero Electromecanico",
+                legajo: "10354- L-06- F-82/83"
+            },
+            {
+                name: "Varas, Mario Miguel",
+                title: "Tec.en Electronica Gral. e Industrial",
+                legajo: "13598-L-07-F-192/193"
+            }
+        ],
+        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
+        inscriptionDate: "Septiembre 2026",
+        inscriptionFee: "$50.000",
+        inscriptionDocs: "Fotocopia de DNI",
+        salidaLaboral: [
+            "Servicio y mantenimiento de PC",
+            "Mantenimiento industrial",
+            "Instalación y mantenimiento de sistemas de audio e imágenes",
+            "Comercio de electrónica"
         ]
     }
 };
