@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { GraduationCap, Clock } from "lucide-react";
 import { CAREER_DATA, type Career } from "../../../config/careerData";
 
@@ -8,7 +9,7 @@ interface ProgramsProps {
     selection: {
         id: string;
         modality: "virtual" | "presencial";
-    } | null;
+    };
     onViewDetail: (id: string) => void;
 }
 
@@ -16,11 +17,13 @@ interface ProgramsProps {
 let lastSelectionKey: string | null = null;
 
 const Programs = ({ selection, onViewDetail }: ProgramsProps) => {
-    const sectionRef = useRef<HTMLDivElement>(null);
+    const sectionRef = useRef<HTMLElement>(null);
     const [imgError, setImgError] = useState<Record<string, boolean>>({});
 
+    useEffect(() => () => { lastSelectionKey = null; }, []);
+
     useEffect(() => {
-        if (!selection || !sectionRef.current) return;
+        if (!sectionRef.current) return;
         const selectionKey = `${selection.id}-${selection.modality}`;
         if (lastSelectionKey !== selectionKey) {
             lastSelectionKey = selectionKey;
@@ -30,8 +33,6 @@ const Programs = ({ selection, onViewDetail }: ProgramsProps) => {
             return () => clearTimeout(timer);
         }
     }, [selection]);
-
-    if (!selection) return null;
 
     const selectedId = selection.id;
     const selectedModality = selection.modality;
@@ -47,7 +48,14 @@ const Programs = ({ selection, onViewDetail }: ProgramsProps) => {
     const title = selectedModality === "virtual" ? "Cursos" : "Carrera";
 
     return (
-        <section ref={sectionRef} className="site-section bg-white border-t border-gray-100 animate-fade-up py-12 lg:py-16">
+        <motion.section
+            ref={sectionRef}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
+            className="site-section bg-white border-t border-gray-100 py-12 lg:py-16"
+        >
             <div className="site-container max-w-7xl mx-auto px-6 lg:px-12">
                 <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
 
@@ -116,7 +124,7 @@ const Programs = ({ selection, onViewDetail }: ProgramsProps) => {
 
                 </div>
             </div>
-        </section>
+        </motion.section>
     );
 };
 

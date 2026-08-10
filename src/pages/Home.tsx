@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import Hero from "@/components/features/home/Hero";
 import EducationalOffer from "@/components/features/home/EducationalOffer";
 import Programs from "@/components/features/home/Programs";
@@ -28,8 +29,8 @@ const Home = ({ onNavigateToDetail, onNavigateToAbout, onNavigateToLocation, ini
     };
   }, []);
 
-  const handleSelectProgram = useCallback((id: string, modality: "virtual" | "presencial") => {
-    setSelectedProgram({ id, modality });
+  const handleSelectProgram = useCallback((id: string | null, modality?: "virtual" | "presencial") => {
+    setSelectedProgram(id && modality ? { id, modality } : null);
   }, []);
 
   return (
@@ -48,10 +49,14 @@ const Home = ({ onNavigateToDetail, onNavigateToAbout, onNavigateToLocation, ini
         />
       </div>
 
-      <Programs
-        selection={selectedProgram}
-        onViewDetail={onNavigateToDetail}
-      />
+      <AnimatePresence initial={false}>
+        {selectedProgram && (
+          <Programs
+            selection={selectedProgram}
+            onViewDetail={onNavigateToDetail}
+          />
+        )}
+      </AnimatePresence>
 
       <InfoForm />
       <Footer />

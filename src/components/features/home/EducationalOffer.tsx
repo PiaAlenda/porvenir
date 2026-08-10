@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { ArrowRight, Laptop, MapPin, CheckCircle } from "lucide-react";
 
 interface EducationalOfferProps {
-    onSelectProgram: (id: string, modality: "virtual" | "presencial") => void;
+    onSelectProgram: (id: string | null, modality?: "virtual" | "presencial") => void;
     activeSelection: { id: string; modality: "virtual" | "presencial" } | null;
 }
 
@@ -85,7 +85,13 @@ const EducationalOffer = ({ onSelectProgram, activeSelection }: EducationalOffer
                                 key={card.id}
                                 data-id={card.id}
                                 ref={(el) => { elementsRef.current[idx + 1] = el as HTMLElement; }}
-                                onClick={() => onSelectProgram(card.id, card.defaultModality)}
+                                onClick={() => {
+                                    if (isActive) {
+                                        onSelectProgram(null);
+                                    } else {
+                                        onSelectProgram(card.id, card.defaultModality);
+                                    }
+                                }}
                                 className={`cursor-pointer group relative flex flex-col p-6 sm:p-10 rounded-[2rem] text-left transition-all duration-500 ease-out bg-white border 
                                 ${isVisible[card.id] ? "translate-x-0 opacity-100" : (idx === 0 ? "-translate-x-10" : "translate-x-10") + " opacity-0"} 
                                 ${isActive ? "border-[#4d0706] ring-4 ring-[#4d0706]/5 shadow-xl" : "border-gray-100 shadow-md hover:shadow-lg"}`}
