@@ -200,10 +200,11 @@ interface CareerDetailsGridProps {
 }
 
 export const CAREER_VIDEOS: Record<string, string> = {
-    "tec-metalmecanica": "/img/video metal mecanica.webm",
-    "tec-torneria-mecanica": "/img/torneria mecanica.mp4 OK.webm",
-    "tec-dibujo-publicitario": "/img/video dibujo.mp4 OK.webm",
-    "tec-administracion-contable": "/img/administracion contable.mp4 OK.webm",
+    "tec-mecanica-automotor": "/videos/MECANICA AUTOMOTOR.webm",
+    "tec-metalmecanica": "/videos/video metal mecanica.webm",
+    "tec-torneria-mecanica": "/videos/torneria mecanica.mp4 OK.webm",
+    "tec-dibujo-publicitario": "/videos/video dibujo.mp4 OK.webm",
+    "tec-administracion-contable": "/videos/administracion contable.mp4 OK.webm",
 };
 
 export const ExpandableVideo = ({ src, center }: { src: string; center?: boolean }) => {
