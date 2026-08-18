@@ -368,55 +368,102 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                                 )}
                                             </>
                                         ) : (
-                                            /* Original Icon Grid for other views */
-                                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
-                                                {filteredCourses.length > 0 ? (
-                                                    filteredCourses.map((career) => (
-                                                        <button
-                                                            key={career.id}
-                                                            type="button"
-                                                            onClick={() => onViewDetail(career.id)}
-                                                            className="cursor-pointer group flex flex-col items-center gap-1.5 lg:gap-2 p-2.5 lg:p-5 bg-gray-50/50 rounded-xl lg:rounded-2xl border border-gray-100 hover:bg-white hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5 transition-all duration-300 text-center w-full lg:bg-white lg:border-gray-200"
-                                                        >
-                                                            {/* Icon */}
-                                                            <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-full bg-white shadow-sm text-[#4d0706] flex items-center justify-center overflow-hidden shrink-0">
-                                                                {imgError[career.id] ? (
-                                                                      <GraduationCap className="w-4 h-4 lg:w-6 lg:h-6" />
-                                                                ) : (
-                                                                    <img
-                                                                        src={`/icons/${career.id}.png`}
-                                                                        alt={career.title}
-                                                                        onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
-                                                                        className="w-full h-full object-cover rounded-full"
-                                                                    />
-                                                                )}
-                                                            </div>
-                                                            <div className="flex flex-col items-center gap-1 lg:gap-1.5">
-                                                                <h3 className="text-[11px] lg:text-sm font-black text-gray-800 group-hover:text-[#4d0706] transition-colors leading-tight break-words">
-                                                                    {career.title}
-                                                                </h3>
-                                                                
-                                                                {/* Mobile Duration */}
-                                                                <span className="text-[9px] font-bold text-[#4d0706]/60 bg-[#4d0706]/5 px-2 py-0.5 rounded-full leading-none lg:hidden">
-                                                                    {career.duration}
-                                                                </span>
-                                                                
-                                                                {/* Desktop Duration */}
-                                                                <div className="hidden lg:flex items-center gap-1.5 text-[#333] font-medium text-[14px]">
-                                                                    <Clock className="w-[18px] h-[18px]" />
-                                                                    <span>{career.duration}</span>
+                                            /* Original Icon Grid for Carreras Presenciales */
+                                            <>
+                                                <AnimatePresence mode="wait">
+                                                    <motion.div
+                                                        key={currentPage}
+                                                        initial={{ opacity: 0, x: 40 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        exit={{ opacity: 0, x: -40 }}
+                                                        transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
+                                                    >
+                                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
+                                                            {paginatedCourses.length > 0 ? (
+                                                                paginatedCourses.map((career) => (
+                                                                    <button
+                                                                        key={career.id}
+                                                                        type="button"
+                                                                        onClick={() => onViewDetail(career.id)}
+                                                                        className="cursor-pointer group flex flex-col items-center gap-1.5 lg:gap-2 p-2.5 lg:p-5 bg-gray-50/50 rounded-xl lg:rounded-2xl border border-gray-100 hover:bg-white hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5 transition-all duration-300 text-center w-full lg:bg-white lg:border-gray-200"
+                                                                    >
+                                                                        {/* Icon */}
+                                                                        <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-full bg-white shadow-sm text-[#4d0706] flex items-center justify-center overflow-hidden shrink-0">
+                                                                            {imgError[career.id] ? (
+                                                                                  <GraduationCap className="w-4 h-4 lg:w-6 lg:h-6" />
+                                                                            ) : (
+                                                                                <img
+                                                                                    src={`/icons/${career.id}.png`}
+                                                                                    alt={career.title}
+                                                                                    onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
+                                                                                    className="w-full h-full object-cover rounded-full"
+                                                                                />
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex flex-col items-center gap-1 lg:gap-1.5">
+                                                                            <h3 className="text-[11px] lg:text-sm font-black text-gray-800 group-hover:text-[#4d0706] transition-colors leading-tight break-words">
+                                                                                {career.title}
+                                                                            </h3>
+                                                                            
+                                                                            {/* Mobile Duration */}
+                                                                            <span className="text-[9px] font-bold text-[#4d0706]/60 bg-[#4d0706]/5 px-2 py-0.5 rounded-full leading-none lg:hidden">
+                                                                                {career.duration}
+                                                                            </span>
+                                                                            
+                                                                            {/* Desktop Duration */}
+                                                                            <div className="hidden lg:flex items-center gap-1.5 text-[#333] font-medium text-[14px]">
+                                                                                <Clock className="w-[18px] h-[18px]" />
+                                                                                <span>{career.duration}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </button>
+                                                                ))
+                                                            ) : (
+                                                                <div className="w-full text-center py-10 bg-gray-50/80 rounded-2xl border border-dashed border-gray-200 col-span-full">
+                                                                    <span className="text-sm text-gray-500 font-medium">
+                                                                        No hay programas disponibles para esta modalidad actualmente.
+                                                                    </span>
                                                                 </div>
-                                                            </div>
+                                                            )}
+                                                        </div>
+                                                    </motion.div>
+                                                </AnimatePresence>
+
+                                                {/* Pagination */}
+                                                {totalPages > 1 && (
+                                                    <div className="flex items-center justify-center gap-4 mt-6">
+                                                        <button
+                                                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                                            disabled={currentPage === 1}
+                                                            className={`cursor-pointer flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border transition-all duration-200 ${
+                                                                currentPage === 1
+                                                                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                                                    : "bg-white text-[#4d0706] border-[#4d0706] hover:bg-[#4d0706] hover:text-white"
+                                                            }`}
+                                                        >
+                                                            <ChevronLeft className="w-4 h-4" />
+                                                            Anterior
                                                         </button>
-                                                    ))
-                                                ) : (
-                                                    <div className="w-full text-center py-10 bg-gray-50/80 rounded-2xl border border-dashed border-gray-200 col-span-full">
-                                                        <span className="text-sm text-gray-500 font-medium">
-                                                            No hay programas disponibles para esta modalidad actualmente.
+                                                        
+                                                        <span className="text-xs font-bold text-gray-500">
+                                                            Página {currentPage} de {totalPages}
                                                         </span>
+                                                        
+                                                        <button
+                                                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                                            disabled={currentPage === totalPages}
+                                                            className={`cursor-pointer flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border transition-all duration-200 ${
+                                                                currentPage === totalPages
+                                                                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                                                    : "bg-[#4d0706] text-white border-[#4d0706] hover:bg-[#3a0504]"
+                                                            }`}
+                                                        >
+                                                            Siguiente
+                                                            <ChevronRight className="w-4 h-4" />
+                                                        </button>
                                                     </div>
                                                 )}
-                                            </div>
+                                            </>
                                         )}
                                     </div>
 
