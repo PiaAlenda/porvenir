@@ -1,27 +1,35 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Library, Newspaper, MapPin, Users, Home as HomeIcon } from "lucide-react";
+import { Library, MapPin, Users, GraduationCap, Briefcase } from "lucide-react";
 
 interface FloatingNavProps {
     currentView: string;
     onNavigate: (view: "home" | "about" | "location") => void;
     onScrollToSection: (sectionId: string) => void;
+    onNavigateToProgram?: (category: string, modality: "virtual" | "presencial") => void;
 }
 
 const navItems = [
     { id: "about", label: "Nosotros", icon: Users, type: "view" as const },
     { id: "inscripciones", label: "Biblioteca", icon: Library, type: "scroll" as const },
-    { id: "home", label: "Inicio", icon: HomeIcon, type: "view" as const },
-    { id: "novedades", label: "Novedades", icon: Newspaper, type: "scroll" as const },
+    { id: "cursos", label: "Cursos", icon: GraduationCap, type: "program" as const, category: "bach", modality: "virtual" as const },
+    { id: "carrera", label: "Carrera", icon: Briefcase, type: "program" as const, category: "tec", modality: "presencial" as const },
     { id: "location", label: "Sedes", icon: MapPin, type: "view" as const },
 ];
 
-const FloatingNav = ({ currentView, onNavigate, onScrollToSection }: FloatingNavProps) => {
+const FloatingNav = ({ currentView, onNavigate, onScrollToSection, onNavigateToProgram }: FloatingNavProps) => {
 
     const handleClick = (e: React.MouseEvent, item: typeof navItems[0]) => {
         e.preventDefault();
         if (item.type === "view") {
             onNavigate(item.id as any);
+        } else if (item.type === "program" && "category" in item && onNavigateToProgram) {
+            if (currentView !== "home") {
+                onNavigate("home");
+                setTimeout(() => onNavigateToProgram(item.category, item.modality), 300);
+            } else {
+                onNavigateToProgram(item.category, item.modality);
+            }
         } else {
             if (currentView !== "home") {
                 onNavigate("home");

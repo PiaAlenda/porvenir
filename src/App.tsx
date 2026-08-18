@@ -60,6 +60,13 @@ function App() {
     }
   };
 
+  const handleNavToProgram = (category: string, modality: "virtual" | "presencial") => {
+    setProgramSelection({ id: category, modality });
+    if (view.name !== "home") {
+      setView({ name: "home" });
+    }
+  };
+
   return (
     <div className="App min-h-screen bg-white">
       {/* Componente de Navegación Global */}
@@ -68,6 +75,7 @@ function App() {
           currentView={view.name} 
           onNavigate={handleGlobalNavigate}
           onScrollToSection={handleScrollToSection}
+          onNavigateToProgram={handleNavToProgram}
         />
       )}
 

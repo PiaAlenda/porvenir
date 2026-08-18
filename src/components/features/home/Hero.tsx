@@ -1,7 +1,7 @@
 import { memo, useEffect, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import {
-    Library, Calendar, Newspaper, MapPin, Users,
+    Library, MapPin, Users, GraduationCap, Briefcase,
     ChevronRight, type LucideIcon
 } from "lucide-react";
 
@@ -14,8 +14,8 @@ interface SliderItem {
 const sliderItems: SliderItem[] = [
     { text: "Nosotros", href: "#nosotros", icon: Users },
     { text: "Biblioteca", href: "#inscripciones", icon: Library },
-    { text: "Eventos", href: "#eventos", icon: Calendar },
-    { text: "Novedades", href: "#novedades", icon: Newspaper },
+    { text: "Cursos", href: "#cursos", icon: GraduationCap },
+    { text: "Carrera", href: "#carrera", icon: Briefcase },
     { text: "Sedes", href: "#location", icon: MapPin },
 ];
 
@@ -90,8 +90,10 @@ const Hero = ({ onNavigateAbout, onNavigateLocation, onNavigateToProgram }: Hero
             onNavigateAbout();
         } else if (href === "#location" && onNavigateLocation) {
             onNavigateLocation();
-        } else if ((href === "#virtual" || href === "#presencial") && onNavigateToProgram) {
-            onNavigateToProgram(href === "#virtual" ? "bach" : "tec", href === "#virtual" ? "virtual" : "presencial");
+        } else if (href === "#cursos" && onNavigateToProgram) {
+            onNavigateToProgram("bach", "virtual");
+        } else if (href === "#carrera" && onNavigateToProgram) {
+            onNavigateToProgram("tec", "presencial");
         } else if (href && href.startsWith("#")) {
             const el = document.getElementById(href.replace("#", ""));
             if (el) el.scrollIntoView({ behavior: "smooth" });

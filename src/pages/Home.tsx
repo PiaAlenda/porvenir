@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { AnimatePresence } from "framer-motion";
 import Hero from "@/components/features/home/Hero";
 import EducationalOffer from "@/components/features/home/EducationalOffer";
-import Programs from "@/components/features/home/Programs";
 import InfoForm from "@/components/features/home/InfoForm";
 import Footer from "@/components/features/home/Footer";
-
 
 interface HomeProps {
   onNavigateToDetail: (id: string) => void;
@@ -44,19 +41,11 @@ const Home = ({ onNavigateToDetail, onNavigateToAbout, onNavigateToLocation, ini
         <div id="virtual" className="absolute -mt-20" />
         <div id="presencial" className="absolute -mt-20" />
         <EducationalOffer
-          onSelectProgram={handleSelectProgram}
+          onViewDetail={onNavigateToDetail}
           activeSelection={selectedProgram}
+          onSelectProgram={handleSelectProgram}
         />
       </div>
-
-      <AnimatePresence initial={false}>
-        {selectedProgram && (
-          <Programs
-            selection={selectedProgram}
-            onViewDetail={onNavigateToDetail}
-          />
-        )}
-      </AnimatePresence>
 
       <InfoForm />
       <Footer />
