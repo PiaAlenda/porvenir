@@ -188,24 +188,25 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                             const activeCard = cards.find(c => c.id === expandedCard);
                             if (!activeCard) return null;
 
-                            const isCursosPresenciales = activeCard.id === "bach" && selectedModality === "presencial";
-                            const isCursosOnline = activeCard.id === "bach" && selectedModality === "virtual";
+                            const isCursos = activeCard.id === "bach";
 
                             const filteredCourses = Object.values(CAREER_DATA).filter((career) => {
-                                if (isCursosPresenciales) {
-                                    return career.category === "curso-presencial";
+                                if (isCursos) {
+                                    return career.category === "curso-presencial" || career.category === "curso-virtual";
                                 }
-                                if (isCursosOnline) {
-                                    return career.category === "curso-virtual";
-                                }
-                                const matchesCategory = activeCard.id === "bach"
-                                    ? career.id.startsWith("bachiller") || career.id.includes("adultos")
-                                    : career.id.startsWith("tec");
+                                const matchesCategory = career.id.startsWith("tec");
                                 const matchesModality = career.modality.toLowerCase().includes(selectedModality.toLowerCase());
                                 return matchesCategory && matchesModality;
+                            }).sort((a, b) => {
+                                if (isCursos) {
+                                    const aIsPresencial = a.category === "curso-presencial" ? 0 : 1;
+                                    const bIsPresencial = b.category === "curso-presencial" ? 0 : 1;
+                                    return aIsPresencial - bIsPresencial;
+                                }
+                                return 0;
                             });
 
-                            const displayTitle = selectedModality === "virtual" ? "Cursos Online" : (activeCard.id === "bach" ? "Cursos Presenciales" : "Carreras Presenciales");
+                            const displayTitle = isCursos ? "Cursos" : "Carreras Presenciales";
 
                             const totalPages = Math.ceil(filteredCourses.length / COURSES_PER_PAGE);
                             const paginatedCourses = filteredCourses.slice(
@@ -229,52 +230,11 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                                 Programas diseñados para brindarte las mejores herramientas profesionales en el mercado actual.
                                             </p>
                                         </div>
-
-                                        {/* Modality selector buttons (Online / Presencial) - Only for Cursos (bach) */}
-                                        {activeCard.id === "bach" && (
-                                            <div className="mt-8 flex flex-col gap-3">
-                                                <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Elegir Modalidad:</span>
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setSelectedModality("presencial");
-                                                            setCurrentPage(1);
-                                                            if (onSelectProgram) onSelectProgram(activeCard.id, "presencial");
-                                                        }}
-                                                        className={`cursor-pointer px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 flex items-center gap-2 ${
-                                                            selectedModality === "presencial"
-                                                                ? "bg-[#4d0706] text-white border-[#4d0706]"
-                                                                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                                                        }`}
-                                                    >
-                                                        <MapPin className="w-3.5 h-3.5" />
-                                                        Presenciales
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setSelectedModality("virtual");
-                                                            setCurrentPage(1);
-                                                            if (onSelectProgram) onSelectProgram(activeCard.id, "virtual");
-                                                        }}
-                                                        className={`cursor-pointer px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 flex items-center gap-2 ${
-                                                            selectedModality === "virtual"
-                                                                ? "bg-[#4d0706] text-white border-[#4d0706]"
-                                                                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                                                        }`}
-                                                    >
-                                                        <Laptop className="w-3.5 h-3.5" />
-                                                        Online
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
 
                                     {/* Right Courses Grid */}
                                     <div className="w-full lg:w-2/3">
-                                        {(isCursosPresenciales || isCursosOnline) ? (
+                                        {isCursos ? (
                                             /* Image Grid for Cursos Presenciales and Online */
                                             <>
                                                 <AnimatePresence mode="wait">
@@ -295,7 +255,7 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                                                 className="cursor-pointer group flex flex-col rounded-2xl border border-gray-100 overflow-hidden hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5 transition-all duration-300 text-center w-full bg-white"
                                                             >
                                                                 {/* Course Image */}
-                                                                <div className="w-full h-32 sm:h-36 lg:h-40 overflow-hidden bg-gray-100">
+                                                                <div className="w-full aspect-[1090/1350] overflow-hidden bg-gray-100">
                                                                     {imgError[career.id] ? (
                                                                         <div className="w-full h-full flex items-center justify-center bg-gray-50">
                                                                             <GraduationCap className="w-10 h-10 text-gray-300" />

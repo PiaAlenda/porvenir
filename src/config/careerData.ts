@@ -732,5 +732,49 @@ export const CAREER_DATA: Record<string, Career> = {
         inscriptionFee: "$18.000",
         inscriptionDocs: "Fotocopia de DNI",
         salidaLaboral: ["Soldador industrial", "Construcción metalúrgica", "Talleres de soldadura", "Industria pesada"]
+    },
+    "tec-electronica-domiciliaria": {
+        id: "tec-electronica-domiciliaria",
+        title: "Electrónica Domiciliaria",
+        icon: "Cpu",
+        description: "Reparación y mantenimiento de electrodomésticos y equipos electrónicos del hogar.",
+        longDescription: "Formación técnica en electrónica domiciliaria orientada a la reparación, mantenimiento e instalación de electrodomésticos y equipos electrónicos del hogar. Preparación para el desempeño en talleres de reparación, servicio técnico independiente y empresas de electrodomésticos.",
+        duration: "2 años",
+        modality: "Presencial",
+        perfilEgresado: [
+            "Diagnóstico y reparación de electrodomésticos",
+            "Mantenimiento de equipos electrónicos domiciliarios",
+            "Instalación y configuración de equipos",
+            "Lectura de esquemas electrónicos"
+        ],
+        syllabus: [
+            {
+                year: "1° Año",
+                subjects: [
+                    "Electrónica Básica",
+                    "Componentes Electrónicos",
+                    "Electrodomésticos I"
+                ]
+            },
+            {
+                year: "2° Año",
+                subjects: [
+                    "Electrónica Aplicada",
+                    "Electrodomésticos II",
+                    "Reparación y Mantenimiento"
+                ]
+            }
+        ],
+        teachers: [],
+        schedule: "Lunes a Jueves de 20:30hs a 23:15hs",
+        inscriptionDate: "Septiembre 2026",
+        inscriptionFee: "$50.000",
+        inscriptionDocs: "Fotocopia de DNI",
+        salidaLaboral: [
+            "Técnico en reparación de electrodomésticos",
+            "Servicio técnico independiente",
+            "Empresas de electrodomésticos",
+            "Mantenimiento domiciliario"
+        ]
     }
 };

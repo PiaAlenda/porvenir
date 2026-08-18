@@ -5,6 +5,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GraduationCap, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { CAREER_DATA, type Career } from "../../../config/careerData";
 
+const COURSE_IMAGES: Record<string, string> = {
+    "curso-danza": "/img/cursos/CURSO DE DANZA.jpg.jpeg",
+    "curso-estilismo-moda": "/img/cursos/ESTILISMO DE MODA.jpg.jpeg",
+    "curso-franquicia-septiembre": "/img/cursos/franquicia septiembre.jpg.jpeg",
+    "curso-higiene-seguridad": "/img/cursos/higiene y seguridad 2 SEPTIEMBRE NUEVO.jpg.jpeg",
+    "curso-maquillaje-profesional": "/img/cursos/mAQUILLAJE PROFESIONAL AGOSTO.jpg.jpeg",
+    "curso-peinado-profesional": "/img/cursos/peinadp profesional AGOSTO.jpg.jpeg",
+    "curso-plomero-cloaquista": "/img/cursos/Plomero cloaquista SEPTIEMBRE.jpg.jpeg",
+    "curso-secretariado-administrativo": "/img/cursos/secretariado administrativo.jpg.jpeg",
+    "curso-soldadura": "/img/cursos/soldadura SEPTIEMBRE -.jpg.jpeg",
+    "curso-instalacion-paneles": "/img/cursos/Instalacion paneles 2026- 2 QR AGOSTO ----.jpg.jpeg",
+};
+
 interface ProgramsProps {
     selection: {
         id: string;
@@ -97,34 +110,31 @@ const Programs = ({ selection, onViewDetail }: ProgramsProps) => {
                                                 key={career.id}
                                                 type="button"
                                                 onClick={() => onViewDetail(career.id)}
-                                                className="cursor-pointer group flex flex-col items-center gap-1.5 lg:gap-2 p-2.5 lg:p-5 bg-gray-50/50 rounded-xl lg:rounded-2xl border border-gray-100 hover:bg-white hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5 transition-all duration-300 text-center w-full lg:bg-white lg:border-gray-200"
+                                                className="cursor-pointer group flex flex-col rounded-2xl border border-gray-100 overflow-hidden hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5 transition-all duration-300 text-center w-full bg-white"
                                             >
-                                                {/* Icon */}
-                                                <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-full bg-white shadow-sm text-[#4d0706] flex items-center justify-center overflow-hidden shrink-0">
-                                                    {imgError[career.id] ? (
-                                                        <GraduationCap className="w-4 h-4 lg:w-6 lg:h-6" />
+                                                {/* Course Image */}
+                                                <div className="w-full aspect-[1090/1350] overflow-hidden bg-gray-100">
+                                                    {imgError[career.id] || !COURSE_IMAGES[career.id] ? (
+                                                        <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                                                            <GraduationCap className="w-10 h-10 text-gray-300" />
+                                                        </div>
                                                     ) : (
                                                         <img
-                                                            src={`/icons/${career.id}.png`}
+                                                            src={COURSE_IMAGES[career.id]}
                                                             alt={career.title}
                                                             onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
-                                                            className="w-full h-full object-cover rounded-full"
+                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                         />
                                                     )}
                                                 </div>
-                                                <div className="flex flex-col items-center gap-1 lg:gap-1.5">
-                                                    <h3 className="text-[11px] lg:text-sm font-black text-gray-800 group-hover:text-[#4d0706] transition-colors leading-tight break-words">
+
+                                                {/* Course Info */}
+                                                <div className="flex flex-col items-center gap-1.5 p-3 lg:p-4">
+                                                    <h3 className="text-xs lg:text-sm font-black text-gray-800 group-hover:text-[#4d0706] transition-colors leading-tight">
                                                         {career.title}
                                                     </h3>
-                                                    
-                                                    {/* Mobile Duration */}
-                                                    <span className="text-[9px] font-bold text-[#4d0706]/60 bg-[#4d0706]/5 px-2 py-0.5 rounded-full leading-none lg:hidden">
-                                                        {career.duration}
-                                                    </span>
-                                                    
-                                                    {/* Desktop Duration */}
-                                                    <div className="hidden lg:flex items-center gap-1.5 text-[#333] font-medium text-[14px]">
-                                                        <Clock className="w-[18px] h-[18px]" />
+                                                    <div className="flex items-center gap-1.5 text-[#333] font-medium text-xs">
+                                                        <Clock className="w-3 h-3" />
                                                         <span>{career.duration}</span>
                                                     </div>
                                                 </div>
