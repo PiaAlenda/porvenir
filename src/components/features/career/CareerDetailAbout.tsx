@@ -206,6 +206,7 @@ export const CAREER_VIDEOS: Record<string, string> = {
     "tec-dibujo-publicitario": "/videos/video dibujo.mp4 OK.webm",
     "tec-administracion-contable": "/videos/administracion contable.mp4 OK.webm",
     "tec-refrigeracion-aire-acondicionado": "/videos/Refrigeracion.webm",
+    "tec-electronica-domiciliaria": "/videos/Electricidad domiciliaria.webm",
 };
 
 export const ExpandableVideo = ({ src, center }: { src: string; center?: boolean }) => {
