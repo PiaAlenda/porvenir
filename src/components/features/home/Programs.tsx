@@ -6,16 +6,16 @@ import { GraduationCap, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { CAREER_DATA, type Career } from "../../../config/careerData";
 
 const COURSE_IMAGES: Record<string, string> = {
-    "curso-danza": "/img/cursos/CURSO DE DANZA.jpg.jpeg",
-    "curso-estilismo-moda": "/img/cursos/ESTILISMO DE MODA.jpg.jpeg",
-    "curso-franquicia-septiembre": "/img/cursos/franquicia septiembre.jpg.jpeg",
-    "curso-higiene-seguridad": "/img/cursos/higiene y seguridad 2 SEPTIEMBRE NUEVO.jpg.jpeg",
-    "curso-maquillaje-profesional": "/img/cursos/mAQUILLAJE PROFESIONAL AGOSTO.jpg.jpeg",
-    "curso-peinado-profesional": "/img/cursos/peinadp profesional AGOSTO.jpg.jpeg",
-    "curso-plomero-cloaquista": "/img/cursos/Plomero cloaquista SEPTIEMBRE.jpg.jpeg",
-    "curso-secretariado-administrativo": "/img/cursos/secretariado administrativo.jpg.jpeg",
-    "curso-soldadura": "/img/cursos/soldadura SEPTIEMBRE -.jpg.jpeg",
-    "curso-instalacion-paneles": "/img/cursos/Instalacion paneles 2026- 2 QR AGOSTO ----.jpg.jpeg",
+    "curso-danza": "/img/cursos/CURSO DE DANZA.webp",
+    "curso-estilismo-moda": "/img/cursos/ESTILISMO DE MODA.webp",
+    "curso-franquicia-septiembre": "/img/cursos/franquicia septiembre.webp",
+    "curso-higiene-seguridad": "/img/cursos/higiene y seguridad 2 SEPTIEMBRE NUEVO.webp",
+    "curso-maquillaje-profesional": "/img/cursos/mAQUILLAJE PROFESIONAL AGOSTO.webp",
+    "curso-peinado-profesional": "/img/cursos/peinadp profesional AGOSTO.webp",
+    "curso-plomero-cloaquista": "/img/cursos/Plomero cloaquista SEPTIEMBRE.webp",
+    "curso-secretariado-administrativo": "/img/cursos/secretariado administrativo.webp",
+    "curso-soldadura": "/img/cursos/soldadura SEPTIEMBRE -.webp",
+    "curso-instalacion-paneles": "/img/cursos/Instalacion paneles 2026- 2 QR AGOSTO ----.webp",
 };
 
 interface ProgramsProps {

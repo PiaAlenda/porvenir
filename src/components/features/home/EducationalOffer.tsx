@@ -33,16 +33,16 @@ const cards = [
 ];
 
 const COURSE_IMAGES: Record<string, string> = {
-    "curso-danza": "/img/cursos/CURSO DE DANZA.jpg.jpeg",
-    "curso-estilismo-moda": "/img/cursos/ESTILISMO DE MODA.jpg.jpeg",
-    "curso-franquicia-septiembre": "/img/cursos/franquicia septiembre.jpg.jpeg",
-    "curso-higiene-seguridad": "/img/cursos/higiene y seguridad 2 SEPTIEMBRE NUEVO.jpg.jpeg",
-    "curso-maquillaje-profesional": "/img/cursos/mAQUILLAJE PROFESIONAL AGOSTO.jpg.jpeg",
-    "curso-peinado-profesional": "/img/cursos/peinadp profesional AGOSTO.jpg.jpeg",
-    "curso-plomero-cloaquista": "/img/cursos/Plomero cloaquista SEPTIEMBRE.jpg.jpeg",
-    "curso-secretariado-administrativo": "/img/cursos/secretariado administrativo.jpg.jpeg",
-    "curso-soldadura": "/img/cursos/soldadura SEPTIEMBRE -.jpg.jpeg",
-    "curso-instalacion-paneles": "/img/cursos/Instalacion paneles 2026- 2 QR AGOSTO ----.jpg.jpeg",
+    "curso-danza": "/img/cursos/CURSO DE DANZA.webp",
+    "curso-estilismo-moda": "/img/cursos/ESTILISMO DE MODA.webp",
+    "curso-franquicia-septiembre": "/img/cursos/franquicia septiembre.webp",
+    "curso-higiene-seguridad": "/img/cursos/higiene y seguridad 2 SEPTIEMBRE NUEVO.webp",
+    "curso-maquillaje-profesional": "/img/cursos/mAQUILLAJE PROFESIONAL AGOSTO.webp",
+    "curso-peinado-profesional": "/img/cursos/peinadp profesional AGOSTO.webp",
+    "curso-plomero-cloaquista": "/img/cursos/Plomero cloaquista SEPTIEMBRE.webp",
+    "curso-secretariado-administrativo": "/img/cursos/secretariado administrativo.webp",
+    "curso-soldadura": "/img/cursos/soldadura SEPTIEMBRE -.webp",
+    "curso-instalacion-paneles": "/img/cursos/Instalacion paneles 2026- 2 QR AGOSTO ----.webp",
 };
 
 const COURSES_PER_PAGE = 6;
@@ -353,7 +353,7 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                                                                   <GraduationCap className="w-4 h-4 lg:w-6 lg:h-6" />
                                                                             ) : (
                                                                                 <img
-                                                                                    src={`/icons/${career.id}.png`}
+                                                                                    src={`/icons/${career.id}.webp`}
                                                                                     alt={career.title}
                                                                                     onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
                                                                                     className="w-full h-full object-cover rounded-full"

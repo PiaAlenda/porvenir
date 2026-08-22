@@ -33,7 +33,7 @@ const carouselSlides = [
         description: "Con más de 150 años de excelencia educativa, formamos profesionales que transforman la sociedad.",
         buttonText: "Nuestra Historia",
         href: "#nosotros",
-        bgImage: "/img/baner 1 medida nueva nueva 4.jpg.jpeg",
+        bgImage: "/img/baner 1 medida nueva nueva 4.webp",
     },
     {
         id: "distancia",
@@ -51,7 +51,7 @@ const carouselSlides = [
         description: "Explorá nuestra oferta académica con carreras de grado y cursos de formación profesional.",
         buttonText: "Ver oferta académica",
         href: "#academic-offer-section",
-        bgImage: "/img/baner 3 jpg.jpeg",
+        bgImage: "/img/baner 3 jpg.webp",
     }
 ];
 

@@ -27,7 +27,7 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                 <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/4 opacity-[0.07] pointer-events-none z-0">
                     {!imgError && (
                         <img
-                            src={`/icons/${career.id}.png`}
+                            src={`/icons/${career.id}.webp`}
                             alt=""
                             aria-hidden="true"
                             className="w-72 h-72 lg:w-96 lg:h-96 object-contain"
@@ -54,7 +54,7 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                                 </div>
                             ) : (
                                 <img
-                                    src={`/icons/${career.id}.png`}
+                                    src={`/icons/${career.id}.webp`}
                                     alt={career.title}
                                     onError={() => setImgError(true)}
                                     className="w-full h-full object-cover"
@@ -94,7 +94,7 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                                     <GraduationCap className="z-10 w-20 h-20 lg:w-24 lg:h-24 text-[#ffcc00] transition-transform duration-500 group-hover:scale-110" />
                                 ) : (
                                     <img
-                                        src={`/icons/${career.id}.png`}
+                                        src={`/icons/${career.id}.webp`}
                                         alt={career.title}
                                         onError={() => setImgError(true)}
                                         className="z-10 w-full h-full object-cover rounded-full transition-transform duration-500 group-hover:scale-110"

@@ -69,7 +69,7 @@ interface TeachersListProps {
 
 function getProfileSrc(legajo: string): string {
     const normalized = legajo.replace(/[\s/]+/g, "");
-    return `/img/profile/${normalized}.png`;
+    return `/img/profile/${normalized}.webp`;
 }
 
 export const CareerTeachersList = ({ career }: TeachersListProps) => {

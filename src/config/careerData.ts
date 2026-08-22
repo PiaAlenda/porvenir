@@ -61,31 +61,31 @@ export const CAREER_DATA: Record<string, Career> = {
                 name: "Alonzo, Ariel Alberto",
                 title: "Auxiliar Técnico Automotor",
                 legajo: "14594- L.8 - F. 106/107",
-                image: "/img/profile/ariel.jpg"
+                image: "/img/profile/ariel.webp"
             },
             {
                 name: "Becerra, Gustavo",
                 title: "Técnico en Automotores",
                 legajo: "11767- L.06- F. 184/185",
-                image: "/img/profile/becerra.jpg"
+                image: "/img/profile/becerra.webp"
             },
             {
                 name: "Cabrera, Juan",
                 title: "Aux. Tec. en Mec. del Autom.",
                 legajo: "8459-L-5-F-126/127",
-                image: "/img/profile/cabrera.jpg"
+                image: "/img/profile/cabrera.webp"
             },
             {
                 name: "Ghione, Santiago",
                 title: "Ingeniero Mecánico",
                 legajo: "13386 -L-7-F-168/169",
-                image: "/img/profile/santiago.jpg"
+                image: "/img/profile/santiago.webp"
             },
             {
                 name: "Montiel, Andrés",
                 title: "Técnico Mecánico",
                 legajo: "10262- L.06- F.74/75",
-                image: "/img/profile/montiel.jpg"
+                image: "/img/profile/montiel.webp"
             },
             {
                 name: "Olmedo, David",
@@ -95,7 +95,8 @@ export const CAREER_DATA: Record<string, Career> = {
             {
                 name: "Rodriguez, Juan Ramon",
                 title: "PROF. TÉC. CARPINTERO – Cat. I y II",
-                legajo: "L: 05 Folio: 160/161"
+                legajo: "L: 05 Folio: 160/161",
+                image: "/img/profile/Profe Juan INDUSTRIA DE LA MADRA.webp"
             }
         ],
         schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
@@ -140,13 +141,13 @@ export const CAREER_DATA: Record<string, Career> = {
                 name: "Moncunill Mauro Lucas",
                 title: "Técnico en Automotores",
                 legajo: "9557 - L. 06 - F. 26/27",
-                image: "/img/profile/Profe Lucas.jpg.jpeg"
+                image: "/img/profile/Profe Lucas.webp"
             },
             {
                 name: "Zanino, Renzo Leonardo",
                 title: "Aux. Téc. Tornero",
                 legajo: "10568 - L. 6 - F. 96/97",
-                image: "/img/profile/Profe renzo.jpg.jpeg"
+                image: "/img/profile/Profe renzo.webp"
             }
         ],
         schedule: "Lunes a Jueves de 20:30hs a 23:15hs",
@@ -197,13 +198,13 @@ export const CAREER_DATA: Record<string, Career> = {
                 name: "Garro, Leonardo",
                 title: "Tec. en Equipos e Instal. Electromecanica",
                 legajo: "13544-L-7-F-186/187",
-                image: "/img/profile/garro.jpg"
+                image: "/img/profile/garro.webp"
             },
             {
                 name: "Ortiz, Bruno",
                 title: "Auxiliar Tec. Tornero",
                 legajo: "1184-L-06, F-193/193",
-                image: "/img/profile/ortiz.jpg"
+                image: "/img/profile/ortiz.webp"
             }
         ],
         schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
@@ -256,13 +257,13 @@ export const CAREER_DATA: Record<string, Career> = {
                 name: "Nuñez, María Elisa",
                 title: "Lic. en Comunicación Social",
                 legajo: "5639- L.4- F.42/43",
-                image: "/img/profile/elisa.jpg"
+                image: "/img/profile/elisa.webp"
             },
             {
                 name: "Rojas, Sofia",
                 title: "Diseñador Gráfico",
                 legajo: "14787-L-8-F-128/129",
-                image: "/img/profile/rojas.jpg"
+                image: "/img/profile/rojas.webp"
             }
         ],
         schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
@@ -318,31 +319,31 @@ export const CAREER_DATA: Record<string, Career> = {
                 name: "Aceituno, Guillermo",
                 title: "Tec. Programador Universitario",
                 legajo: "11849- L.6- F. 190/191",
-                image: "/img/profile/guillermo.jpg"
+                image: "/img/profile/guillermo.webp"
             },
             {
                 name: "Davila, Cecilia",
                 title: "Contador Público Nacional",
                 legajo: "9850- L. 6- F. 46/47",
-                image: "/img/profile/cecilia.jpg"
+                image: "/img/profile/cecilia.webp"
             },
             {
                 name: "Diaz, Pablo",
                 title: "Contador Público Nacional",
                 legajo: "10503- L.6- F.92/93",
-                image: "/img/profile/pablo.jpg"
+                image: "/img/profile/pablo.webp"
             },
             {
                 name: "Nuñez, Rogelio",
                 title: "Contador Público Nacional",
                 legajo: "5342- L. 4- F. 10/11",
-                image: "/img/profile/rogelio.jpg"
+                image: "/img/profile/rogelio.webp"
             },
             {
                 name: "Caballero, Juan Marcelo",
                 title: "Adm. de Empresas",
                 legajo: "9071-L.06-F.36/37",
-                image: "/img/profile/Marcelo.jpg"
+                image: "/img/profile/Marcelo.webp"
             }
         ],
         schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
@@ -427,7 +428,8 @@ export const CAREER_DATA: Record<string, Career> = {
             {
                 name: "Fernandez, Mauricio",
                 title: "Auxiliar Tec. en Industria de la Mad.",
-                legajo: "1184-L-06, F-193/193"
+                legajo: "1184-L-06, F-193/193",
+                image: "/img/profile/Profe Mauricio  INDUSTRIA DE LA MADRA.webp"
             },
             {
                 name: "Molina, Ricardo Fabio",
@@ -437,7 +439,8 @@ export const CAREER_DATA: Record<string, Career> = {
             {
                 name: "Rodriguez, Juan Ramon",
                 title: "PROF. TÉC.CARPINTERO – Cat. I y II",
-                legajo: "L: 05 Folio: 160/161"
+                legajo: "L: 05 Folio: 160/161",
+                image: "/img/profile/Profe Juan INDUSTRIA DE LA MADRA.webp"
             }
         ],
         schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
@@ -481,12 +484,14 @@ export const CAREER_DATA: Record<string, Career> = {
             {
                 name: "Herrero, Mercedes",
                 title: "Tecnico Superior en Gastronomia",
-                legajo: "8673-L-05-F-146/147"
+                legajo: "8673-L-05-F-146/147",
+                image: "/img/profile/Profe MERCEDES GASTRONOMIA.webp"
             },
             {
                 name: "Navas, Nélida",
                 title: "Tec.Univ.en Gestión Gastronómica",
-                legajo: "9352-L.06- F.10/11"
+                legajo: "9352-L.06- F.10/11",
+                image: "/img/profile/Profe NELIDA GASTRONOMIA.webp"
             }
         ],
         schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
@@ -532,14 +537,14 @@ export const CAREER_DATA: Record<string, Career> = {
                 legajo: "5515 - L. 4 - F. 30/31"
             },
             {
-                name: "Rivas, Alejandro",
-                title: "Ingeniero Electromecanico",
-                legajo: "10354- L-06- F-82/83"
-            },
-            {
                 name: "Varas, Mario Miguel",
                 title: "Tec.en Electronica Gral. e Industrial",
                 legajo: "13598-L-07-F-192/193"
+            },
+            {
+                name: "Weber, David",
+                title: "Tecnico Electrónico",
+                image: "/img/profile/Profe weber ELECTRONICA.webp"
             }
         ],
         schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
@@ -775,6 +780,130 @@ export const CAREER_DATA: Record<string, Career> = {
             "Servicio técnico independiente",
             "Empresas de electrodomésticos",
             "Mantenimiento domiciliario"
+        ]
+    },
+    "tec-reparacion-pc": {
+        id: "tec-reparacion-pc",
+        title: "Reparación de PC",
+        icon: "Cpu",
+        description: "Habilidades y conocimiento en armado, instalación, reparación y mantenimiento de computadoras.",
+        longDescription: "Formación integral en reparación de PC con enfoque en el armado, instalación, reparación y mantenimiento de computadoras. Preparación para el desempeño en soporte técnico de empresas, locales de reparación y venta de insumos de informática, emprendimientos digitales y talleres de reparación de PC.",
+        duration: "1 año",
+        modality: "Presencial",
+        perfilEgresado: [
+            "Armado de PC",
+            "Instalación de sistemas y software",
+            "Reparación de computadoras",
+            "Mantenimiento preventivo y correctivo"
+        ],
+        syllabus: [
+            {
+                year: "1° Año",
+                subjects: [
+                    "Armado",
+                    "Instalación",
+                    "Reparación",
+                    "Mantenimiento"
+                ]
+            }
+        ],
+        teachers: [
+            {
+                name: "Garcia, Fernando Andres",
+                title: "Técnico Electrotecnico",
+                legajo: "9220- L-06- F-02/03",
+                image: "/img/profile/Profe Fernando REPARACION DE PC.webp"
+            }
+        ],
+        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
+        inscriptionDate: "Septiembre 2026",
+        inscriptionFee: "$50.000",
+        inscriptionDocs: "Fotocopia de DNI",
+        salidaLaboral: [
+            "Soporte técnico en empresas",
+            "Local de reparación y venta de insumos de informática",
+            "Emprendimiento digital",
+            "Taller de reparación de PC"
+        ]
+    },
+    "tec-electricidad-domiciliaria-industrial": {
+        id: "tec-electricidad-domiciliaria-industrial",
+        title: "Electricidad Domiciliaria e Industrial",
+        icon: "Zap",
+        description: "Habilidades y conocimiento en instalaciones eléctricas domiciliarias e industriales, tableros de distribución, iluminación y motores eléctricos.",
+        longDescription: "Formación integral en electricidad domiciliaria e industrial con enfoque en el diseño, instalación y mantenimiento de instalaciones eléctricas, tableros de distribución y protecciones, sistemas de iluminación, motores y comandos eléctricos. Preparación para el desempeño en obras eléctricas domiciliarias y comerciales, industrias, mantenimiento edilicio y emprendimientos propios.",
+        duration: "2 años",
+        modality: "Presencial",
+        perfilEgresado: [
+            "Diseño y ejecución de instalaciones eléctricas domiciliarias",
+            "Instalaciones eléctricas industriales",
+            "Armado de tableros de distribución y protecciones",
+            "Instalación y mantenimiento de sistemas de iluminación",
+            "Motores eléctricos y comandos",
+            "Diagnóstico y reparación de fallas eléctricas"
+        ],
+        syllabus: [
+            {
+                year: "1° Año",
+                subjects: [
+                    "Instalaciones Eléctricas Domiciliarias",
+                    "Tableros de Distribución y Protecciones",
+                    "Iluminación",
+                    "Normativa de Seguridad Eléctrica"
+                ]
+            },
+            {
+                year: "2° Año",
+                subjects: [
+                    "Instalaciones Eléctricas Industriales",
+                    "Motores y Comandos Eléctricos",
+                    "Diagnóstico y Reparación de Fallas",
+                    "Taller Integrador"
+                ]
+            }
+        ],
+        teachers: [
+            {
+                name: "Berardinelli, Alfio Eric",
+                title: "Ingeniero Civil",
+                legajo: "8601-L.5-F.140-141",
+                image: "/img/profile/Profe ALFIO ELECTRICIDAD.webp"
+            },
+            {
+                name: "Ferreyra, Emiliano",
+                title: "Tec. en Eq. e Inst. Electro.",
+                legajo: "11208-L-06-F-140/141",
+                image: "/img/profile/Profe EMILIANO ELECTRICIDAD.webp"
+            },
+            {
+                name: "López, Silvio Fernando",
+                title: "Aux. Tec. en Elect. Dom. e Industrial",
+                legajo: "9289-L.06-F.6/7",
+                image: "/img/profile/Profe SILvio ELECTRICIDAD.webp"
+            },
+            {
+                name: "Martin, Roque",
+                title: "Tec. Electrotecnico",
+                legajo: "13860-L-8-F24/25",
+                image: "/img/profile/Profe ROQUE ELECTRICIDAD.webp"
+            },
+            {
+                name: "Rivas, Alejandro",
+                title: "Ingeniero Electromecanico",
+                legajo: "10354-L-06-F-82/83",
+                image: "/img/profile/Profe ALEJANDRO ELECTRICIDAD.webp"
+            }
+        ],
+        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
+        inscriptionDate: "Septiembre 2026",
+        inscriptionFee: "$50.000",
+        inscriptionDocs: "Fotocopia de DNI",
+        salidaLaboral: [
+            "Instalaciones eléctricas domiciliarias y comerciales",
+            "Mantenimiento eléctrico industrial",
+            "Obras eléctricas y construcción",
+            "Empresas de servicio eléctrico",
+            "Emprendimiento propio"
         ]
     }
 };
