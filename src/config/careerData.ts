@@ -770,7 +770,38 @@ export const CAREER_DATA: Record<string, Career> = {
                 ]
             }
         ],
-        teachers: [],
+        teachers: [
+            {
+                name: "Berardinelli, Alfio Eric",
+                title: "Ingeniero Civil",
+                legajo: "8601-L.5-F.140-141",
+                image: "/img/profile/Profe ALFIO ELECTRICIDAD.webp"
+            },
+            {
+                name: "Ferreyra, Emiliano",
+                title: "Tec. en Eq. e Inst. Electro.",
+                legajo: "11208-L-06-F-140/141",
+                image: "/img/profile/Profe EMILIANO ELECTRICIDAD.webp"
+            },
+            {
+                name: "López, Silvio Fernando",
+                title: "Aux. Tec. en Elect. Dom. e Industrial",
+                legajo: "9289-L.06-F.6/7",
+                image: "/img/profile/Profe SILvio ELECTRICIDAD.webp"
+            },
+            {
+                name: "Martin, Roque",
+                title: "Tec. Electrotecnico",
+                legajo: "13860-L-8-F24/25",
+                image: "/img/profile/Profe ROQUE ELECTRICIDAD.webp"
+            },
+            {
+                name: "Rivas, Alejandro",
+                title: "Ingeniero Electromecanico",
+                legajo: "10354-L-06-F-82/83",
+                image: "/img/profile/Profe ALEJANDRO ELECTRICIDAD.webp"
+            }
+        ],
         schedule: "Lunes a Jueves de 20:30hs a 23:15hs",
         inscriptionDate: "Septiembre 2026",
         inscriptionFee: "$50.000",
@@ -824,86 +855,6 @@ export const CAREER_DATA: Record<string, Career> = {
             "Local de reparación y venta de insumos de informática",
             "Emprendimiento digital",
             "Taller de reparación de PC"
-        ]
-    },
-    "tec-electricidad-domiciliaria-industrial": {
-        id: "tec-electricidad-domiciliaria-industrial",
-        title: "Electricidad Domiciliaria e Industrial",
-        icon: "Zap",
-        description: "Habilidades y conocimiento en instalaciones eléctricas domiciliarias e industriales, tableros de distribución, iluminación y motores eléctricos.",
-        longDescription: "Formación integral en electricidad domiciliaria e industrial con enfoque en el diseño, instalación y mantenimiento de instalaciones eléctricas, tableros de distribución y protecciones, sistemas de iluminación, motores y comandos eléctricos. Preparación para el desempeño en obras eléctricas domiciliarias y comerciales, industrias, mantenimiento edilicio y emprendimientos propios.",
-        duration: "2 años",
-        modality: "Presencial",
-        perfilEgresado: [
-            "Diseño y ejecución de instalaciones eléctricas domiciliarias",
-            "Instalaciones eléctricas industriales",
-            "Armado de tableros de distribución y protecciones",
-            "Instalación y mantenimiento de sistemas de iluminación",
-            "Motores eléctricos y comandos",
-            "Diagnóstico y reparación de fallas eléctricas"
-        ],
-        syllabus: [
-            {
-                year: "1° Año",
-                subjects: [
-                    "Instalaciones Eléctricas Domiciliarias",
-                    "Tableros de Distribución y Protecciones",
-                    "Iluminación",
-                    "Normativa de Seguridad Eléctrica"
-                ]
-            },
-            {
-                year: "2° Año",
-                subjects: [
-                    "Instalaciones Eléctricas Industriales",
-                    "Motores y Comandos Eléctricos",
-                    "Diagnóstico y Reparación de Fallas",
-                    "Taller Integrador"
-                ]
-            }
-        ],
-        teachers: [
-            {
-                name: "Berardinelli, Alfio Eric",
-                title: "Ingeniero Civil",
-                legajo: "8601-L.5-F.140-141",
-                image: "/img/profile/Profe ALFIO ELECTRICIDAD.webp"
-            },
-            {
-                name: "Ferreyra, Emiliano",
-                title: "Tec. en Eq. e Inst. Electro.",
-                legajo: "11208-L-06-F-140/141",
-                image: "/img/profile/Profe EMILIANO ELECTRICIDAD.webp"
-            },
-            {
-                name: "López, Silvio Fernando",
-                title: "Aux. Tec. en Elect. Dom. e Industrial",
-                legajo: "9289-L.06-F.6/7",
-                image: "/img/profile/Profe SILvio ELECTRICIDAD.webp"
-            },
-            {
-                name: "Martin, Roque",
-                title: "Tec. Electrotecnico",
-                legajo: "13860-L-8-F24/25",
-                image: "/img/profile/Profe ROQUE ELECTRICIDAD.webp"
-            },
-            {
-                name: "Rivas, Alejandro",
-                title: "Ingeniero Electromecanico",
-                legajo: "10354-L-06-F-82/83",
-                image: "/img/profile/Profe ALEJANDRO ELECTRICIDAD.webp"
-            }
-        ],
-        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
-        salidaLaboral: [
-            "Instalaciones eléctricas domiciliarias y comerciales",
-            "Mantenimiento eléctrico industrial",
-            "Obras eléctricas y construcción",
-            "Empresas de servicio eléctrico",
-            "Emprendimiento propio"
         ]
     }
 };
