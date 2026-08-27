@@ -82,7 +82,9 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                                 <span className="text-white font-bold text-xs">Modalidad {career.modality}</span>
                             </div>
                         </div>
-                        {CAREER_VIDEOS[career.id] && <ExpandableVideo src={CAREER_VIDEOS[career.id]} />}
+                        {CAREER_VIDEOS[career.id]?.map((src) => (
+    <ExpandableVideo key={src} src={src} />
+))}
                     </div>
 
                     <div className="hidden lg:col-span-4 lg:flex justify-center lg:justify-end">
