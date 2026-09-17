@@ -1,13 +1,14 @@
-import { GraduationCap, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { GraduationCap, ArrowRight, UserX, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { type Career, type Teacher } from "@/config/careerData";
 
 interface CohortCardProps {
     career: Career;
     onBack: () => void;
+    available?: boolean;
 }
 
-export const CareerCohortCard = ({ career, onBack }: CohortCardProps) => {
+export const CareerCohortCard = ({ career, onBack, available = true }: CohortCardProps) => {
     const handleEnroll = () => {
         onBack();
         setTimeout(() => {
@@ -41,13 +42,20 @@ export const CareerCohortCard = ({ career, onBack }: CohortCardProps) => {
                 </div>
             </div>
 
-            <button
-                onClick={handleEnroll}
-                className="mt-8 w-full py-4 bg-[#ffcc00] text-[#4d0706] font-black uppercase tracking-wider text-xs rounded-xl hover:bg-white hover:text-[#4d0706] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border-none shadow-lg shadow-black/25"
-            >
-                Iniciar Inscripción
-                <ArrowRight className="w-4 h-4" />
-            </button>
+            {available ? (
+                <button
+                    onClick={handleEnroll}
+                    className="mt-8 w-full py-4 bg-[#ffcc00] text-[#4d0706] font-black uppercase tracking-wider text-xs rounded-xl hover:bg-white hover:text-[#4d0706] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border-none shadow-lg shadow-black/25"
+                >
+                    Iniciar Inscripción
+                    <ArrowRight className="w-4 h-4" />
+                </button>
+            ) : (
+                <div className="mt-8 w-full py-4 bg-stone-700 text-stone-200 font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2">
+                    <UserX className="w-4 h-4" />
+                    Sin cupo
+                </div>
+            )}
         </div>
     );
 };

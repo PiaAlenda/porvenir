@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Laptop, MapPin, CheckCircle, GraduationCap, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Laptop, MapPin, CheckCircle, GraduationCap, Clock, ChevronLeft, ChevronRight, UserX } from "lucide-react";
 import { CAREER_DATA } from "../../../config/careerData";
+import { getImageFor, isAvailableFor, useSiteConfig } from "@/siteConfig";
 
 interface EducationalOfferProps {
     onViewDetail: (id: string) => void;
@@ -32,24 +33,12 @@ const cards = [
     },
 ];
 
-const COURSE_IMAGES: Record<string, string> = {
-    "curso-danza": "/img/cursos/CURSO DE DANZA.webp",
-    "curso-estilismo-moda": "/img/cursos/ESTILISMO DE MODA.webp",
-    "curso-franquicia-septiembre": "/img/cursos/franquicia septiembre.webp",
-    "curso-higiene-seguridad": "/img/cursos/higiene y seguridad 2 SEPTIEMBRE NUEVO.webp",
-    "curso-maquillaje-profesional": "/img/cursos/mAQUILLAJE PROFESIONAL AGOSTO.webp",
-    "curso-peinado-profesional": "/img/cursos/peinadp profesional AGOSTO.webp",
-    "curso-plomero-cloaquista": "/img/cursos/Plomero cloaquista SEPTIEMBRE.webp",
-    "curso-secretariado-administrativo": "/img/cursos/secretariado administrativo.webp",
-    "curso-soldadura": "/img/cursos/soldadura SEPTIEMBRE -.webp",
-    "curso-instalacion-paneles": "/img/cursos/Instalacion paneles 2026- 2 QR AGOSTO ----.webp",
-};
-
 const COURSES_PER_PAGE = 6;
 
 let lastOfferSelectionKey: string | null = null;
 
 const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: EducationalOfferProps) => {
+    const { config } = useSiteConfig();
     const [isVisible, setIsVisible] = useState<{ [key: string]: boolean }>({});
     const [expandedCard, setExpandedCard] = useState<string | null>(activeSelection?.id ?? null);
     const [selectedModality, setSelectedModality] = useState<"virtual" | "presencial">(activeSelection?.modality ?? "virtual");
@@ -146,7 +135,7 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                 <button
                                     onClick={() => handleCardClick(card.id, card.defaultModality)}
                                     className={`cursor-pointer group relative flex flex-col p-6 sm:p-10 rounded-[2rem] text-left transition-all duration-500 ease-out bg-white border w-full
-                                    ${isExpanded ? "border-[#4d0706] ring-4 ring-[#4d0706]/5 shadow-xl animate-pulse-subtle" : "border-gray-100 shadow-md hover:shadow-lg"}`}
+                                    ${isExpanded ? "border-[#4d0706] ring-2 ring-[#4d0706]/10 shadow-lg" : "border-gray-100 shadow-md hover:shadow-lg active:scale-[0.98]"}`}
                                 >
                                     <div className="flex items-center justify-between mb-6 w-full">
                                         <div className="flex items-center gap-4">
@@ -182,8 +171,16 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                 </div>
 
                 {/* Unified dropdown container below the 2 columns */}
+                <AnimatePresence initial={false}>
                 {expandedCard && (
-                    <div ref={expandedRef} className="mt-8 sm:mt-12 w-full transition-all duration-500 ease-out animate-fade-in">
+                    <motion.div
+                        ref={expandedRef}
+                        initial={{ opacity: 0, y: 32, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 16, scale: 0.98 }}
+                        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                        className="mt-8 sm:mt-12 w-full"
+                    >
                         {(() => {
                             const activeCard = cards.find(c => c.id === expandedCard);
                             if (!activeCard) return null;
@@ -244,25 +241,38 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                                         animate={{ opacity: 1, x: 0 }}
                                                         exit={{ opacity: 0, x: -40 }}
                                                         transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
-                                                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                                                        className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3"
                                                     >
                                                     {paginatedCourses.length > 0 ? (
-                                                        paginatedCourses.map((career) => (
+                                                        paginatedCourses.map((career) => {
+                                                            const avail = isAvailableFor(career.id, config);
+                                                            return (
                                                             <button
                                                                 key={career.id}
                                                                 type="button"
-                                                                onClick={() => onViewDetail(career.id)}
-                                                                className="cursor-pointer group flex flex-col rounded-2xl border border-gray-100 overflow-hidden hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5 transition-all duration-300 text-center w-full bg-white"
+                                                                onClick={avail ? () => onViewDetail(career.id) : undefined}
+                                                                disabled={!avail}
+                                                                className={`cursor-pointer group flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 text-center w-full bg-white ${
+                                                                    avail
+                                                                        ? "border-gray-100 hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5"
+                                                                        : "border-gray-200 grayscale opacity-60 cursor-not-allowed"
+                                                                }`}
                                                             >
                                                                 {/* Course Image */}
-                                                                <div className="w-full aspect-[1090/1350] overflow-hidden bg-gray-100">
+                                                                <div className="relative w-full aspect-[1090/1350] overflow-hidden bg-gray-100">
+                                                                    {!avail && (
+                                                                        <div className="absolute top-3 left-3 z-10 flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-800 text-white text-[10px] font-black uppercase tracking-widest shadow-md">
+                                                                            <UserX className="w-3 h-3" />
+                                                                            Sin cupo
+                                                                        </div>
+                                                                    )}
                                                                     {imgError[career.id] ? (
                                                                         <div className="w-full h-full flex items-center justify-center bg-gray-50">
                                                                             <GraduationCap className="w-10 h-10 text-gray-300" />
                                                                         </div>
                                                                     ) : (
                                                                         <img
-                                                                            src={COURSE_IMAGES[career.id]}
+                                                                            src={getImageFor(career.id, config)}
                                                                             alt={career.title}
                                                                             onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
                                                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -271,17 +281,18 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                                                 </div>
                                                                 
                                                                 {/* Course Info */}
-                                                                <div className="flex flex-col items-center gap-1.5 p-3 lg:p-4">
-                                                                    <h3 className="text-xs lg:text-sm font-black text-gray-800 group-hover:text-[#4d0706] transition-colors leading-tight">
+                                                                <div className="flex flex-col items-center gap-1 p-2.5 lg:p-4">
+                                                                    <h3 className="text-[11px] lg:text-sm font-black text-gray-800 group-hover:text-[#4d0706] transition-colors leading-tight">
                                                                         {career.title}
                                                                     </h3>
-                                                                    <div className="flex items-center gap-1.5 text-[#333] font-medium text-xs">
-                                                                        <Clock className="w-3 h-3" />
+                                                                    <div className="flex items-center gap-1 text-[#333] font-medium text-[10px] lg:text-xs">
+                                                                        <Clock className="w-2.5 h-2.5 lg:w-3 lg:h-3" />
                                                                         <span>{career.duration}</span>
                                                                     </div>
                                                                 </div>
                                                             </button>
-                                                        ))
+                                                            );
+                                                        })
                                                     ) : (
                                                         <div className="w-full text-center py-10 bg-gray-50/80 rounded-2xl border border-dashed border-gray-200 col-span-full">
                                                             <span className="text-sm text-gray-500 font-medium">
@@ -340,20 +351,33 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                                     >
                                                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
                                                             {paginatedCourses.length > 0 ? (
-                                                                paginatedCourses.map((career) => (
+                                                                paginatedCourses.map((career) => {
+                                                                    const avail = isAvailableFor(career.id, config);
+                                                                    return (
                                                                     <button
                                                                         key={career.id}
                                                                         type="button"
-                                                                        onClick={() => onViewDetail(career.id)}
-                                                                        className="cursor-pointer group flex flex-col items-center gap-1.5 lg:gap-2 p-2.5 lg:p-5 bg-gray-50/50 rounded-xl lg:rounded-2xl border border-gray-100 hover:bg-white hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5 transition-all duration-300 text-center w-full lg:bg-white lg:border-gray-200"
+                                                                        onClick={avail ? () => onViewDetail(career.id) : undefined}
+                                                                        disabled={!avail}
+                                                                        className={`cursor-pointer group relative flex flex-col items-center gap-1.5 lg:gap-2 p-2.5 lg:p-5 rounded-xl lg:rounded-2xl border transition-all duration-300 text-center w-full ${
+                                                                            avail
+                                                                                ? "bg-gray-50/50 border-gray-100 hover:bg-white hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5 lg:bg-white lg:border-gray-200"
+                                                                                : "bg-gray-100/70 border-gray-200 grayscale opacity-60 cursor-not-allowed"
+                                                                        }`}
                                                                     >
+                                                                        {!avail && (
+                                                                            <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-800 text-white text-[9px] font-black uppercase tracking-widest shadow-md">
+                                                                                <UserX className="w-3 h-3" />
+                                                                                Sin cupo
+                                                                            </div>
+                                                                        )}
                                                                         {/* Icon */}
                                                                         <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-full bg-white shadow-sm text-[#4d0706] flex items-center justify-center overflow-hidden shrink-0">
                                                                             {imgError[career.id] ? (
                                                                                   <GraduationCap className="w-4 h-4 lg:w-6 lg:h-6" />
                                                                             ) : (
                                                                                 <img
-                                                                                    src={`/icons/${career.id}.webp`}
+                                                                                    src={getImageFor(career.id, config)}
                                                                                     alt={career.title}
                                                                                     onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
                                                                                     className="w-full h-full object-cover rounded-full"
@@ -377,7 +401,8 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                                                             </div>
                                                                         </div>
                                                                     </button>
-                                                                ))
+                                                                    );
+                                                                })
                                                             ) : (
                                                                 <div className="w-full text-center py-10 bg-gray-50/80 rounded-2xl border border-dashed border-gray-200 col-span-full">
                                                                     <span className="text-sm text-gray-500 font-medium">
@@ -430,8 +455,9 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                 </div>
                             );
                         })()}
-                    </div>
+                    </motion.div>
                 )}
+                </AnimatePresence>
             </div>
         </section>
     );

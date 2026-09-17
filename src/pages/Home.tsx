@@ -10,9 +10,11 @@ interface HomeProps {
   onNavigateToLocation: () => void;
   onBack?: () => void;
   initialSelection?: { id: string; modality: "virtual" | "presencial" } | null;
+  enrollCareerId?: string | null;
+  onProgramSelectionChange?: (id: string | null) => void;
 }
 
-const Home = ({ onNavigateToDetail, onNavigateToAbout, onNavigateToLocation, initialSelection }: HomeProps) => {
+const Home = ({ onNavigateToDetail, onNavigateToAbout, onNavigateToLocation, initialSelection, enrollCareerId, onProgramSelectionChange }: HomeProps) => {
   const [selectedProgram, setSelectedProgram] = useState<{
     id: string;
     modality: "virtual" | "presencial";
@@ -28,7 +30,8 @@ const Home = ({ onNavigateToDetail, onNavigateToAbout, onNavigateToLocation, ini
 
   const handleSelectProgram = useCallback((id: string | null, modality?: "virtual" | "presencial") => {
     setSelectedProgram(id && modality ? { id, modality } : null);
-  }, []);
+    onProgramSelectionChange?.(id);
+  }, [onProgramSelectionChange]);
 
   return (
     <div className="Home">
@@ -47,7 +50,7 @@ const Home = ({ onNavigateToDetail, onNavigateToAbout, onNavigateToLocation, ini
         />
       </div>
 
-      <InfoForm />
+      <InfoForm careerId={enrollCareerId} />
       <Footer />
     </div>
   );

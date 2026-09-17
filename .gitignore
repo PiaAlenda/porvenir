@@ -1,1 +1,5 @@
 node_modules
+
+# Datos locales (inscripciones, uploads) y secretos
+server/data/
+.env

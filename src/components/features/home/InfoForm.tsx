@@ -1,53 +1,141 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
-import { ChevronDown, CheckCircle2 } from "lucide-react"
+import { useEffect, useRef, useState, type FormEvent } from "react"
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react"
+import { api } from "@/api"
+import { CAREER_DATA } from "@/config/careerData"
+import Stepper, { type StepperStep } from "./form/Stepper"
+import { StepContactoYInscripcion, StepDatosPersonales } from "./form/InfoFormSteps"
+import {
+    STEP1_FIELDS,
+    STEP2_FIELDS,
+    validateField,
+    validateStep,
+    type FormErrors,
+    type InscriptionFormValues,
+} from "./form/validation"
 
-interface FormData {
-    nombre: string
-    apellido: string
-    email: string
-    telefono: string
-    tipoCarrera: string
-    carrera: string
-    modalidad: string
-    localidad: string
-    [key: string]: string
+interface InfoFormProps {
+    careerId?: string | null
 }
 
-const selectLabels: Record<string, string> = {
-    tipoCarrera: "Tipo de carrera",
-    carrera: "Carrera",
-    modalidad: "Modalidad",
-}
+const STEPS: StepperStep[] = [
+    { title: "Datos personales" },
+    { title: "Contacto e inscripción" },
+]
 
-const selectOptions: Record<string, string[]> = {
-    tipoCarrera: ["Grado", "Posgrado", "Tecnicatura"],
-    carrera: ["Medicina", "Derecho", "Psicología", "Administración"],
-    modalidad: ["Carreras", "Cursos"],
-}
+const btnPrimary =
+    "inline-flex h-12 sm:h-16 w-full items-center justify-center gap-2 rounded-xl bg-[#4d0706] " +
+    "px-6 text-xs font-black uppercase tracking-widest text-[#ffcc00] shadow-xl shadow-[#4d0706]/20 " +
+    "transition-all duration-200 border-none cursor-pointer hover:bg-[#300404] hover:shadow-[#4d0706]/30 " +
+    "active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#ffcc00]/60 " +
+    "disabled:cursor-not-allowed disabled:opacity-60"
 
-const inputClass =
-    "w-full h-14 px-5 rounded-2xl border border-gray-200 bg-gray-50/50 " +
-    "text-sm text-gray-900 placeholder:text-gray-400 font-medium " +
-    "focus:outline-none focus:ring-4 focus:ring-[#4d0706]/5 focus:border-[#4d0706] focus:bg-white " +
-    "transition-all duration-300"
+const btnGhost =
+    "inline-flex h-12 sm:h-16 items-center justify-center gap-2 rounded-xl bg-white px-6 " +
+    "text-xs font-black uppercase tracking-widest text-[#4d0706] border-2 border-[#4d0706]/20 " +
+    "transition-all duration-200 cursor-pointer hover:border-[#4d0706] hover:bg-[#4d0706]/5 active:scale-[0.98] " +
+    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4d0706]/20"
 
-const InfoForm = () => {
-    const [formData, setFormData] = useState<FormData>({
-        nombre: "", apellido: "", email: "", telefono: "",
-        tipoCarrera: "", carrera: "", modalidad: "", localidad: "",
-    })
+const initialForm = (careerId?: string | null): InscriptionFormValues => ({
+    apellido: "",
+    nombre: "",
+    numeroDocumento: "",
+    cuil: "",
+    fechaNacimiento: "",
+    c_sexo: "M",
+    email: "",
+    careerId: careerId ?? "",
+})
 
-    const [submitted, setSubmitted] = useState(false)
+const InfoForm = ({ careerId }: InfoFormProps) => {
+    const [formData, setFormData] = useState<InscriptionFormValues>(() => initialForm(careerId))
+    const [errors, setErrors] = useState<FormErrors>({})
+    const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set())
+    const [step, setStep] = useState(1)
+    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+    const [errorMsg, setErrorMsg] = useState("")
+    const [registeredName, setRegisteredName] = useState("")
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value })
+    const career = careerId ? CAREER_DATA[careerId] : undefined
+
+    const isTouched = (name: keyof InscriptionFormValues) => touched.has(name)
+
+    const handleFieldChange = (name: keyof InscriptionFormValues, value: string) => {
+        setFormData((prev) => ({ ...prev, [name]: value }))
+        setTouched((prev) => {
+            const next = new Set(prev)
+            next.add(name)
+            return next
+        })
+        setErrors((prev) =>
+            prev[name] !== undefined || touched.has(name)
+                ? { ...prev, [name]: validateField(name, value) }
+                : prev
+        )
     }
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleBlur = (name: keyof InscriptionFormValues) => {
+        const raw = formData[name]
+        const value = name === "email" ? raw.trim().toLowerCase() : raw
+        if (name === "email") setFormData((prev) => ({ ...prev, email: value }))
+        setTouched((prev) => {
+            const next = new Set(prev)
+            next.add(name)
+            return next
+        })
+        setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }))
+    }
+
+    const runStepValidation = (s: 1 | 2): boolean => {
+        const fields = s === 1 ? STEP1_FIELDS : STEP2_FIELDS
+        const nextErrors = validateStep(s, formData)
+        setErrors((prev) => ({ ...prev, ...nextErrors }))
+        setTouched((prev) => {
+            const merged = new Set(prev)
+            fields.forEach((f) => merged.add(f))
+            return merged
+        })
+        return Object.keys(nextErrors).length === 0
+    }
+
+    const goNext = () => {
+        if (runStepValidation(1)) setStep(2)
+    }
+
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        setSubmitted(true)
+        if (!runStepValidation(2)) return
+        setStatus("loading")
+        setErrorMsg("")
+        try {
+            const result = await api.postInscripcion({
+                apellido: formData.apellido,
+                nombre: formData.nombre,
+                c_documento: "DNI",
+                numeroDocumento: formData.numeroDocumento,
+                cuil: formData.cuil,
+                fechaNacimiento: formData.fechaNacimiento,
+                c_sexo: formData.c_sexo,
+                email: formData.email,
+                careerId: formData.careerId,
+                courseTitle: formData.careerId ? CAREER_DATA[formData.careerId]?.title : undefined,
+            })
+            setRegisteredName(result.nombre)
+            setStatus("success")
+        } catch (err) {
+            setErrorMsg(err instanceof Error ? err.message : "Ocurrió un error al enviar el formulario")
+            setStatus("error")
+        }
+    }
+
+    const resetForm = () => {
+        setFormData(initialForm(careerId))
+        setErrors({})
+        setTouched(new Set())
+        setStep(1)
+        setStatus("idle")
+        setErrorMsg("")
     }
 
     const containerRef = useRef<HTMLDivElement | null>(null)
@@ -81,88 +169,111 @@ const InfoForm = () => {
                     </h2>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
+                <div className="mx-auto max-w-3xl">
 
-                    <div className="lg:col-span-5 space-y-6">
-                        <div className="relative aspect-video sm:aspect-square rounded-[2rem] overflow-hidden shadow-xl">
-                            <img src="/img/alumnos.webp" alt="Estudiantes" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                            <div className="absolute bottom-6 left-6 text-white">
-                                <p className="text-xs font-bold uppercase tracking-widest opacity-80">Acreditación Oficial</p>
-                                <p className="text-xl font-black">Escuela Superior de Comercio</p>
-                            </div>
-                        </div>
+                    <div className="bg-white rounded-[2.5rem] border border-gray-100 p-5 sm:p-12 shadow-2xl shadow-gray-200/40">
 
-                        <div className="grid grid-cols-3 gap-3">
-                            {[
-                                { label: "Años", value: "100" },
-                                { label: "Sedes", value: "3" },
-                                { label: "Carreras", value: "15" },
-                            ].map((s) => (
-                                <div key={s.label} className="bg-[#fcfaf7] rounded-2xl p-4 text-center border border-gray-100">
-                                    <p className="text-lg font-black text-[#4d0706]">{s.value}</p>
-                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{s.label}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="lg:col-span-7">
-                        <div className="bg-white rounded-[2.5rem] border border-gray-100 p-6 sm:p-12 shadow-2xl shadow-gray-200/40">
-
-                            <div className="flex items-center gap-4 mb-8">
+                            <div className="flex items-center gap-4 mb-6">
                                 <div className="w-12 h-12 rounded-xl bg-[#4d0706] flex items-center justify-center shrink-0 overflow-hidden">
                                     <img src="/icons/escuela.png" alt="Escuela" className="w-8 h-8 object-contain" />
                                 </div>
                                 <div>
                                     <h3 className="text-lg sm:text-xl font-black text-gray-900 leading-none">¿Listo para empezar?</h3>
-                                    <p className="text-xs text-gray-500 font-medium mt-1">Completá tus datos y nos contactamos.</p>
+                                    <p className="text-xs text-gray-500 font-medium mt-1">Completá tus datos, solo te tomará un minuto.</p>
                                 </div>
                             </div>
 
-                            {submitted ? (
-                                <div className="text-center py-10 space-y-6">
+                            {career && status === "idle" && (
+                                <div className="mb-6 px-4 py-3 rounded-2xl bg-[#4d0706]/5 border border-[#4d0706]/10 text-sm text-[#4d0706] font-bold">
+                                    Inscripción a: {career.title}
+                                </div>
+                            )}
+
+                            {status === "success" ? (
+                                <div role="status" aria-live="polite" className="text-center py-10 space-y-6">
                                     <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto">
                                         <CheckCircle2 className="w-10 h-10 text-green-500" />
                                     </div>
-                                    <h4 className="text-2xl font-black text-gray-900">¡Enviado con éxito!</h4>
-                                    <p className="text-sm text-gray-500 font-medium">Un asesor se comunicará a la brevedad.</p>
-                                    <button onClick={() => setSubmitted(false)} className="text-[#4d0706] font-bold text-sm cursor-pointer">Cargar otro formulario</button>
+                                    <h4 className="text-2xl font-black text-gray-900">¡Inscripción registrada!</h4>
+                                    <p className="text-sm text-gray-500 font-medium">
+                                        {registeredName}, tus datos se guardaron correctamente.
+                                        {formData.careerId && CAREER_DATA[formData.careerId]
+                                            ? ` Te inscribiste a ${CAREER_DATA[formData.careerId].title}.`
+                                            : " La escuela te va a contactar a la brevedad."}
+                                    </p>
+                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                                        <button onClick={resetForm} className="text-[#4d0706] font-bold text-sm cursor-pointer rounded-lg px-4 py-3 hover:bg-[#4d0706]/5 font-bold">
+                                            Cargar otro formulario
+                                        </button>
+                                    </div>
                                 </div>
                             ) : (
-                                <form className="space-y-4" onSubmit={handleSubmit}>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <input type="text" name="nombre" placeholder="Nombre" value={formData.nombre} onChange={handleChange} className={inputClass} required />
-                                        <input type="text" name="apellido" placeholder="Apellido" value={formData.apellido} onChange={handleChange} className={inputClass} required />
+                                <form onSubmit={handleSubmit} noValidate className="space-y-4 sm:space-y-6">
+                                    <Stepper steps={STEPS} current={step} completed={step === 2 ? [1] : []} />
+
+                                    <div key={step} className="animate-step-in">
+                                        {step === 1 ? (
+                                            <StepDatosPersonales
+                                                values={formData}
+                                                errors={errors}
+                                                isTouched={isTouched}
+                                                onFieldChange={handleFieldChange}
+                                                onBlur={handleBlur}
+                                            />
+                                        ) : (
+                                            <StepContactoYInscripcion
+                                                values={formData}
+                                                errors={errors}
+                                                isTouched={isTouched}
+                                                onFieldChange={handleFieldChange}
+                                                onBlur={handleBlur}
+                                            />
+                                        )}
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className={inputClass} required />
-                                        <input type="text" name="telefono" placeholder="Teléfono" value={formData.telefono} onChange={handleChange} className={inputClass} required />
+                                    {status === "error" && (
+                                        <div role="alert" className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-red-50 border border-red-200 text-sm text-red-700 font-medium">
+                                            <AlertCircle className="w-4 h-4 shrink-0" />
+                                            {errorMsg}
+                                        </div>
+                                    )}
+
+                                    <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
+                                        {step === 1 ? (
+                                            <button type="button" onClick={goNext} className={btnPrimary}>
+                                                Continuar
+                                                <ArrowRight className="w-4 h-4" />
+                                            </button>
+                                        ) : (
+                                            <>
+                                                <button type="button" onClick={() => setStep(1)} className={`${btnGhost} sm:w-auto`}>
+                                                    <ArrowLeft className="w-4 h-4" />
+                                                    Volver
+                                                </button>
+                                                <button type="submit" disabled={status === "loading"} className={btnPrimary}>
+                                                    {status === "loading" ? (
+                                                        <>
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                            Enviando...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            Inscribirme ahora
+                                                            <ArrowRight className="w-4 h-4" />
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                        {["tipoCarrera", "carrera", "modalidad"].map((name) => (
-                                            <div key={name} className="relative group">
-                                                <select name={name} value={formData[name]} onChange={handleChange} className={inputClass + " appearance-none cursor-pointer pr-10"} required>
-                                                    <option value="">{selectLabels[name]}</option>
-                                                    {selectOptions[name].map((opt) => (
-                                                        <option key={opt} value={opt.toLowerCase()}>{opt}</option>
-                                                    ))}
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-[#4d0706] transition-colors" />
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <button type="submit" className="w-full h-14 sm:h-16 bg-[#4d0706] text-[#ffcc00] font-black uppercase tracking-widest text-xs rounded-xl shadow-xl shadow-[#4d0706]/20 transition-transform active:scale-[0.98] mt-4 border-none cursor-pointer">
-                                        Inscribirme Ahora
-                                    </button>
+                                    <p className="text-right text-xs font-medium text-gray-500">
+                                        Los campos marcados con <span className="text-red-700 font-black" aria-hidden="true">*</span> son obligatorios
+                                    </p>
                                 </form>
                             )}
                         </div>
                     </div>
-                </div>
             </div>
         </section>
     )

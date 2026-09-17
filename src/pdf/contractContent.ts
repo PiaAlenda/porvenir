@@ -1,0 +1,90 @@
+export interface ContractClause {
+    heading: string
+    items?: string[]
+    body?: string
+}
+
+export interface ContractContent {
+    header: [string, string, string]
+    intro: string
+    clauses: ContractClause[]
+    firmaLines: string[]
+}
+
+export const CONTRACT_MARKERS = [
+    "ALUMNO",
+    "DNI",
+    "DOMICILIO",
+    "DEPARTAMENTO",
+    "CELULAR",
+    "FECHA_NACIMIENTO",
+    "EMAIL",
+    "CURSO",
+] as const
+
+export const CONTRACT_CONTENT: ContractContent = {
+    header: [
+        'Escuela de Capacitación Laboral "Obreros del Porvenir"',
+        "Av. Alem 527 Sur – Capital – San Juan",
+        "Contrato de Servicio CURSOS EXPRESS",
+    ],
+    intro:
+        'Entre la "Escuela de Capacitación Laboral Obreros del Porvenir" representado en este acto por su Representante Legal Ing. Berardinelli Alfio E. D.N.I: 31.372.040, con Domicilio Legal en Av. Alem 527 Sur, Capital San Juan, en adelante "LA ESCUELA" y el Sr/a <ALUMNO>, DNI <DNI>, con domicilio en <DOMICILIO>, departamento <DEPARTAMENTO>, Celular N° <CELULAR>, fecha de nacimiento <FECHA_NACIMIENTO>, Email <EMAIL>, en adelante "EL ALUMNO", que se inscribe al CURSO <CURSO>, conviene la celebración del presente contrato de Prestación de Servicios Educativos, el que se ajustará a las siguientes cláusulas:',
+    clauses: [
+        {
+            heading: "1) La escuela se compromete a:",
+            items: [
+                "Promover una formación de solidaridad hacia el prójimo.",
+                "Fomentar el orden, el respeto y armonía entre todos los miembros.",
+                "Dar a conocer las normas de convivencia por las cuales se rige esta Comunidad Educativa.",
+                "Realizar un seguimiento y evaluación en relación a sus pares, docentes y la convivencia institucional en general, su proceso de aprendizaje y rendimiento académico.",
+                "Dispensar la atención necesaria para que el alumno/a desarrolle el proceso educativo dentro de un adecuado y exigente nivel.",
+                "Impartir el proceso de enseñanza – aprendizaje de conformidad con la ley de Educación Nacional N° 26.206, Ley General de Educación de la provincia de San Juan N° 1327 H, el PEI de la Escuela.",
+                "Difundir el contenido del proyecto educativo y del Acuerdo de Convivencia de la Escuela y velar por su cumplimiento.",
+                "Promover actividades complementarias que estimulen el desarrollo espiritual, intelectual, moral y físico del alumno.",
+                "La ESCUELA habilitará los medios para garantizar el dictado de clases durante el dictado del curso consecuentemente se mantendrá el libre acceso a sus instalaciones, para alumnos y personal docente. Liberando de responsabilidad a los PADRES y/o ALUMNOS a la ESCUELA, de las suspensiones o interrupciones de las actividades que se produjeren como consecuencia de medidas de fuerza o acción directa del personal, caso fortuito, fuerza mayor, desastre natural o similar.",
+            ],
+        },
+        {
+            heading: "2) Los alumnos se comprometen y declaran conocer:",
+            items: [
+                "a) El ideario institucional de la Escuela, obligándose a cumplir el educando, su reglamento interno, el compromiso educativo que suscriben, coadyuvando con el PE.I., A.E.C. (Acuerdo Escolar de Convivencia), y el ideario de la Institución en su calidad de integrantes de la Comunidad Educativa para llevar adelante el proyecto al que adhieren, procurando mantener sus principios sin que se pierda la causa ni los objetivos originarios.",
+                "b) La propuesta educativa de la Escuela, adhiriendo a ella en forma completa y comprometiéndose a cumplir y a cooperar en hacer cumplir por el alumno todas las obligaciones establecidas en las reglamentaciones oficiales, en el A.E.C. y demás normas y disposiciones emanadas de la Representante Legal, de la Dirección Docente de la Institución y de la Autoridad Educativa Gubernamental que hacen a la buena convivencia y las sanas costumbres, así como al asistir cada vez que sea citado por la Institución que se reserva el derecho de admisión. Éste último se basará en estrictos criterios de disciplina y académicos, no pudiendo por ende ser tachado de discriminatorio.",
+                "c) El Régimen de aranceles de enseñanza conforme a resoluciones y/o normativas vigentes y/o las que en su oportunidad dicte el docente responsable a tal efecto, comprometiéndose al pago en tiempo y forma de los mismos, de acuerdo con lo establecido en las Disposiciones y/o Resoluciones de Matriculación y Arancelamiento que emite la Institución. Los PADRES/ALUMNOS declaran conocer y aceptar la importancia del cumplimiento puntual de su obligación pecuniaria, ya que de ella depende la posibilidad efectiva de concretar la prestación del servicio con regularidad.",
+                "d) Que, de mediar incumplimiento por parte del alumno a los compromisos asumidos en el presente convenio, será motivo suficiente para pueda ser separado del mismo, reservándose la ESCUELA el derecho de admisión y/o de no suscribir un nuevo convenio para el próximo Ciclo Lectivo. En este supuesto, LOS PADRES/ALUMNOS, serán notificados fehacientemente emitiéndose la documentación pertinente.",
+                "e) El alumno se responsabilizará de los actos ejercidos por sí o por sus hijos cuando se agreda o agravie en forma directa o indirecta, por terceros, o mediante el uso de tecnologías, a cualquier miembro de la comunidad educativa o institución, reparando integralmente los daños producidos (Art. 223 de Ley de Educación de la Provincia de San Juan N° 1327 – H: Ley 1493 – R).",
+                "f) Inculcar en el estudiante el buen uso y cuidado de las instalaciones, equipamiento y recursos didácticos de la Institución, responsabilizarse por los daños causados por aquel, respondiendo patrimonialmente, reparándolos integralmente.",
+                "g) Colaborar con eventos, festivales u otros beneficios que disponga la Institución Educativa, con el fin de contribuir a la construcción del edificio escolar y equipamiento para las tareas educativas.",
+                "h) Esperar un tiempo prudencial, las resoluciones de las autoridades a sus peticiones, conforme los procedimientos escolares establecidos, y abstenerse de darle estado de conocimiento ministerial y/o público antes de agotar la instancia interna.",
+                "i) Presentar cartilla sanitaria, requisitos y/o DDJJ de estado de salud de su hijo o del alumno, cuando sea requerida por la institución educativa y comunicar de inmediato a la Institución Educativa cualquier modificación que pudiese operarse durante el Ciclo Lectivo.",
+                "j) Permitir que la imagen de fotografías y/o videos de su hijo o el alumno sea utilizada por la Institución Educativa con fines pedagógicos – institucionales.",
+                "k) Inculcar en el estudiante un comportamiento y presentación personal de acuerdo a exigencias de la Institución Educativa, dentro y fuera de la Institución.",
+                "l) Los ALUMNOS se comprometen a informar a la ESCUELA, si se encuentra bajo tratamiento médico que le impone la toma de medicamentos, siendo la toma de los mismos y sus efectos, de absoluta responsabilidad de los familiares y/o ALUMNOS, no responsabilizando a la Institución para cosas particulares.",
+                "m) En caso de alumnos incluidos, que precisan la asistencia de D.A.I. (Docente de apoyo a la inclusión), los PADRES deberán acreditar mes a mes, el cumplimiento de todas las obligaciones legales a su cargo (incluido el pago mensual del seguro), pues la ESCUELA deslinda todo tipo de responsabilidad.",
+                "n) Los ALUMNOS se obligan a mantener actualizado desde el ingreso hasta el egreso todos los datos de identidad, propios y del alumno, que resulten ser atributos de la personalidad, así como también aquellos que por su especificidad resulten indispensables para su inscripción, reinscripción y mantenimiento como alumnos, conforme a las disposiciones vigentes, debiendo mantener regular la comunicación con la Institución, notificándose y haciéndole saber a ésta de todas las novedades que resulten necesarias, mediante el mecanismo de comunicación que la ESCUELA implemente. Podrán, asimismo, concurrir al establecimiento cuando lo consideren necesario y deberán hacerlo todas las veces que sean citados por el mismo, en el día y horario establecido.",
+            ],
+        },
+        {
+            heading:
+                "3) La prestación del Servicio Educativo del año lectivo 2026, será cumplida bajo la modalidad que dispusiera el Ministerio de Educación Nacional y/o Provincial, presencialidad plena, presencialidad cuidada, no presencial – virtual y/o combinada, quedando sujeto a las disposiciones legales que emanen de la cartera educativa reglamentando el servicio educativo, en base al contexto sanitario nacional y/o jurisdiccional.",
+            body: "En la presencialidad, respetar puntualmente los horarios establecidos por la Institución Educativa para la entrada y salida de los estudiantes. Además de respetar la puntualidad, deberá respetar la asistencia regular a clases y/o actividades planificadas por la Institución Educativa, la distribución horaria de la carga curricular y extra curricular.\nEn la no presencialidad, respetar el cronograma de clases y a las actividades virtuales planificadas por la Institución educativa, la distribución horaria de la carga curricular y extra curricular, sea en turno o contra turno.\nPor el presente los alumnos otorgan autorización para el retiro de la institución antes de hora, en caso de ausencia de algún profesor.\nA fines de resguardar la responsabilidad de la Escuela y conforme la cobertura establecida por la póliza del seguro, los alumnos deberán en caso de retiro antes de hora, dirigirse directamente hacia su domicilio. En caso de no hacerlo así, por el presente los ALUMNOS toman debido conocimiento que los riesgos dejan de estar cubiertos por la aseguradora.\nLos alumnos deberán dejar el establecimiento en no más de 15 minutos después del horario de salida.",
+        },
+        {
+            heading:
+                "4) Vigencia: El presente acuerdo regirá relaciones entre las partes durante el ciclo lectivo 2026. Una vez finalizado el mismo, se tendrá por extinguido el presente, de pleno derecho, sin necesidad de comunicación alguna, pudiendo solo ser renovado con la celebración de otro contrato para el ciclo 2026.",
+        },
+        {
+            heading:
+                "5) En contraprestación del Servicio Educativo que recibirá el alumno, se comprometen a abonar a la Institución un arancel dividido en 1 Inscripción, 5 (cinco) cuotas mensuales y consecutivas y 1 derecho de examen, pagaderas por adelantado del uno (1) al diez (10) de cada mes, en el domicilio de Av. Alem 527 Sur, Capital San Juan, según los métodos de cobranza (transferencia bancaria, débito, efectivo, etc.) dispuestos por la Institución. El pago del arancel por la Prestación del Servicio Educativo, sea bajo modalidad de presencialidad plena o cuidada, virtual o combinada, es OBLIGATORIO y MENSUAL, y se abona por anticipado.",
+        },
+        {
+            heading:
+                "6) Se prevé que para los supuestos de atraso de pago de arancel, la mora se producirá en pleno derecho, sin necesidad de interpelación judicial o extrajudicial alguna, quedando la Institución a exigirle a los ALUMNOS, además del pago de los recargos por mora, las costas de recupero (los que están dentro del marco autorizado por la ley y la jurisprudencia provincial y nacional), aplicándose primero a cuenta de su abono, cualquier pago posterior que realicen los PADRES y/o ALUMNOS, todo sin perjuicio del derecho de la Institución a poder informar al Organismo de registro de morosos VERAZ, CODESA, SEVEN o similares del ramo, los datos personales de los ALUMNOS deudores, a partir de la primera cuota impaga. Será requisito indispensable de matriculación no adeudar suma alguna de dinero a la ESCUELA, por ningún concepto.",
+        },
+    ],
+    firmaLines: [
+        "Firma del Alumno:",
+        "Firma del Representante Legal:",
+        "Firma y aclaración del Padre:",
+    ],
+}

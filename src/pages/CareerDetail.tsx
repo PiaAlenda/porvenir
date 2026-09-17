@@ -1,19 +1,22 @@
 import { useEffect } from "react";
-import { FileEdit } from "lucide-react";
+import { FileEdit, Users } from "lucide-react";
 import { CAREER_DATA, type Career } from "@/config/careerData";
 import CareerDetailHero from "@/components/features/career/CareerDetailHero";
 import { CareerSyllabus, CareerDetailsGrid } from "@/components/features/career/CareerDetailAbout";
 import { CareerCohortCard, CareerTeachersList } from "@/components/features/career/CareerDetailSidebar";
 import CareerMobileQuickInfo from "@/components/features/career/CareerMobileQuickInfo";
+import { isAvailableFor, useSiteConfig } from "@/siteConfig";
 
 interface CareerDetailProps {
     careerId: string;
     onBack: () => void;
-    onBackToForm?: () => void;
+    onBackToForm?: (careerId?: string) => void;
 }
 
 const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => {
     const career: Career | undefined = CAREER_DATA[careerId];
+    const { config } = useSiteConfig();
+    const available = career ? isAvailableFor(career.id, config) : true;
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -38,7 +41,7 @@ const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => 
     }
 
     const handleEnroll = () => {
-        onBackToForm?.();
+        onBackToForm?.(career.id);
     };
 
     return (
@@ -58,7 +61,7 @@ const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => 
                             <CareerSyllabus career={career} />
                         </div>
                         <div className="lg:col-span-4 col-span-1 hidden lg:block">
-                            <CareerCohortCard career={career} onBack={onBack} />
+                            <CareerCohortCard career={career} onBack={onBack} available={available} />
                         </div>
                     </div>
 
@@ -78,13 +81,20 @@ const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => 
             </main>
 
             <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/80 backdrop-blur-md border-t border-stone-200/80 z-50">
-                <button
-                    onClick={handleEnroll}
-                    className="w-full py-3 bg-[#4d0706] text-[#ffcc00] font-black uppercase tracking-widest text-[11px] rounded-xl flex items-center justify-center gap-2 hover:bg-[#300404] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-[#4d0706]/15 cursor-pointer"
-                >
-                    <FileEdit className="w-3.5 h-3.5" />
-                    Inscribite Ahora
-                </button>
+                {available ? (
+                    <button
+                        onClick={handleEnroll}
+                        className="w-full py-3 bg-[#4d0706] text-[#ffcc00] font-black uppercase tracking-widest text-[11px] rounded-xl flex items-center justify-center gap-2 hover:bg-[#300404] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-[#4d0706]/15 cursor-pointer"
+                    >
+                        <FileEdit className="w-3.5 h-3.5" />
+                        Inscribite Ahora
+                    </button>
+                ) : (
+                    <div className="w-full py-3 bg-gray-200 text-gray-500 font-black uppercase tracking-widest text-[11px] rounded-xl flex items-center justify-center gap-2">
+                        <Users className="w-3.5 h-3.5" />
+                        Sin cupo
+                    </div>
+                )}
             </div>
         </div>
     );

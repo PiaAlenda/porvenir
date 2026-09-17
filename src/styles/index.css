@@ -40,10 +40,20 @@
     from { opacity: 0; transform: translateX(40px); }
     to   { opacity: 1; transform: translateX(0); }
   }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(-50%) scale(0.6); }
+    to   { opacity: 1; transform: translateY(-50%) scale(1); }
+  }
+  @keyframes step-in {
+    from { opacity: 0; transform: translateX(16px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
 
   .animate-fade-up { animation: fade-up 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
   .animate-slide-left { animation: slide-left 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
   .animate-slide-right { animation: slide-right 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  .animate-pop-in { animation: pop-in 0.25s ease-out forwards; }
+  .animate-step-in { animation: step-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
   /* ─── Utilities ─── */
   .no-scrollbar::-webkit-scrollbar { display: none; }
