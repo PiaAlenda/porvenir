@@ -25,7 +25,7 @@ interface FieldShellProps {
     children: ReactNode
 }
 
-function FieldShell({ id, label, required, error, hint, children }: FieldShellProps) {
+export function FieldShell({ id, label, required, error, hint, children }: FieldShellProps) {
     return (
         <div>
             <label htmlFor={id} className="mb-1.5 block text-xs font-black uppercase tracking-widest text-gray-500">
@@ -280,6 +280,18 @@ export function SearchableSelect({
                         setDirty(true)
                         setOpen(true)
                     }}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault()
+                            // Select first filtered option on Enter
+                            if (open && filtered.length > 0) {
+                                selectOption(filtered[0])
+                            }
+                        }
+                        if (e.key === "Escape") {
+                            setOpen(false)
+                        }
+                    }}
                     onFocus={() => {
                         setOpen(true)
                         setQuery("")
@@ -334,6 +346,58 @@ export function SearchableSelect({
                     </div>
                 )}
             </div>
+        </FieldShell>
+    )
+}
+
+export interface TextAreaInputProps {
+    label: string
+    name: string
+    value: string
+    placeholder?: string
+    hint?: string
+    error?: string
+    required?: boolean
+    rows?: number
+    onChange?: (e: ChangeEvent<HTMLTextAreaElement>) => void
+    onBlur?: () => void
+}
+
+export function TextAreaInput({
+    label,
+    name,
+    value,
+    placeholder,
+    hint,
+    error,
+    required,
+    rows = 3,
+    onChange,
+    onBlur,
+}: TextAreaInputProps) {
+    const autoId = useId()
+    const fieldId = `${name}-${autoId.replace(/:/g, "")}`
+    const hasError = Boolean(error)
+    const cls = `block w-full p-4 rounded-2xl border bg-white text-sm text-gray-900 font-medium transition-all duration-300 placeholder:text-gray-400 ${inputState(
+        hasError ? "error" : "normal"
+    )}`
+
+    return (
+        <FieldShell id={fieldId} label={label} required={required} error={error} hint={hint}>
+            <textarea
+                id={fieldId}
+                name={name}
+                value={value}
+                rows={rows}
+                placeholder={placeholder}
+                required={required}
+                aria-required={required || undefined}
+                aria-invalid={hasError || undefined}
+                aria-describedby={hasError ? `${fieldId}-error` : undefined}
+                onChange={onChange}
+                onBlur={onBlur}
+                className={cls}
+            />
         </FieldShell>
     )
 }

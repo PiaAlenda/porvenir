@@ -90,20 +90,56 @@ app.post("/api/auth/password", requireAdmin, (req, res) => {
 /* ---------- inscripciones ---------- */
 
 const FIELDS_7 = ["apellido", "nombre", "c_documento", "numeroDocumento", "cuil", "fechaNacimiento", "c_sexo"]
-const INTERNAL_FIELDS = ["domicilio", "departamento", "celular", "email", "careerId", "courseTitle"]
+const INTERNAL_FIELDS = [
+  "domicilio",
+  "departamento",
+  "celular",
+  "celularUrgencia",
+  "email",
+  "careerId",
+  "courseTitle",
+  "c_pais_nacimiento",
+  "c_provincia_nacimiento",
+  "lugar_nacimiento",
+  "c_nacionalidad",
+  "especialidad",
+  "c_discapacidad",
+  "c_pueblo_indigena",
+  "cud",
+  "problematicaIntegrado",
+  "fotoDni",
+  "fotoCertificado",
+]
 
 function validateRequeridos(body) {
   const faltantes = FIELDS_7.filter((f) => !body[f] || !String(body[f]).trim())
-  if (faltantes.length) return `Faltan datos: ${faltantes.join(", ")}`
-  if (!/^\d{11}$/.test(String(body.cuil))) return "El CUIL debe tener 11 dígitos"
-  if (!/^\d+$/.test(String(body.numeroDocumento))) return "El número de documento debe ser numérico"
+  if (faltantes.length) {
+    return "Por favor, completá todos los datos obligatorios del formulario."
+  }
+  if (!/^\d{11}$/.test(String(body.cuil))) return "El CUIL ingresado no es válido (debe tener 11 dígitos numéricos)."
+  if (!/^\d+$/.test(String(body.numeroDocumento))) return "El número de documento debe contener únicamente números."
   const fecha = String(body.fechaNacimiento)
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return "Fecha de nacimiento inválida"
-  if (!["M", "F", "X"].includes(String(body.c_sexo).toUpperCase())) return "Sexo inválido"
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return "La fecha de nacimiento no es válida."
+  if (!["M", "F", "X"].includes(String(body.c_sexo).toUpperCase())) return "El sexo seleccionado no es válido."
   return null
 }
 
-app.post("/api/inscripciones", (req, res) => {
+const uploader = upload.fields([
+  { name: "fotoDni", maxCount: 1 },
+  { name: "fotoCertificado", maxCount: 1 },
+])
+
+const inscripcionUpload = (req, res, next) => {
+  uploader(req, res, (err) => {
+    if (err) {
+      console.error("[multer error]", err)
+      return res.status(400).json({ error: "No se pudieron adjuntar los archivos. Verificá que las imágenes pesen menos de 10MB." })
+    }
+    next()
+  })
+}
+
+app.post("/api/inscripciones", inscripcionUpload, (req, res) => {
   const body = req.body || {}
   const err = validateRequeridos(body)
   if (err) return res.status(400).json({ error: err })
@@ -111,6 +147,16 @@ app.post("/api/inscripciones", (req, res) => {
   const email = body.email ? String(body.email).trim() : ""
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: "Correo electrónico inválido" })
+  }
+
+  let fotoDni = ""
+  let fotoCertificado = ""
+
+  if (req.files?.fotoDni?.[0]) {
+    fotoDni = `/uploads/${req.files.fotoDni[0].filename}`
+  }
+  if (req.files?.fotoCertificado?.[0]) {
+    fotoCertificado = `/uploads/${req.files.fotoCertificado[0].filename}`
   }
 
   const record = createAlumno({
@@ -121,9 +167,24 @@ app.post("/api/inscripciones", (req, res) => {
     cuil: String(body.cuil).trim(),
     fechaNacimiento: String(body.fechaNacimiento).trim(),
     c_sexo: String(body.c_sexo).toUpperCase(),
+    c_pais_nacimiento: body.c_pais_nacimiento ? String(body.c_pais_nacimiento).trim() : "",
+    c_provincia_nacimiento: body.c_provincia_nacimiento ? String(body.c_provincia_nacimiento).trim() : "",
+    lugar_nacimiento: body.lugar_nacimiento ? String(body.lugar_nacimiento).trim() : "",
+    c_nacionalidad: body.c_nacionalidad ? String(body.c_nacionalidad).trim() : "",
     email,
+    celular: body.celular ? String(body.celular).trim() : "",
+    celularUrgencia: body.celularUrgencia ? String(body.celularUrgencia).trim() : "",
+    domicilio: body.domicilio ? String(body.domicilio).trim() : "",
+    departamento: body.departamento ? String(body.departamento).trim() : "",
     careerId: body.careerId ? String(body.careerId) : "",
     courseTitle: body.courseTitle ? String(body.courseTitle) : "",
+    especialidad: body.especialidad ? String(body.especialidad).trim() : "",
+    c_discapacidad: body.c_discapacidad ? String(body.c_discapacidad).trim() : "",
+    cud: body.cud ? String(body.cud).trim() : "",
+    c_pueblo_indigena: body.c_pueblo_indigena ? String(body.c_pueblo_indigena).trim() : "",
+    problematicaIntegrado: body.problematicaIntegrado ? String(body.problematicaIntegrado).trim() : "",
+    fotoDni,
+    fotoCertificado,
   })
 
   res.status(201).json({
@@ -145,6 +206,27 @@ app.put("/api/inscripciones/:id", requireAdmin, (req, res) => {
   }
   const updated = updateAlumno(req.params.id, patch)
   if (!updated) return res.status(404).json({ error: "No existe la inscripción" })
+  res.json({ inscripcion: updated })
+})
+
+app.post("/api/inscripciones/:id/archivos", requireAdmin, inscripcionUpload, (req, res) => {
+  const alumno = getById(req.params.id)
+  if (!alumno) return res.status(404).json({ error: "No existe la inscripción" })
+
+  const patch = {}
+  if (req.files?.fotoDni?.[0]) {
+    patch.fotoDni = `/uploads/${req.files.fotoDni[0].filename}`
+  } else if (req.body?.removeFotoDni === "true") {
+    patch.fotoDni = ""
+  }
+
+  if (req.files?.fotoCertificado?.[0]) {
+    patch.fotoCertificado = `/uploads/${req.files.fotoCertificado[0].filename}`
+  } else if (req.body?.removeFotoCertificado === "true") {
+    patch.fotoCertificado = ""
+  }
+
+  const updated = updateAlumno(req.params.id, patch)
   res.json({ inscripcion: updated })
 })
 

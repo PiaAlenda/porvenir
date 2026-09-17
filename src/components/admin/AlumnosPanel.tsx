@@ -490,52 +490,146 @@ export default function AlumnosPanel({ token }: Props) {
                             </div>
                         </div>
 
-                        <div className="mt-4 bg-white border border-gray-200 rounded-2xl p-5 sm:p-6">
-                            <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Datos personales</h4>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-5">
-                                <div className="min-w-0">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Tipo documento</p>
-                                    <p className="text-sm font-bold text-gray-800 mt-1 break-words">{detailAlumno.c_documento}</p>
+                        <div className="mt-4 bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 space-y-6">
+                            <div>
+                                <h4 className="text-xs font-black uppercase tracking-widest text-[#4d0706] mb-3">Datos personales</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Tipo documento</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_documento}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Número documento</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.numeroDocumento}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">CUIL</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.cuil}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Fecha de nacimiento</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">
+                                            {detailAlumno.fechaNacimiento ? formatDate(detailAlumno.fechaNacimiento) : "—"}
+                                        </p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Sexo</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{sexoLabel(detailAlumno.c_sexo)}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Edad</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">
+                                            {detailAlumno.fechaNacimiento ? `${calcAge(detailAlumno.fechaNacimiento)} años` : "—"}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Número documento</p>
-                                    <p className="text-sm font-bold text-gray-800 mt-1 break-words">{detailAlumno.numeroDocumento}</p>
+                            </div>
+
+                            <div className="pt-4 border-t border-gray-100">
+                                <h4 className="text-xs font-black uppercase tracking-widest text-[#4d0706] mb-3">Lugar de nacimiento</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4">
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">País</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_pais_nacimiento || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Provincia</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_provincia_nacimiento || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Lugar/Localidad</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.lugar_nacimiento || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Nacionalidad</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_nacionalidad || "—"}</p>
+                                    </div>
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">CUIL</p>
-                                    <p className="text-sm font-bold text-gray-800 mt-1 break-words">{detailAlumno.cuil}</p>
+                            </div>
+
+                            <div className="pt-4 border-t border-gray-100">
+                                <h4 className="text-xs font-black uppercase tracking-widest text-[#4d0706] mb-3">Contacto completo</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Celular particular</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.celular || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Celular urgencia</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.celularUrgencia || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Email</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.email || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Domicilio</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.domicilio || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Departamento</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.departamento || "—"}</p>
+                                    </div>
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Fecha de nacimiento</p>
-                                    <p className="text-sm font-bold text-gray-800 mt-1 break-words">
-                                        {detailAlumno.fechaNacimiento ? formatDate(detailAlumno.fechaNacimiento) : "—"}
-                                    </p>
+                            </div>
+
+                            <div className="pt-4 border-t border-gray-100">
+                                <h4 className="text-xs font-black uppercase tracking-widest text-[#4d0706] mb-3">Datos complementarios y documentación</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Especialidad</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.especialidad || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Discapacidad</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_discapacidad || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">N° CUD</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.cud || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Pueblo indígena</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_pueblo_indigena || "—"}</p>
+                                    </div>
+                                    <div className="col-span-2 sm:col-span-2 min-w-0">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Problemática integrado</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.problematicaIntegrado || "—"}</p>
+                                    </div>
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Sexo</p>
-                                    <p className="text-sm font-bold text-gray-800 mt-1 break-words">{sexoLabel(detailAlumno.c_sexo)}</p>
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Edad</p>
-                                    <p className="text-sm font-bold text-gray-800 mt-1 break-words">
-                                        {detailAlumno.fechaNacimiento ? `${calcAge(detailAlumno.fechaNacimiento)} años` : "—"}
-                                    </p>
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Celular</p>
-                                    <p className="text-sm font-bold text-gray-800 mt-1 break-words">{detailAlumno.celular || "—"}</p>
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Email</p>
-                                    <p className="text-sm font-bold text-gray-800 mt-1 break-words">{detailAlumno.email || "—"}</p>
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Domicilio</p>
-                                    <p className="text-sm font-bold text-gray-800 mt-1 break-words">{detailAlumno.domicilio || "—"}</p>
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Departamento</p>
-                                    <p className="text-sm font-bold text-gray-800 mt-1 break-words">{detailAlumno.departamento || "—"}</p>
+
+                                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="border border-gray-200 rounded-xl p-3 bg-gray-50/50">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-2">Foto DNI</p>
+                                        {detailAlumno.fotoDni ? (
+                                            <div className="space-y-2">
+                                                <a href={detailAlumno.fotoDni} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-gray-200 bg-white max-h-40">
+                                                    <img src={detailAlumno.fotoDni} alt="Foto DNI" className="w-full h-32 object-contain" />
+                                                </a>
+                                                <a href={detailAlumno.fotoDni} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#4d0706] hover:underline">
+                                                    Ver imagen completa
+                                                </a>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs font-medium text-gray-400">Sin foto de DNI</p>
+                                        )}
+                                    </div>
+
+                                    <div className="border border-gray-200 rounded-xl p-3 bg-gray-50/50">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-2">Foto Certificado</p>
+                                        {detailAlumno.fotoCertificado ? (
+                                            <div className="space-y-2">
+                                                <a href={detailAlumno.fotoCertificado} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-gray-200 bg-white max-h-40">
+                                                    <img src={detailAlumno.fotoCertificado} alt="Foto Certificado" className="w-full h-32 object-contain" />
+                                                </a>
+                                                <a href={detailAlumno.fotoCertificado} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#4d0706] hover:underline">
+                                                    Ver imagen completa
+                                                </a>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs font-medium text-gray-400">Sin foto de certificado</p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

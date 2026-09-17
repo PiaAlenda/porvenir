@@ -40,25 +40,42 @@ const MINISTRY_FIELDS = [
   { label: "Apellido:", value: (a) => a.apellido || "" },
   { label: "Nombre:", value: (a) => a.nombre || "" },
   { label: "Tipo de documento (c_documento):", value: (a) => a.c_documento || "" },
-  { label: "N\u00famero de documento:", value: (a) => a.numeroDocumento || "" },
+  { label: "Número de documento:", value: (a) => a.numeroDocumento || "" },
   { label: "CUIL:", value: (a) => a.cuil || "" },
   { label: "Fecha de nacimiento:", value: (a) => formatFecha(a.fechaNacimiento) || "" },
   { label: "Sexo (c_sexo):", value: (a) => a.c_sexo || "" },
+  { label: "País de nacimiento:", value: (a) => a.c_pais_nacimiento || "" },
+  { label: "Provincia de nacimiento:", value: (a) => a.c_provincia_nacimiento || "" },
+  { label: "Lugar de nacimiento:", value: (a) => a.lugar_nacimiento || "" },
+  { label: "Nacionalidad:", value: (a) => a.c_nacionalidad || "" },
+  { label: "Correo electrónico:", value: (a) => a.email || "" },
+  { label: "Celular particular:", value: (a) => a.celular || "" },
+  { label: "Celular urgencia:", value: (a) => a.celularUrgencia || "" },
+  { label: "Departamento:", value: (a) => a.departamento || "" },
+  { label: "Domicilio:", value: (a) => a.domicilio || "" },
   { label: "Curso / Carrera:", value: (a) => a.courseTitle || a.careerTitle || "" },
+  { label: "Especialidad:", value: (a) => a.especialidad || "" },
+  { label: "Posee discapacidad:", value: (a) => a.c_discapacidad || "" },
+  { label: "Número CUD:", value: (a) => a.cud || "" },
+  { label: "Pueblo Indígena:", value: (a) => a.c_pueblo_indigena || "" },
+  { label: "Problemática integrado:", value: (a) => a.problematicaIntegrado || "" },
 ]
 
 export async function generarFichaPdf(alumno) {
-  const rows = MINISTRY_FIELDS.map((f) => [
-    { text: f.label, bold: true, fontSize: 10.5, color: "#2d2d2d" },
-    { text: f.value(alumno) || "", fontSize: 10.5, color: "#1f2937" },
+  const rows = MINISTRY_FIELDS.filter((f) => {
+    const val = f.value(alumno)
+    return val !== undefined && val !== null && val !== ""
+  }).map((f) => [
+    { text: f.label, bold: true, fontSize: 10, color: "#2d2d2d" },
+    { text: f.value(alumno) || "", fontSize: 10, color: "#1f2937" },
   ])
 
   const docDefinition = {
     pageSize: "A4",
-    pageMargins: [50, 50, 50, 50],
+    pageMargins: [40, 40, 40, 40],
     content: [
       {
-        text: 'ESCUELA DE CAPACITACI\u00d3N LABORAL "OBREROS DEL PORVENIR"',
+        text: 'ESCUELA DE CAPACITACIÓN LABORAL "OBREROS DEL PORVENIR"',
         bold: true,
         fontSize: 13,
         alignment: "center",
@@ -67,15 +84,15 @@ export async function generarFichaPdf(alumno) {
         text: "Av. Alem 527 Sur - Capital - San Juan",
         fontSize: 10,
         alignment: "center",
-        margin: [0, 2, 0, 12],
+        margin: [0, 2, 0, 10],
       },
-      { text: "FICHA DE INSCRIPCI\u00d3N", bold: true, fontSize: 12, alignment: "center" },
+      { text: "FICHA DE INSCRIPCIÓN", bold: true, fontSize: 12, alignment: "center" },
       {
-        text: "Datos a presentar ante el Ministerio de Educaci\u00f3n",
+        text: "Datos a presentar ante el Ministerio de Educación",
         fontSize: 9.5,
         alignment: "center",
         color: "#6b7280",
-        margin: [0, 2, 0, 14],
+        margin: [0, 2, 0, 12],
       },
       {
         table: {
@@ -86,13 +103,13 @@ export async function generarFichaPdf(alumno) {
           hLineWidth: (i) => (i === 0 || i === rows.length ? 0.8 : 0.4),
           hLineColor: () => "#bfbfbf",
           vLineWidth: () => 0,
-          paddingTop: () => 8,
-          paddingBottom: () => 8,
+          paddingTop: () => 6,
+          paddingBottom: () => 6,
           paddingLeft: () => 4,
           paddingRight: () => 4,
         },
       },
-      { text: `FECHA: ${todayFormatted()}`, bold: true, fontSize: 10, margin: [0, 18, 0, 0] },
+      { text: `FECHA: ${todayFormatted()}`, bold: true, fontSize: 10, margin: [0, 14, 0, 0] },
     ],
   }
 

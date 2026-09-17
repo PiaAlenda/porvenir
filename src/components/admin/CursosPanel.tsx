@@ -1,10 +1,12 @@
-import { useRef, useState, type ChangeEvent } from "react"
+import { useEffect, useRef, useState, type ChangeEvent } from "react"
 import {
     Briefcase,
     Building2,
     Calculator,
     Check,
     ChefHat,
+    ChevronLeft,
+    ChevronRight,
     Cog,
     Cpu,
     Flame,
@@ -60,7 +62,23 @@ export default function CursosPanel({ token, section }: Props) {
     const { config, refresh } = useSiteConfig()
     const [savingId, setSavingId] = useState<string | null>(null)
     const [imgError, setImgError] = useState<Record<string, boolean>>({})
+    const [pagination, setPagination] = useState<{ section: Props["section"]; page: number }>({ section, page: 0 })
+    const [viewport, setViewport] = useState<"mobile" | "tablet" | "desktop">(() => {
+        const w = window.innerWidth
+        if (w >= 1024) return "desktop"
+        if (w >= 640) return "tablet"
+        return "mobile"
+    })
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+    useEffect(() => {
+        const compute = () => {
+            const w = window.innerWidth
+            setViewport(w >= 1024 ? "desktop" : w >= 640 ? "tablet" : "mobile")
+        }
+        window.addEventListener("resize", compute)
+        return () => window.removeEventListener("resize", compute)
+    }, [])
 
     const ids = Object.keys(config)
     const cursos = ids.filter((id) => id.startsWith("curso-"))
@@ -173,23 +191,23 @@ export default function CursosPanel({ token, section }: Props) {
                     </button>
                 </div>
 
-                <div className="mt-auto flex items-center gap-2 border-t border-gray-100 p-3">
+                <div className="mt-auto flex items-center gap-1.5 sm:gap-2 border-t border-gray-100 p-2.5 sm:p-3">
                     <button
                         type="button"
                         onClick={() => fileInputRefs.current[id]?.click()}
                         title="Subir una imagen"
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 transition-colors cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 transition-colors cursor-pointer"
                     >
-                        <Upload className="w-3.5 h-3.5 shrink-0" />
+                        <Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
                         <span className="truncate">Subir imagen</span>
                     </button>
                     <button
                         type="button"
                         onClick={() => removeImage(id)}
                         title="Volver a la imagen original"
-                        className="flex items-center justify-center w-9 h-9 shrink-0 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                        className="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 shrink-0 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
                     >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
                     <input
                         ref={(el) => {
@@ -206,6 +224,11 @@ export default function CursosPanel({ token, section }: Props) {
     }
 
     const showIds = section === "cursos" ? cursos : carreras
+    const perPage = viewport === "desktop" ? 10 : viewport === "tablet" ? 6 : 4
+    const totalPages = Math.max(1, Math.ceil(showIds.length / perPage))
+    const safePage = Math.min(pagination.section === section ? pagination.page : 0, totalPages - 1)
+    const goToPage = (p: number) => setPagination({ section, page: p })
+    const pageIds = showIds.slice(safePage * perPage, safePage * perPage + perPage)
     const availableCount = showIds.filter((id) => isAvailableFor(id, config)).length
     const noCupoCount = showIds.length - availableCount
 
@@ -231,7 +254,44 @@ export default function CursosPanel({ token, section }: Props) {
                 </div>
             ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                    {showIds.map(renderCard)}
+                    {pageIds.map(renderCard)}
+                </div>
+            )}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-1.5 pt-1">
+                    <button
+                        type="button"
+                        onClick={() => goToPage(safePage - 1)}
+                        disabled={safePage === 0}
+                        title="Anterior"
+                        className="w-9 h-9 grid place-items-center rounded-xl text-[#4d0706] bg-white border border-gray-200 hover:bg-[#4d0706]/5 disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-colors"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            onClick={() => goToPage(i)}
+                            aria-current={i === safePage ? "page" : undefined}
+                            className={`w-9 h-9 grid place-items-center rounded-xl text-sm font-black cursor-pointer transition-colors ${
+                                i === safePage
+                                    ? "bg-[#4d0706] text-[#ffcc00]"
+                                    : "bg-white text-gray-600 border border-gray-200 hover:bg-[#4d0706]/5"
+                            }`}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={() => goToPage(safePage + 1)}
+                        disabled={safePage >= totalPages - 1}
+                        title="Siguiente"
+                        className="w-9 h-9 grid place-items-center rounded-xl text-[#4d0706] bg-white border border-gray-200 hover:bg-[#4d0706]/5 disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-colors"
+                    >
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
                 </div>
             )}
         </div>
