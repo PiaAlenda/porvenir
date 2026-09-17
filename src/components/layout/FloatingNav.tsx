@@ -62,7 +62,7 @@ const FloatingNav = ({ currentView, activeNavId, onNavigate, onScrollToSection, 
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 50, opacity: 0 }}
                             transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                            className="bg-[#7a0d0b] backdrop-blur-xl rounded-full py-2 pl-3 pr-2 shadow-[0_20px_50px_rgba(122,13,11,0.5)] flex items-center justify-between gap-1.5 sm:gap-3 border border-white/10 pointer-events-auto"
+                            className="bg-[#7a0d0b] backdrop-blur-xl rounded-full py-3.5 pl-3.5 pr-2.5 shadow-[0_20px_50px_rgba(122,13,11,0.5)] flex items-center justify-between gap-1.5 sm:gap-3 border border-white/10 pointer-events-auto"
                         >
                             {navItems.map((item) => {
                                 const Icon = item.icon;
@@ -72,7 +72,7 @@ const FloatingNav = ({ currentView, activeNavId, onNavigate, onScrollToSection, 
                                     <button
                                         key={item.id}
                                         onClick={(e) => handleClick(e, item)}
-                                        className="relative flex flex-col items-center justify-center border-none bg-transparent cursor-pointer py-1"
+                                        className="relative flex flex-col items-center justify-center border-none bg-transparent cursor-pointer py-1.5"
                                     >
                                         <motion.div
                                             initial={false}
@@ -80,16 +80,16 @@ const FloatingNav = ({ currentView, activeNavId, onNavigate, onScrollToSection, 
                                                 scale: isActive ? 1.2 : 1,
                                                 opacity: isActive ? 1 : 0.5
                                             }}
-                                            className={`flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 transition-colors
+                                            className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 transition-colors
                                                 ${isActive ? 'text-[#ffcc00]' : 'text-white'}
                                             `}
                                         >
-                                            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                                         </motion.div>
                                         {isActive && (
                                             <motion.div
                                                 layoutId="navIndicator"
-                                                className="absolute -bottom-1 h-1.5 w-1.5 rounded-full bg-[#ffcc00]"
+                                                className="absolute -bottom-1.5 h-1.5 w-1.5 rounded-full bg-[#ffcc00]"
                                                 transition={{
                                                     type: "spring",
                                                     stiffness: 380,
@@ -102,10 +102,10 @@ const FloatingNav = ({ currentView, activeNavId, onNavigate, onScrollToSection, 
                             })}
                             <button
                                 onClick={() => setCollapsed(true)}
-                                className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition-colors cursor-pointer border-none flex-shrink-0"
+                                className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition-colors cursor-pointer border-none flex-shrink-0"
                                 aria-label="Minimizar menú"
                             >
-                                <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <X className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                         </motion.div>
                     )}
