@@ -1,28 +1,9 @@
 import { memo, useEffect, useState } from "react";
 import { motion, type Variants } from "framer-motion";
-import {
-    Library, MapPin, Users, GraduationCap, Briefcase,
-    ChevronRight, type LucideIcon
-} from "lucide-react";
-
-interface SliderItem {
-    text: string;
-    href: string;
-    icon: LucideIcon;
-}
-
-const sliderItems: SliderItem[] = [
-    { text: "Nosotros", href: "#nosotros", icon: Users },
-    { text: "Biblioteca", href: "#inscripciones", icon: Library },
-    { text: "Cursos", href: "#cursos", icon: GraduationCap },
-    { text: "Carrera", href: "#carrera", icon: Briefcase },
-    { text: "Sedes", href: "#location", icon: MapPin },
-];
+import { ChevronRight } from "lucide-react";
 
 interface HeroProps {
     onNavigateAbout?: () => void;
-    onNavigateLocation?: () => void;
-    onNavigateToProgram?: (id: string, modality: "virtual" | "presencial") => void;
 }
 
 const carouselSlides = [
@@ -55,12 +36,10 @@ const carouselSlides = [
     }
 ];
 
-const Hero = ({ onNavigateAbout, onNavigateLocation, onNavigateToProgram }: HeroProps) => {
-    const [isLoaded, setIsLoaded] = useState(false);
+const Hero = ({ onNavigateAbout }: HeroProps) => {
     const [currentSlide, setCurrentSlide] = useState(0);
 
     useEffect(() => {
-        setIsLoaded(true);
         const interval = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
         }, 8000);
@@ -88,12 +67,6 @@ const Hero = ({ onNavigateAbout, onNavigateLocation, onNavigateToProgram }: Hero
         e.preventDefault();
         if (href === "#nosotros" && onNavigateAbout) {
             onNavigateAbout();
-        } else if (href === "#location" && onNavigateLocation) {
-            onNavigateLocation();
-        } else if (href === "#cursos" && onNavigateToProgram) {
-            onNavigateToProgram("bach", "virtual");
-        } else if (href === "#carrera" && onNavigateToProgram) {
-            onNavigateToProgram("tec", "presencial");
         } else if (href && href.startsWith("#")) {
             const el = document.getElementById(href.replace("#", ""));
             if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -125,7 +98,7 @@ const Hero = ({ onNavigateAbout, onNavigateLocation, onNavigateToProgram }: Hero
                     className="w-full max-w-[90vw] flex flex-col items-center text-center space-y-5 sm:space-y-6 h-[280px] sm:h-[320px] justify-center"
                     variants={containerVariants}
                     initial="hidden"
-                    animate={isLoaded ? "visible" : "hidden"}
+                    animate="visible"
                 >
                     <motion.h1 variants={itemVariants} className="text-5xl sm:text-7xl md:text-8xl font-black text-white leading-[1.1] sm:leading-[0.9] tracking-tighter">
                         <span className="text-gold italic drop-shadow-[0_0_30px_rgba(245,197,24,0.2)]">
@@ -167,27 +140,6 @@ const Hero = ({ onNavigateAbout, onNavigateLocation, onNavigateToProgram }: Hero
                     </motion.div>
                 </motion.div>
             </section>
-
-            <div className="hidden lg:block relative z-20 w-full bg-white/95 backdrop-blur-md border-t border-gray-100">
-                <div className="flex items-center justify-center divide-x divide-gray-100">
-                    {sliderItems.map((item, index) => {
-                        const Icon = item.icon;
-                        return (
-                            <a
-                                key={index}
-                                href={item.href}
-                                onClick={(e) => handleItemClick(e, item.href)}
-                                className="flex items-center gap-3 px-10 py-6 text-gray-500 hover:text-[#7a0d0b] transition-colors group no-underline"
-                            >
-                                <Icon className="w-5 h-5 text-gray-400 group-hover:text-[#7a0d0b]" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest">{item.text}</span>
-                            </a>
-                        );
-                    })}
-                </div>
-            </div>
-
-
         </div>
     );
 };

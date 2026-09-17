@@ -1,5 +1,28 @@
 import { useRef, useState, type ChangeEvent } from "react"
-import { Check, Loader2, Upload, X } from "lucide-react"
+import {
+    Briefcase,
+    Building2,
+    Calculator,
+    Check,
+    ChefHat,
+    Cog,
+    Cpu,
+    Flame,
+    GraduationCap,
+    Hammer,
+    Image,
+    Loader2,
+    Music,
+    Palette,
+    Scissors,
+    ShieldCheck,
+    Sparkles,
+    Sun,
+    Upload,
+    Wrench,
+    X,
+    type LucideIcon,
+} from "lucide-react"
 import { api } from "@/api"
 import { CAREER_DATA } from "@/config/careerData"
 import { getImageFor, isAvailableFor, useSiteConfig } from "@/siteConfig"
@@ -9,9 +32,34 @@ interface Props {
     section: "cursos" | "carreras"
 }
 
+const CAREER_ICONS: Record<string, LucideIcon> = {
+    Briefcase,
+    Building2,
+    Calculator,
+    ChefHat,
+    Cog,
+    Cpu,
+    Flame,
+    Hammer,
+    Image,
+    Music,
+    Palette,
+    Scissors,
+    ShieldCheck,
+    Sparkles,
+    Sun,
+    Wrench,
+}
+
+const iconFor = (id: string): LucideIcon => {
+    const name = CAREER_DATA[id]?.icon
+    return (name && CAREER_ICONS[name]) || GraduationCap
+}
+
 export default function CursosPanel({ token, section }: Props) {
     const { config, refresh } = useSiteConfig()
     const [savingId, setSavingId] = useState<string | null>(null)
+    const [imgError, setImgError] = useState<Record<string, boolean>>({})
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
     const ids = Object.keys(config)
@@ -59,83 +107,99 @@ export default function CursosPanel({ token, section }: Props) {
         const title = titleOf(id)
         const available = isAvailableFor(id, config)
         const saving = savingId === id
+        const src = getImageFor(id, config)
+        const showFallback = !src || imgError[id]
+        const FallbackIcon = iconFor(id)
 
         return (
             <div
                 className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all flex flex-col ${
-                    available ? "border-gray-200" : "border-gray-300 opacity-80"
+                    available ? "border-gray-200 hover:border-gray-300" : "border-gray-300 opacity-85"
                 }`}
                 key={id}
             >
-                <div className="relative aspect-[1090/1350] bg-gray-100">
-                    <img
-                        src={getImageFor(id, config)}
-                        alt={title}
-                        className={`w-full h-full object-cover ${available ? "" : "grayscale"}`}
-                        onError={(e) => {
-                            ;(e.target as HTMLImageElement).style.display = "none"
-                        }}
-                    />
-                    {!available && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="px-4 py-2 rounded-full bg-gray-800 text-white text-xs font-black uppercase tracking-widest">
-                                Sin cupo
-                            </span>
-                        </div>
-                    )}
-                    {saving && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <Loader2 className="w-8 h-8 text-white animate-spin" />
-                        </div>
-                    )}
+                <div className="p-3">
+                    <div
+                        className={`relative aspect-[4/3] rounded-xl overflow-hidden ${
+                            section === "carreras" ? "bg-[#800000]/5 flex items-center justify-center" : "bg-gray-50"
+                        } ${
+                            available
+                                ? "ring-1 ring-gray-100"
+                                : "ring-1 ring-gray-100 grayscale opacity-80"
+                        }`}
+                    >
+                        {showFallback ? (
+                            <div className="w-full h-full flex items-center justify-center">
+                                <div className="w-14 h-14 rounded-full bg-[#800000]/5 ring-1 ring-[#800000]/10 flex items-center justify-center">
+                                    <FallbackIcon className="w-6 h-6 text-[#800000]/60" />
+                                </div>
+                            </div>
+                        ) : (
+                            <img
+                                src={src}
+                                alt={title}
+                                className={`w-full h-full ${
+                                    section === "carreras" ? "object-contain p-3" : "object-cover"
+                                }`}
+                                onError={() => setImgError((prev) => ({ ...prev, [id]: true }))}
+                            />
+                        )}
+                        {saving && (
+                            <div className="absolute inset-0 z-10 bg-black/40 flex items-center justify-center">
+                                <Loader2 className="w-6 h-6 text-white animate-spin" />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <div className="p-3 sm:p-4 space-y-3 flex flex-col">
-                    <h4 className="text-sm font-black text-gray-900 leading-tight line-clamp-2">{title}</h4>
+                <div className="px-3 pb-3 flex flex-col gap-2.5">
+                    <h4 className="text-sm font-bold text-[#1F2937] leading-tight line-clamp-2">{title}</h4>
 
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-gray-500" id={`avail-${id}`}>Disponible</span>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={available}
-                            aria-labelledby={`avail-${id}`}
-                            onClick={() => toggleAvailable(id, available)}
-                            disabled={saving}
-                            className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${available ? "bg-green-500" : "bg-gray-300"}`}
-                        >
-                            <span
-                                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${available ? "translate-x-5" : ""}`}
-                            />
-                        </button>
-                    </div>
+                    <button
+                        type="button"
+                        role="switch"
+                        aria-checked={available}
+                        onClick={() => toggleAvailable(id, available)}
+                        disabled={saving}
+                        title={available ? "Marcar sin cupo" : "Marcar disponible"}
+                        className={`inline-flex w-full items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ring-1 transition-colors cursor-pointer disabled:opacity-50 ${
+                            available
+                                ? "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-100"
+                                : "bg-red-50 text-red-600 ring-red-200 hover:bg-red-100"
+                        }`}
+                    >
+                        {available ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                        {available ? "Disponible" : "Sin Cupo"}
+                    </button>
+                </div>
 
-                    <div className="flex items-center gap-2 mt-auto">
-                        <button
-                            onClick={() => fileInputRefs.current[id]?.click()}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 cursor-pointer"
-                        >
-                            <Upload className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate">Subir imagen</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => removeImage(id)}
-                            className="flex items-center justify-center px-2.5 py-2 rounded-lg text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 cursor-pointer"
-                            title="Volver a la imagen original"
-                        >
-                            <X className="w-3.5 h-3.5" />
-                        </button>
-                        <input
-                            ref={(el) => {
-                                fileInputRefs.current[id] = el
-                            }}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => onPickImage(id, e)}
-                        />
-                    </div>
+                <div className="mt-auto flex items-center gap-2 border-t border-gray-100 p-3">
+                    <button
+                        type="button"
+                        onClick={() => fileInputRefs.current[id]?.click()}
+                        title="Subir una imagen"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 transition-colors cursor-pointer"
+                    >
+                        <Upload className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Subir imagen</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => removeImage(id)}
+                        title="Volver a la imagen original"
+                        className="flex items-center justify-center w-9 h-9 shrink-0 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                    </button>
+                    <input
+                        ref={(el) => {
+                            fileInputRefs.current[id] = el
+                        }}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => onPickImage(id, e)}
+                    />
                 </div>
             </div>
         )
@@ -148,11 +212,11 @@ export default function CursosPanel({ token, section }: Props) {
     return (
         <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black text-green-700 bg-green-50">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-emerald-700 bg-emerald-50 ring-1 ring-emerald-100">
                     <Check className="w-3.5 h-3.5" />
                     {availableCount} disponibles
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black text-gray-500 bg-gray-100">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-red-600 bg-red-50 ring-1 ring-red-100">
                     <X className="w-3.5 h-3.5" />
                     {noCupoCount} sin cupo
                 </span>
@@ -166,7 +230,7 @@ export default function CursosPanel({ token, section }: Props) {
                     <p className="text-sm font-bold text-gray-500">No hay {section} cargadas.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                     {showIds.map(renderCard)}
                 </div>
             )}

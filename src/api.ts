@@ -61,11 +61,19 @@ export const api = {
         })
     },
 
-    async login(password: string) {
+    async login(email: string, password: string) {
         return request<{ token: string }>("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password }),
+            body: JSON.stringify({ email, password }),
+        })
+    },
+
+    async changePassword(token: string, currentPassword: string, newPassword: string) {
+        return request<{ ok: boolean; message: string }>("/api/auth/password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...auth(token) },
+            body: JSON.stringify({ currentPassword, newPassword }),
         })
     },
 

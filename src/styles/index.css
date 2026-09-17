@@ -17,9 +17,6 @@
 }
 
 @layer base {
-  html {
-    zoom: 1.25;
-  }
   body {
     @apply font-inter antialiased text-[#1a1a1a] bg-site-bg m-0;
   }

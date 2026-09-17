@@ -4,21 +4,29 @@ import CareerDetail from "@/pages/CareerDetail"
 import About from "@/pages/About"
 import Location from "@/pages/Location"
 import Admin from "@/pages/Admin"
+import Login from "@/pages/Login"
 import FloatingNav from "@/components/layout/FloatingNav"
 import { SiteConfigProvider } from "@/siteConfig"
 
-type ViewName = "home" | "detail" | "about" | "location" | "admin"
+type ViewName = "home" | "detail" | "about" | "location" | "admin" | "login"
 
 interface ViewState {
     name: ViewName
     params?: { id: string }
 }
 
-const initialView = (): ViewState =>
-    window.location.hash === "#admin" ? { name: "admin" } : { name: "home" }
+const TOKEN_KEY = "obreros_admin_token"
+
+const hasSession = () => Boolean(sessionStorage.getItem(TOKEN_KEY))
+
+const resolveHashView = (): ViewState => {
+    if (window.location.hash === "#login") return { name: "login" }
+    if (window.location.hash === "#admin") return hasSession() ? { name: "admin" } : { name: "login" }
+    return { name: "home" }
+}
 
 function App() {
-  const [view, setView] = useState<ViewState>(initialView);
+  const [view, setView] = useState<ViewState>(resolveHashView);
   const [programSelection, setProgramSelection] = useState<{ id: string; modality: "virtual" | "presencial" } | null>(null);
   const [activeNavId, setActiveNavId] = useState<string | null>(null);
   const [enrollCareerId, setEnrollCareerId] = useState<string | null>(null);
@@ -26,7 +34,7 @@ function App() {
 
   useEffect(() => {
     const onHashChange = () => {
-      setView(window.location.hash === "#admin" ? { name: "admin" } : { name: "home" });
+      setView(resolveHashView());
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
@@ -51,9 +59,23 @@ function App() {
   };
 
   const navigateHome = () => {
+    history.replaceState(null, "", window.location.pathname);
     setProgramSelection(null);
     setActiveNavId(null);
     setView({ name: "home" });
+    window.scrollTo(0, 0);
+  };
+
+  const navigateToLogin = () => {
+    history.replaceState(null, "", "#login");
+    setActiveNavId(null);
+    setView({ name: "login" });
+    window.scrollTo(0, 0);
+  };
+
+  const handleLoginSuccess = () => {
+    history.replaceState(null, "", "#admin");
+    setView({ name: "admin" });
     window.scrollTo(0, 0);
   };
 
@@ -73,10 +95,11 @@ function App() {
     });
   };
 
-  const handleGlobalNavigate = (viewName: "home" | "about" | "location") => {
+  const handleGlobalNavigate = (viewName: "home" | "about" | "location" | "login") => {
     if (viewName === "home") navigateHome();
     else if (viewName === "about") navigateToAbout();
     else if (viewName === "location") navigateToLocation();
+    else if (viewName === "login") navigateToLogin();
   };
 
   const handleScrollToSection = (sectionId: string) => {
@@ -101,7 +124,7 @@ function App() {
     setTimeout(() => document.getElementById("inscripciones")?.scrollIntoView({ behavior: "smooth" }), 200);
   };
 
-  const showNav = view.name !== "detail" && view.name !== "admin";
+  const showNav = view.name !== "detail" && view.name !== "admin" && view.name !== "login";
 
   return (
     <SiteConfigProvider>
@@ -119,9 +142,11 @@ function App() {
 
         {view.name === "home" && (
           <Home 
+            onNavigateHome={navigateHome} 
             onNavigateToDetail={navigateToDetail} 
             onNavigateToAbout={navigateToAbout}
             onNavigateToLocation={navigateToLocation}
+            onNavigateToLogin={navigateToLogin}
             initialSelection={programSelection}
             enrollCareerId={enrollCareerId}
             onProgramSelectionChange={(id) => setActiveNavId(id ? programNavId(id) : null)}
@@ -147,6 +172,9 @@ function App() {
               navigateHome();
             }}
           />
+        )}
+        {view.name === "login" && (
+          <Login onSuccess={handleLoginSuccess} onBack={navigateHome} />
         )}
       </div>
     </SiteConfigProvider>

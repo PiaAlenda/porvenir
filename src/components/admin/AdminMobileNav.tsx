@@ -1,6 +1,6 @@
-import { Briefcase, GraduationCap, Users } from "lucide-react"
+import { Briefcase, GraduationCap, Settings, Users } from "lucide-react"
 
-export type AdminTabId = "alumnos" | "cursos" | "carreras"
+export type AdminTabId = "alumnos" | "cursos" | "carreras" | "ajustes"
 
 interface Props {
     active: AdminTabId
@@ -12,12 +12,13 @@ const items: { id: AdminTabId; label: string; icon: typeof Users }[] = [
     { id: "alumnos", label: "Inscripciones", icon: Users },
     { id: "cursos", label: "Cursos", icon: GraduationCap },
     { id: "carreras", label: "Carreras", icon: Briefcase },
+    { id: "ajustes", label: "Ajustes", icon: Settings },
 ]
 
 export default function AdminMobileNav({ active, counts, onChange }: Props) {
     return (
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[90] bg-white/95 backdrop-blur-xl border-t border-gray-200 shadow-[0_-10px_30px_rgba(0,0,0,0.08)]">
-            <div className="grid grid-cols-3">
+            <div className="grid grid-cols-4">
                 {items.map((item) => {
                     const Icon = item.icon
                     const isActive = active === item.id

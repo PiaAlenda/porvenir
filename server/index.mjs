@@ -14,10 +14,15 @@ import {
 } from "./db.mjs"
 import { getConfig, updateItem } from "./site-config.mjs"
 import {
-  checkPassword,
+  changePassword,
+  checkCredentials,
   issueToken,
   verifyToken,
   isDefaultPassword,
+  isLocked,
+  lockRemainingMs,
+  registerFailure,
+  resetFailures,
 } from "./auth.mjs"
 import { generarFichaPdf } from "./pdf.mjs"
 
@@ -57,11 +62,29 @@ function requireAdmin(req, res, next) {
 }
 
 app.post("/api/auth/login", (req, res) => {
-  const { password } = req.body || {}
-  if (!checkPassword(password)) {
-    return res.status(401).json({ error: "Contraseña incorrecta" })
+  const ip = req.ip || (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown"
+  if (isLocked(ip)) {
+    const mins = Math.max(1, Math.ceil(lockRemainingMs(ip) / 60000))
+    return res.status(429).json({ error: `Demasiados intentos fallidos. Probá de nuevo en ${mins} min.` })
   }
+
+  const { email, password } = req.body || {}
+  if (!checkCredentials(email, password)) {
+    registerFailure(ip)
+    return res.status(401).json({ error: "Credenciales incorrectas" })
+  }
+
+  resetFailures(ip)
   res.json({ token: issueToken() })
+})
+
+app.post("/api/auth/password", requireAdmin, (req, res) => {
+  const { currentPassword, newPassword } = req.body || {}
+  const result = changePassword(currentPassword, newPassword)
+  if (!result.ok) {
+    return res.status(400).json({ error: result.message })
+  }
+  res.json({ ok: true, message: "Contraseña actualizada correctamente" })
 })
 
 /* ---------- inscripciones ---------- */
