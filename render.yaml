@@ -22,11 +22,14 @@ services:
         sync: false
       - key: SERVE_STATIC
         value: "0"
-      # Correo con acceso al panel. Con Supabase Auth, cualquier otra cuenta
-      # del proyecto queda rechazada, aunque tenga la contraseña correcta.
+      # OBLIGATORIA en producción: sin esta variable el servicio no arranca
+      # (ver el guard de arranque en server/index.mjs). Tiene que coincidir
+      # exactamente con el usuario creado en Supabase Auth, porque es la única
+      # allow-list que decide quién entra al panel: cualquier otra cuenta del
+      # proyecto queda rechazada aunque la contraseña sea correcta.
       - key: ADMIN_EMAIL
         sync: false
       # Si el panel necesita más de un usuario, listalos separados por coma.
-      # Tiene prioridad sobre ADMIN_EMAIL.
+      # Tiene prioridad sobre ADMIN_EMAIL: si lo definís, ADMIN_EMAIL se ignora.
       - key: ADMIN_EMAILS
         sync: false

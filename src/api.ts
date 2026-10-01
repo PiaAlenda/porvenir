@@ -72,22 +72,34 @@ export interface InscripcionPayload {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+    let res: Response
     try {
-        const res = await fetch(`${API_BASE}${path}`, options)
-        if (!res.ok) {
-            const body = await res.json().catch(() => ({}))
-            throw new Error(body?.error || `Error en el servidor (${res.status})`)
-        }
-        return (await res.json()) as T
-    } catch (err) {
-        if (err instanceof Error) {
-            if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError") || err.message.includes("fetch")) {
-                throw new Error("No se pudo conectar con el servidor. Por favor, comprobá tu conexión a internet e intentá de nuevo.")
-            }
-            throw err
-        }
-        throw new Error("Ocurrió un error inesperado. Por favor, intentá nuevamente.")
+        res = await fetch(`${API_BASE}${path}`, options)
+    } catch {
+        /*
+         * `fetch` solo rechaza cuando no hubo respuesta: CORS bloqueado por el
+         * navegador, API caída, DNS roto, o la API dormida. Eso tiene causas
+         * muy distintas entre sí, pero ninguna es "se cayó el wifi del
+         * usuario", así que el mensaje no puede seguir mandándolo a revisar
+         * su conexión.
+         *
+         * El `try` envuelve únicamente el fetch a propósito: si envolviera toda
+         * la función, un `body.error` del servidor que contenga la palabra
+         * "fetch" se reportaría como si fuera un problema de red.
+         */
+        const destino = API_BASE
+            ? `la API en ${API_BASE}`
+            : "la API (VITE_API_URL no está definida en este build, por eso se pidió al propio dominio)"
+        throw new Error(
+            `No se pudo contactar con ${destino}. Si es un problema de CORS o la API está caída, el navegador no muestra el detalle: revisá que VITE_API_URL apunte a la API y que su ALLOWED_ORIGIN incluya este dominio.`
+        )
     }
+
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error || `Error en el servidor (${res.status})`)
+    }
+    return (await res.json()) as T
 }
 
 function auth(token: string): Record<string, string> {

@@ -10,12 +10,26 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@escuela.com"
 let PASSWORD = process.env.ADMIN_PASSWORD || "admin"
 
 /**
- * Correos con acceso al panel. Si se especifica ADMIN_EMAILS o ADMIN_EMAIL en el entorno,
- * se filtrará por ellos. Si se usa Supabase y no se define un whitelist,
- * cualquier usuario creado en Supabase Auth tiene acceso.
+ * Allow-list de administradores tal como vino del entorno, antes de aplicarle
+ * el default. El default se conserva para que `pnpm dev` funcione sin
+ * configurar nada, pero distinguir "vino del entorno" de "se inventó acá" es
+ * lo que separa un arranque sano de uno que rechaza todos los logins.
+ */
+const ADMIN_EMAILS_RAW = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "").trim()
+
+/**
+ * Correos con acceso al panel. `ADMIN_EMAILS` acepta varios separados por
+ * coma; si no está, se usa el `ADMIN_EMAIL` de siempre.
+ *
+ * Fail-closed a propósito: en modo Supabase, `verifyToken` solo comprobaba que
+ * el token fuera de un usuario válido, así que cualquier cuenta creada en el
+ * proyecto entraba como administrador. Con el alta por email abierta, eso
+ * alcanzaba para que cualquiera se metiera al panel. Por eso una allow-list
+ * vacía ya no significa "cualquiera es admin" sino "nadie entra", y el
+ * arranque en producción se niega a seguir sin allow-list.
  */
 const ADMIN_EMAILS = new Set(
-  (process.env.ADMIN_EMAILS || (supabaseEnabled ? process.env.ADMIN_EMAIL : ADMIN_EMAIL) || "")
+  (ADMIN_EMAILS_RAW || ADMIN_EMAIL)
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
@@ -33,17 +47,32 @@ function safeEqual(a, b) {
 }
 
 function isAdminEmail(email) {
-  if (!ADMIN_EMAILS.size) return true // Si no hay whitelist configurada, cualquier usuario de Supabase es admitido
   return ADMIN_EMAILS.has(String(email ?? "").trim().toLowerCase())
+}
+
+/** Allow-list efectiva, para que el log diga cuál se comparó contra el login. */
+function adminAllowListForLog() {
+  if (!ADMIN_EMAILS_RAW) {
+    return "(sin definir en el entorno, se comparó contra el default de desarrollo)"
+  }
+  return [...ADMIN_EMAILS].join(", ")
 }
 
 export function isDefaultPassword() {
   return !supabaseEnabled && PASSWORD === "admin"
 }
 
-/** ¿La configuración de acceso del panel es la de desarrollo? */
+/**
+ * ¿Hay una allow-list de administradores definida en el entorno?
+ *
+ * Lee `ADMIN_EMAILS_RAW` y no `ADMIN_EMAILS.size` a propósito. El Set cae al
+ * `admin@escuela.com` por defecto, así que su tamaño era siempre mayor a cero
+ * y el guard de arranque de `index.mjs` no detectaba nunca una configuración
+ * ausente: Render levantaba la API "sana" y rechazaba todos los logins con un
+ * 401 indistinguible de una contraseña incorrecta.
+ */
 export function hasUsableAdminConfig() {
-  return supabaseEnabled || ADMIN_EMAILS.size > 0
+  return ADMIN_EMAILS_RAW.length > 0
 }
 
 
@@ -63,13 +92,20 @@ export async function authenticate(email, password) {
       password: String(password ?? ""),
     })
     if (error || !data?.session) {
-      console.warn("[supabase auth] Error de login:", error?.message || "Sin sesión")
-      return { error: error?.message || "Credenciales incorrectas" }
+      // El mensaje crudo de Supabase no vuelve al cliente: decir "invalid
+      // login credentials" frente a "user not found" convierte el login en un
+      // oráculo para enumerar cuentas. El detalle queda en el log del
+      // servidor, que es donde hay que mirar cuando el panel devuelve 401.
+      console.warn(
+        `[supabase auth] login RECHAZADO: credenciales inválidas para "${String(email ?? "").trim().toLowerCase()}" (${error?.message || "sin sesión"})`,
+      )
+      return { error: "Credenciales incorrectas" }
     }
-    // Si se definió ADMIN_EMAILS o ADMIN_EMAIL explícito y no coincide, filtrar; si no, permitir
     if (!isAdminEmail(data.user?.email)) {
-      console.warn(`[supabase auth] El usuario ${data.user?.email} no está en la lista de administradores`)
-      return { error: "Usuario no autorizado como administrador" }
+      console.warn(
+        `[supabase auth] login RECHAZADO: "${data.user?.email}" autenticó bien pero NO está en la allow-list. ADMIN_EMAIL/ADMIN_EMAILS = ${adminAllowListForLog()}`,
+      )
+      return { error: "Credenciales incorrectas" }
     }
     return {
       token: data.session.access_token,
