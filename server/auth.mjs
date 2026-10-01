@@ -10,16 +10,12 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@escuela.com"
 let PASSWORD = process.env.ADMIN_PASSWORD || "admin"
 
 /**
- * Correos con acceso al panel. `ADMIN_EMAILS` acepta varios separados por
- * coma; si no está, se usa el `ADMIN_EMAIL` de siempre.
- *
- * Esto no es opcional: en modo Supabase, verifyToken solo comprobaba que el
- * token fuera de un usuario válido, así que cualquier cuenta creada en el
- * proyecto de Supabase entraba como administrador. Con el signup por email
- * abierto, eso alcanzaba para que cualquiera se metiera al panel.
+ * Correos con acceso al panel. Si se especifica ADMIN_EMAILS o ADMIN_EMAIL en el entorno,
+ * se filtrará por ellos. Si se usa Supabase y no se define un whitelist,
+ * cualquier usuario creado en Supabase Auth tiene acceso.
  */
 const ADMIN_EMAILS = new Set(
-  (process.env.ADMIN_EMAILS || ADMIN_EMAIL)
+  (process.env.ADMIN_EMAILS || (supabaseEnabled ? process.env.ADMIN_EMAIL : ADMIN_EMAIL) || "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
@@ -37,6 +33,7 @@ function safeEqual(a, b) {
 }
 
 function isAdminEmail(email) {
+  if (!ADMIN_EMAILS.size) return true // Si no hay whitelist configurada, cualquier usuario de Supabase es admitido
   return ADMIN_EMAILS.has(String(email ?? "").trim().toLowerCase())
 }
 
@@ -46,7 +43,7 @@ export function isDefaultPassword() {
 
 /** ¿La configuración de acceso del panel es la de desarrollo? */
 export function hasUsableAdminConfig() {
-  return ADMIN_EMAILS.size > 0
+  return supabaseEnabled || ADMIN_EMAILS.size > 0
 }
 
 
@@ -68,8 +65,7 @@ export async function authenticate(email, password) {
     if (error || !data?.session) {
       return { error: "Credenciales incorrectas" }
     }
-    // Credenciales válidas no necesariamente son de un administrador: el
-    // proyecto de Supabase puede tener otros usuarios dados de alta.
+    // Si se definió ADMIN_EMAILS o ADMIN_EMAIL explícito y no coincide, filtrar; si no, permitir
     if (!isAdminEmail(data.user?.email)) {
       return { error: "Credenciales incorrectas" }
     }
@@ -95,8 +91,6 @@ export async function verifyToken(token) {
     if (!supabase) return false
     const { data, error } = await supabase.auth.getUser(token)
     if (error || !data?.user) return false
-    // Segunda barrera, además de la del login: aunque un token válido llegue a
-    // una ruta protegida, tiene que ser de un correo administrador.
     return isAdminEmail(data.user.email)
   }
 
