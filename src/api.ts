@@ -31,15 +31,47 @@ export interface Alumno {
     updatedAt?: string
 }
 
+export interface ConfigTeacher {
+    name: string
+    title?: string
+    legajo?: string
+    image?: string
+    /** El admin pidió borrar la foto actual de este docente. */
+    removeImage?: boolean
+}
+
+export interface ConfigSyllabusEntry {
+    year: string
+    subjects: string[]
+}
+
 export interface CursoConfig {
     image?: string
     available: boolean
     title?: string
     cantidadTitulares?: number
+    /* hero / encabezado */
+    description?: string
+    longDescription?: string
+    duration?: string
+    modality?: string
+    icon?: string
+    category?: "carrera" | "curso-presencial" | "curso-virtual"
+    video?: string
+    /* inscripción */
     inscriptionDate?: string
     month?: string
     schedule?: string
+    inscriptionFee?: string
+    inscriptionDocs?: string
+    /* cuerpo */
+    syllabus?: ConfigSyllabusEntry[]
+    teachers?: ConfigTeacher[]
+    /** Nombre del primer docente, redundante con teachers[0]. Se mantiene por compatibilidad. */
     teacher?: string
+    salidaLaboral?: string[]
+    perfilEgresado?: string[]
+    /** Campo plano anterior; se sigue aceptando y se deriva de syllabus[0]. */
     ejes?: string
 }
 

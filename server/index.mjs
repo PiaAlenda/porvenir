@@ -12,7 +12,17 @@ import {
   updateAlumno,
   deleteAlumno,
 } from "./db.mjs"
-import { getConfig, updateItem, parseCantidadTitulares, MAX_CANTIDAD_TITULARES } from "./site-config.mjs"
+import {
+  getConfig,
+  updateItem,
+  parseCantidadTitulares,
+  MAX_CANTIDAD_TITULARES,
+  normalizeList,
+  normalizeSyllabus,
+  normalizeTeachers,
+  TEXT_LIMITS,
+  VALID_CATEGORIES,
+} from "./site-config.mjs"
 import {
   authenticate,
   changePassword,
@@ -20,7 +30,7 @@ import {
   isDefaultPassword,
   hasUsableAdminConfig,
 } from "./auth.mjs"
-import { upload, saveUpload, deleteUpload, UPLOADS_URL_PREFIX } from "./storage.mjs"
+import { upload, careerUpload, saveUpload, deleteUpload, UPLOADS_URL_PREFIX } from "./storage.mjs"
 import { ensureBuckets, supabaseEnabled } from "./supabase.mjs"
 import { generarFichaPdf } from "./pdf.mjs"
 import { PublicError } from "./errors.mjs"
@@ -118,6 +128,9 @@ app.use(
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
+        // Los videos de las carreras también salen de Storage cuando el admin
+        // los sube: sin esto el reproductor los bloquea.
+        mediaSrc: ["'self'", "blob:", "https://*.supabase.co"],
         fontSrc: ["'self'", "data:", "https://*.supabase.co"],
         connectSrc: ["'self'", "https://*.supabase.co"],
         objectSrc: ["'none'"],
@@ -399,22 +412,66 @@ app.get("/api/config", async (_req, res) => {
   res.json({ cursos: await getConfig() })
 })
 
-app.put("/api/config/:id", requireAdmin, upload.single("image"), async (req, res) => {
+const careerUploadMiddleware = (req, res, next) => {
+  careerUpload(req, res, (err) => {
+    if (err) {
+      console.error("[multer error]", err.message)
+      return res.status(400).json({
+        error: err.code === "LIMIT_FILE_SIZE"
+          ? "El archivo supera el tamaño máximo permitido (50MB para videos)."
+          : err.message || "No se pudieron adjuntar los archivos.",
+      })
+    }
+    next()
+  })
+}
+
+app.put("/api/config/:id", requireAdmin, careerUploadMiddleware, async (req, res) => {
   const cfg = await getConfig()
   const existing = cfg[req.params.id] || { image: "", available: true }
+  const body = req.body || {}
 
-  const patch = { ...existing }
-  if (req.body.available !== undefined) {
-    patch.available = req.body.available === "true" || req.body.available === true
-  }
-  const textFields = { title: 120, inscriptionDate: 60, month: 40, schedule: 200, teacher: 120, ejes: 2000 }
-  for (const [key, max] of Object.entries(textFields)) {
-    if (typeof req.body[key] === "string") {
-      patch[key] = req.body[key].trim().slice(0, max)
+  /*
+   * Los archivos llegan con el nombre del campo: "image", "video" y
+   * "teacherImage_<índice>" para las fotos de los docentes. El índice va en
+   * el nombre porque en un multipart no se puede anidar un archivo dentro del
+   * JSON del listado.
+   */
+  const files = { image: [], video: [], teacherImages: [] }
+  for (const file of req.files || []) {
+    if (file.fieldname === "image") files.image.push(file)
+    else if (file.fieldname === "video") files.video.push(file)
+    else if (file.fieldname.startsWith("teacherImage_")) {
+      const index = Number(file.fieldname.slice("teacherImage_".length))
+      if (Number.isInteger(index) && index >= 0) files.teacherImages[index] = file
     }
   }
-  if (req.body.cantidadTitulares !== undefined) {
-    const cupo = parseCantidadTitulares(req.body.cantidadTitulares)
+
+  const patch = { ...existing }
+  if (body.available !== undefined) {
+    patch.available = body.available === "true" || body.available === true
+  }
+  for (const [key, max] of Object.entries(TEXT_LIMITS)) {
+    if (typeof body[key] === "string") {
+      patch[key] = body[key].trim().slice(0, max)
+    }
+  }
+  if (typeof body.teacher === "string") {
+    patch.teacher = body.teacher.trim().slice(0, 120)
+  }
+  if (body.category !== undefined) {
+    patch.category = VALID_CATEGORIES.has(body.category) ? body.category : undefined
+  }
+  /*
+   * Las listas se guardan aunque vengan vacías: si el panel las manda
+   * siempre, un array vacío significa "el admin lo borró" y no "no me
+   * digas nada". Sin esto no se podría limpiar un campo desde el panel.
+   */
+  if (body.syllabus !== undefined) patch.syllabus = normalizeSyllabus(body.syllabus)
+  if (body.salidaLaboral !== undefined) patch.salidaLaboral = normalizeList(body.salidaLaboral)
+  if (body.perfilEgresado !== undefined) patch.perfilEgresado = normalizeList(body.perfilEgresado)
+  if (body.cantidadTitulares !== undefined) {
+    const cupo = parseCantidadTitulares(body.cantidadTitulares)
     if (cupo === null) {
       return res.status(400).json({
         error: `El cupo de titulares debe ser un número entero entre 0 y ${MAX_CANTIDAD_TITULARES}.`,
@@ -422,15 +479,62 @@ app.put("/api/config/:id", requireAdmin, upload.single("image"), async (req, res
     }
     patch.cantidadTitulares = cupo
   }
-  if (req.body.removeImage === "true") {
+
+  /*
+   * Docentes: el panel manda el listado ya armado en JSON. Las fotos van en
+   * `teacherImages` como archivos sueltos, en el mismo orden, porque no hay
+   * forma de meter un archivo adentro de un JSON en un multipart.
+   */
+  if (body.teachers !== undefined) {
+    const teachers = normalizeTeachers(body.teachers)
+    const previous = Array.isArray(existing.teachers) ? existing.teachers : []
+    const newImages = files.teacherImages
+
+    for (let i = 0; i < teachers.length; i++) {
+      const teacher = teachers[i]
+      // El admin pidió borrar la foto: se elimina el archivo, no solo el link.
+      if (teacher.removeImage) {
+        await deleteUpload(teacher.image || previous[i]?.image)
+        delete teacher.image
+        delete teacher.removeImage
+        continue
+      }
+      const file = newImages[i]
+      if (file) {
+        await deleteUpload(previous[i]?.image)
+        // Los docentes son parte de la página pública, no un documento de
+        // identidad: van al bucket público.
+        teacher.image = await saveUpload(file, { visibility: "public" })
+      }
+    }
+
+    // Docentes que quedaron fuera del listado: sus fotos no se usan más, así
+    // que se limpian para no dejar archivos huérfanos en el bucket.
+    for (let i = teachers.length; i < previous.length; i++) {
+      if (previous[i]?.image) await deleteUpload(previous[i].image)
+    }
+
+    patch.teachers = teachers
+    patch.teacher = teachers[0]?.name || ""
+  }
+
+  if (body.removeImage === "true") {
     await deleteUpload(existing.image)
     patch.image = ""
   }
-  if (req.file) {
+  if (files.image?.[0]) {
     await deleteUpload(existing.image)
     // La imagen de un curso se muestra en el home público: va al bucket
     // público, no al de los documentos de identidad.
-    patch.image = await saveUpload(req.file, { visibility: "public" })
+    patch.image = await saveUpload(files.image[0], { visibility: "public" })
+  }
+  if (body.removeVideo === "true") {
+    await deleteUpload(existing.video)
+    patch.video = ""
+  }
+  if (files.video?.[0]) {
+    await deleteUpload(existing.video)
+    patch.video = await saveUpload(files.video[0], { visibility: "public", kind: "video" })
   }
 
   const updated = await updateItem(req.params.id, patch)

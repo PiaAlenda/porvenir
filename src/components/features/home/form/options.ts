@@ -75,6 +75,24 @@ export const DEPARTAMENTOS_SAN_JUAN = [
 
 export const DISCAPACIDAD = ["No", "Sí"]
 
+/**
+ * `c_sexo` se guarda con el código corto porque es lo que viaja en el payload.
+ * Esta es la única fuente de verdad de qué código es qué texto: la usan la
+ * ficha del alumno del panel y la exportación a Excel, para que un `F` nunca
+ * se lea de dos maneras distintas.
+ */
+export const SEXO_LABELS: Record<string, string> = {
+    M: "Masculino",
+    F: "Femenino",
+    X: "Otro",
+}
+
+/** Texto visible de un código de sexo, o el mismo código si no está en el catálogo. */
+export function sexoLabel(codigo?: string): string {
+    if (!codigo) return "—"
+    return SEXO_LABELS[codigo] ?? codigo
+}
+
 export const PUEBLOS_INDIGENAS = [
     "Ninguno",
     "Kolla",

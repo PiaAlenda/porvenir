@@ -100,13 +100,19 @@ export const CareerTeachersList = ({ career }: TeachersListProps) => {
     const teacherCount = career.teachers.length;
     const totalPages = Math.ceil(teacherCount / itemsPerPage);
 
-    useEffect(() => {
-        if (currentPage > totalPages) setCurrentPage(1);
-    }, [totalPages, currentPage]);
+    /*
+     * La página efectiva se recorta en render en vez de resetear el estado con
+     * un effect. Si el admin saca docentes y la página actual queda fuera de
+     * rango, `currentPage` sigue siendo un número viejo pero lo que se muestra
+     * y lo que dicen los botones usan siempre esta versión acotada. Es además
+     * lo que evita el setState en effect: con 0 docentes `totalPages` es 0 y
+     * el bloque de paginación ni se renderiza.
+     */
+    const safePage = Math.min(currentPage, Math.max(totalPages, 1));
 
     const paginatedTeachers = career.teachers.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
+        (safePage - 1) * itemsPerPage,
+        safePage * itemsPerPage
     );
 
     const gridCols =
@@ -122,8 +128,13 @@ export const CareerTeachersList = ({ career }: TeachersListProps) => {
             </div>
 
             <div className={`grid ${gridCols} gap-5`}>
-                {paginatedTeachers.map((teacher: Teacher) => (
-                    <TeacherCard key={teacher.legajo} teacher={teacher} />
+                {/*
+                 * La key usa el índice y no el legajo: desde el panel los
+                 * docentes se cargan sin legajo, y dos `undefined` como keys
+                 * hacen que React reutilice la tarjeta equivocada.
+                 */}
+                {paginatedTeachers.map((teacher: Teacher, idx: number) => (
+                    <TeacherCard key={`${teacher.legajo || teacher.name}-${idx}`} teacher={teacher} />
                 ))}
             </div>
 
@@ -131,7 +142,7 @@ export const CareerTeachersList = ({ career }: TeachersListProps) => {
                 <div className="flex items-center justify-center gap-2 lg:gap-4 mt-6">
                     <button
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
+                        disabled={safePage === 1}
                         className="flex items-center gap-1.5 px-2 lg:px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-sm font-bold text-[#4d0706] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
                     >
                         <ChevronLeft className="w-4 h-4" />
@@ -139,12 +150,12 @@ export const CareerTeachersList = ({ career }: TeachersListProps) => {
                     </button>
 
                     <span className="text-xs lg:text-sm font-bold text-stone-500">
-                        Pág. {currentPage} de {totalPages}
+                        Pág. {safePage} de {totalPages}
                     </span>
 
                     <button
                         onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
+                        disabled={safePage === totalPages}
                         className="flex items-center gap-1.5 px-2 lg:px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-sm font-bold text-[#4d0706] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
                     >
                         <span className="hidden lg:inline">Siguiente</span>

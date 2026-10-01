@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { CalendarDays, FileText, FileSpreadsheet, Mail, MoreVertical, Pencil, Phone, Trash2, RefreshCw, Loader2, Users, Search, GraduationCap, X } from "lucide-react"
 import { api, type Alumno } from "@/api"
+import { sexoLabel } from "@/components/features/home/form/options"
 import AlumnoEditModal from "./AlumnoEditModal"
 import { downloadContractPdf } from "@/pdf/downloadContract"
 
@@ -221,13 +222,6 @@ export default function AlumnosPanel({ token }: Props) {
         const d = new Date(iso)
         if (isNaN(d.getTime()) || d > new Date()) return null
         return Math.floor((new Date().getTime() - d.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-    }
-
-    const sexoLabel = (s?: string) => {
-        if (s === "M") return "Masculino"
-        if (s === "F") return "Femenino"
-        if (s === "X") return "Otro (X)"
-        return "—"
     }
 
     const renderRow = (a: Alumno) => {

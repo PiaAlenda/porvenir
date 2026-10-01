@@ -1,8 +1,8 @@
 import { Clock, MapPin, ArrowLeft, GraduationCap } from "lucide-react";
 import { useState } from "react";
 import { type Career } from "@/config/careerData";
-import { getImageFor, useSiteConfig } from "@/siteConfig";
-import { CAREER_VIDEOS, ExpandableVideo } from "@/components/features/career/CareerDetailAbout";
+import { getImageFor, getVideosFor, useSiteConfig } from "@/siteConfig";
+import { ExpandableVideo } from "@/components/features/career/CareerDetailAbout";
 
 interface CareerDetailHeroProps {
     career: Career;
@@ -20,6 +20,7 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
     const [imgError, setImgError] = useState(false);
     const { config } = useSiteConfig();
     const heroSrc = getImageFor(career.id, config);
+    const videos = getVideosFor(career.id, config);
 
     return (
         <header className="relative min-h-[380px] lg:min-h-[480px] flex items-center overflow-hidden bg-[#4d0706] border-b-4 border-[#ffcc00]">
@@ -86,9 +87,9 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                                 <span className="text-white font-bold text-xs">Modalidad {career.modality}</span>
                             </div>
                         </div>
-                        {CAREER_VIDEOS[career.id]?.map((src) => (
-    <ExpandableVideo key={src} src={src} />
-))}
+                        {videos.map((src) => (
+                            <ExpandableVideo key={src} src={src} />
+                        ))}
                     </div>
 
                     <div className="hidden lg:col-span-4 lg:flex justify-center lg:justify-end">

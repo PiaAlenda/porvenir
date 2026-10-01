@@ -74,7 +74,7 @@ const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => 
                     <CareerDetailsGrid career={career} />
 
                     {/* Teachers: full width on mobile after all content, desktop sidebar */}
-                    {career.teachers.length > 0 && (
+                            {career.teachers.length > 0 && (
                         <div>
                             <CareerTeachersList career={career} />
                         </div>

@@ -20,6 +20,12 @@ const UPLOADS_DIR = path.join(__dirname, "data", "uploads")
 export const UPLOADS_URL_PREFIX = "/uploads"
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+/*
+ * Los videos de las careers pesan bastante más que una foto. 50MB es el
+ * mismo techo que impone Supabase Storage: si el multer aceptara más, el
+ * archivo pasaría la validación de la API y la rechazaría el bucket.
+ */
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024
 
 const ALLOWED_MIME = new Set([
     "image/png",
@@ -27,6 +33,16 @@ const ALLOWED_MIME = new Set([
     "image/webp",
     "image/gif",
     "application/pdf",
+])
+
+/*
+ * Solo los tipos que `VIDEO_SIGNATURES` sabe verificar. Ogg queda fuera a
+ * propósito: si se acceptara acá, `assertValidVideoType` lo rechazaría después
+ * con un error confuso, cuando el archivo sí pasó el filtro de multer.
+ */
+const ALLOWED_VIDEO_MIME = new Set([
+    "video/webm",
+    "video/mp4",
 ])
 
 /**
@@ -44,6 +60,29 @@ const SIGNATURES = [
 ]
 
 /**
+ * Igual que SIGNATURES pero para los videos de las carreras. Mismo motivo: el
+ * `mimetype` lo declara el cliente, así que la decisión se toma sobre los
+ * primeros bytes.
+ */
+const VIDEO_SIGNATURES = [
+    // EBML: webm y también mkv, que el navegador no reproduce pero al menos
+    // no se cuela como otra cosa.
+    { ext: ".webm", mime: "video/webm", test: (b) => b.length > 4 && b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3 },
+    // MP4/MOV: el box "ftyp" va en el cuarto byte.
+    { ext: ".mp4", mime: "video/mp4", test: (b) => b.length > 12 && b.toString("latin1", 4, 8) === "ftyp" },
+]
+
+const assetFileFilter = (_req, file, cb) => {
+    // Chequeo temprano para no gastar ancho de banda con algo que se va a
+    // rechazar igual. La verificación real es assertValidFileType().
+    if (file.mimetype && !ALLOWED_MIME.has(file.mimetype)) {
+        cb(new Error("Solo se admiten imágenes (JPG, PNG, WEBP, GIF) o PDF."))
+        return
+    }
+    cb(null, true)
+}
+
+/**
  * Multer en memoria: el archivo va a Supabase Storage, no al disco de Render.
  * El límite de `files` acota los adjuntos por request; el rate limiting de la
  * ruta es lo que acota la memoria total en vuelo.
@@ -51,16 +90,30 @@ const SIGNATURES = [
 export const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: MAX_UPLOAD_BYTES, files: 2 },
+    fileFilter: assetFileFilter,
+})
+
+/**
+ * Adjuntos de la configuración de un curso o carrera: logo, fotos de los
+ * docentes y el video. Necesita más archivos por request y un tope de peso
+ * mayor porque los videosWebM del repo rondan los 25MB.
+ */
+export const careerUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: MAX_VIDEO_BYTES, files: 30 },
     fileFilter: (_req, file, cb) => {
-        // Chequeo temprano para no gastar ancho de banda con algo que se va a
-        // rechazar igual. La verificación real es assertValidFileType().
-        if (file.mimetype && !ALLOWED_MIME.has(file.mimetype)) {
-            cb(new Error("Solo se admiten imágenes (JPG, PNG, WEBP, GIF) o PDF."))
+        const mimetype = file.mimetype || ""
+        if (mimetype.startsWith("video/")) {
+            if (!ALLOWED_VIDEO_MIME.has(mimetype)) {
+                cb(new Error("El video debe ser WebM, MP4 u OGG."))
+                return
+            }
+            cb(null, true)
             return
         }
-        cb(null, true)
+        assetFileFilter(_req, file, cb)
     },
-})
+}).any()
 
 /**
  * Verifica que el contenido sea realmente una imagen o un PDF y devuelve la
@@ -78,6 +131,17 @@ export function assertValidFileType(buffer) {
     return match
 }
 
+export function assertValidVideoType(buffer) {
+    if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+        throw new PublicError("El video está vacío.")
+    }
+    const match = VIDEO_SIGNATURES.find((s) => s.test(buffer))
+    if (!match) {
+        throw new PublicError("El video no es un archivo WebM o MP4 válido.")
+    }
+    return match
+}
+
 /**
  * El nombre se arma del timestamp y un UUID corto. La extensión sale del
  * contenido detectado, nunca de `file.originalname`, que controla el cliente y
@@ -91,11 +155,12 @@ function buildName(detected) {
  * Guarda un archivo y devuelve la clave que hay que referenciarlo.
  * `visibility: "private"` para documentos de identidad (van al bucket
  * privado y se leen con URL firmada), `"public"` para imágenes de marketing.
+ * `kind: "video"` cambia la validación a los firmas de video.
  */
-export async function saveUpload(file, { visibility = "private" } = {}) {
+export async function saveUpload(file, { visibility = "private", kind = "image" } = {}) {
     if (!file) return ""
 
-    const detected = assertValidFileType(file.buffer)
+    const detected = kind === "video" ? assertValidVideoType(file.buffer) : assertValidFileType(file.buffer)
     const bucket = visibility === "public" ? ASSETS_BUCKET : UPLOADS_BUCKET
     const key = `${bucket}/${buildName(detected)}`
 

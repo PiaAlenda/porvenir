@@ -15,8 +15,8 @@ const ANON_KEY = process.env.SUPABASE_ANON_KEY?.trim() || ""
 export const UPLOADS_BUCKET = "uploads"
 export const ASSETS_BUCKET = "public-assets"
 
-/** El tipo de contenido que la API acepta para cualquier adjunto. */
-const ALLOWED_MIME_TYPES = [
+/** Adjuntos de identidad: imágenes o PDF, y nada más. */
+const DOCUMENT_MIME_TYPES = [
   "image/png",
   "image/jpeg",
   "image/webp",
@@ -24,10 +24,23 @@ const ALLOWED_MIME_TYPES = [
   "application/pdf",
 ]
 
+/**
+ * El bucket de assets además recibe los videos de las carreras, que en el
+ * repo rondan los 25MB. Por eso el tope de tamaño no puede ser el mismo que el
+ * de los documentos de identidad.
+ */
+const ASSET_MIME_TYPES = [...DOCUMENT_MIME_TYPES, "video/webm", "video/mp4", "video/ogg"]
+
 /** Cuánto viven las URLs firmadas de los adjuntos privados. */
 export const SIGNED_URL_TTL_S = 600
 
-const MAX_FILE_BYTES = 10 * 1024 * 1024
+const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024
+/**
+ * Storage rechaza con "exceeded the maximum allowed size" cualquier
+ * `fileSizeLimit` de más de 50MB, así que ese es el techo duro. Los videos
+ * más pesados del repo rondan los 27MB, así que entra comfortably.
+ */
+const MAX_ASSET_BYTES = 50 * 1024 * 1024
 
 /**
  * La app usa Supabase cuando están las credenciales en el entorno.
@@ -54,36 +67,59 @@ export const supabaseAnon = supabaseEnabled && ANON_KEY
  * están. `uploads` nace privado: los adjuntos de identidad no pueden quedar
  * accesibles por URL pública bajo ningún concepto.
  */
+const BUCKETS = [
+    { name: UPLOADS_BUCKET, public: false, fileSizeLimit: MAX_DOCUMENT_BYTES, allowedMimeTypes: DOCUMENT_MIME_TYPES },
+    { name: ASSETS_BUCKET, public: true, fileSizeLimit: MAX_ASSET_BYTES, allowedMimeTypes: ASSET_MIME_TYPES },
+]
+
+/** Compara dos listas de mimes sin importar el orden. */
+function sameMimeList(a, b) {
+    if (!Array.isArray(a) || a.length !== b.length) return false
+    const left = new Set(a)
+    return b.every((mime) => left.has(mime))
+}
+
 export async function ensureBuckets() {
     if (!supabase) return
 
-    for (const [bucket, isPublic] of [[UPLOADS_BUCKET, false], [ASSETS_BUCKET, true]]) {
-        const { data, error } = await supabase.storage.getBucket(bucket)
+    for (const bucket of BUCKETS) {
+        const { data, error } = await supabase.storage.getBucket(bucket.name)
         if (!error && data) {
-            // El bucket existe: hay que asegurarse de que su política siga
-            // siendo la esperada, por si quedó de un deploy anterior.
-            if (data.public !== isPublic) {
-                const { error: updateError } = await supabase.storage.updateBucket(bucket, {
-                    public: isPublic,
-                    fileSizeLimit: MAX_FILE_BYTES,
-                    allowedMimeTypes: ALLOWED_MIME_TYPES,
+            /*
+             * El bucket existe: hay que asegurarse de que su política siga
+             * siendo la esperada, por si quedó de un deploy anterior. Esto
+             * también sube el tope de tamaño y los mimes del bucket de assets
+             * cuando se le agregan los videos.
+             */
+            const stale =
+                data.public !== bucket.public ||
+                data.file_size_limit !== bucket.fileSizeLimit ||
+                !sameMimeList(data.allowed_mime_types, bucket.allowedMimeTypes)
+            if (stale) {
+                const { error: updateError } = await supabase.storage.updateBucket(bucket.name, {
+                    public: bucket.public,
+                    fileSizeLimit: bucket.fileSizeLimit,
+                    allowedMimeTypes: bucket.allowedMimeTypes,
                 })
                 if (updateError) {
-                    console.warn(`[supabase] No se pudo ajustar la visibilidad de ${bucket}:`, updateError.message)
+                    console.warn(
+                        `[supabase] No se pudo ajustar la visibilidad de ${bucket.name}:`,
+                        updateError.message,
+                    )
                 }
             }
             continue
         }
         if (error && !/not found/i.test(error.message)) {
-            console.warn(`[supabase] No se pudo verificar el bucket ${bucket}:`, error.message)
+            console.warn(`[supabase] No se pudo verificar el bucket ${bucket.name}:`, error.message)
         }
-        const { error: createError } = await supabase.storage.createBucket(bucket, {
-            public: isPublic,
-            fileSizeLimit: MAX_FILE_BYTES,
-            allowedMimeTypes: ALLOWED_MIME_TYPES,
+        const { error: createError } = await supabase.storage.createBucket(bucket.name, {
+            public: bucket.public,
+            fileSizeLimit: bucket.fileSizeLimit,
+            allowedMimeTypes: bucket.allowedMimeTypes,
         })
         if (createError) {
-            console.warn(`[supabase] No se pudo crear el bucket ${bucket}:`, createError.message)
+            console.warn(`[supabase] No se pudo crear el bucket ${bucket.name}:`, createError.message)
         }
     }
 }

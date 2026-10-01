@@ -1,9 +1,11 @@
 import { useId, useState, useRef, useEffect, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from "react"
 import { AlertCircle, CheckCircle2, ChevronDown, Search } from "lucide-react"
 
-const inputBase =
-    "block w-full h-12 px-4 sm:h-14 sm:px-5 rounded-2xl border bg-white text-sm text-gray-900 font-medium " +
+const inputShell =
+    "block w-full h-12 sm:h-14 rounded-2xl border bg-white text-sm text-gray-900 font-medium " +
     "transition-all duration-300 placeholder:text-gray-400"
+
+const inputBase = `${inputShell} px-4 sm:px-5`
 
 function inputState(variant: "normal" | "error" | "valid"): string {
     switch (variant) {
@@ -130,6 +132,7 @@ export function TextInput({
 export interface SelectOption {
     value: string
     label: string
+    group?: string
 }
 
 export interface SelectInputProps {
@@ -254,7 +257,14 @@ export function SearchableSelect({
         setOpen(false)
     }
 
-    const cls = `${inputBase} pl-11 ${showCheck ? "pr-12" : "pr-10"} cursor-text ${inputState(hasError ? "error" : valid ? "valid" : "normal")}`
+    const cls = `${inputShell} pl-11 ${showCheck ? "pr-12" : "pr-10"} cursor-text ${inputState(hasError ? "error" : valid ? "valid" : "normal")}`
+
+    const groups: { name?: string; items: SelectOption[] }[] = []
+    filtered.forEach((opt) => {
+        const last = groups[groups.length - 1]
+        if (last && last.name === opt.group) last.items.push(opt)
+        else groups.push({ name: opt.group, items: [opt] })
+    })
 
     return (
         <FieldShell id={fieldId} label={label} required={required} error={error} hint={hint}>
@@ -323,22 +333,31 @@ export function SearchableSelect({
                             </div>
                         )}
                         {filtered.length > 0 ? (
-                            filtered.map((opt) => (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    role="option"
-                                    aria-selected={opt.value === value}
-                                    onMouseDown={(e) => e.preventDefault()}
-                                    onClick={() => selectOption(opt)}
-                                    className={`block w-full px-4 py-3 text-left text-sm font-medium transition-colors ${
-                                        opt.value === value
-                                            ? "bg-[#4d0706]/5 text-[#4d0706]"
-                                            : "text-gray-700 hover:bg-gray-50"
-                                    }`}
-                                >
-                                    {opt.label}
-                                </button>
+                            groups.map((g, gi) => (
+                                <div key={g.name ?? gi}>
+                                    {g.name && (
+                                        <div className="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-widest text-gray-400">
+                                            {g.name}
+                                        </div>
+                                    )}
+                                    {g.items.map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            role="option"
+                                            aria-selected={opt.value === value}
+                                            onMouseDown={(e) => e.preventDefault()}
+                                            onClick={() => selectOption(opt)}
+                                            className={`block w-full px-4 py-3 text-left text-sm font-medium transition-colors ${
+                                                opt.value === value
+                                                    ? "bg-[#4d0706]/5 text-[#4d0706]"
+                                                    : "text-gray-700 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
                             ))
                         ) : (
                             <div className="px-4 py-3 text-sm font-medium text-gray-400">Sin resultados</div>

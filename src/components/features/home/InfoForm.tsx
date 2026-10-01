@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Download } from "lucide-react"
 import { api } from "@/api"
 import { getCareerById, useSiteConfig } from "@/siteConfig"
-import { downloadCsv } from "@/lib/csv"
+import { downloadInscripcionXlsx } from "@/lib/excelExport"
 import Stepper, { type StepperStep } from "./form/Stepper"
 import {
     StepContacto,
@@ -79,6 +79,8 @@ const InfoForm = ({ careerId }: InfoFormProps) => {
     const [errorMsg, setErrorMsg] = useState("")
     const [registeredName, setRegisteredName] = useState("")
     const [submittedData, setSubmittedData] = useState<InscriptionFormValues | null>(null)
+    const [descargando, setDescargando] = useState(false)
+    const [errorDescarga, setErrorDescarga] = useState("")
 
     const career = careerId ? getCareerById(careerId, config) : undefined
 
@@ -249,28 +251,44 @@ const InfoForm = ({ careerId }: InfoFormProps) => {
         setStep(1)
         setStatus("idle")
         setErrorMsg("")
+        setErrorDescarga("")
         setSubmittedData(null)
     }
 
-    const downloadFormData = () => {
+    /**
+     * Arma el .xlsx con la inscripción recién registrada.
+     *
+     * `submittedData` es el estado del form en el momento del envío, no el
+     * actual: si la persona toca algo después de confirmar, el archivo tiene
+     * que reflejar lo que realmente llegó al servidor.
+     */
+    const downloadFormData = async () => {
         const dataToDownload = submittedData || formData
         const careerInfo = dataToDownload.careerId
             ? getCareerById(dataToDownload.careerId, config)?.title ?? "Sin carrera seleccionada"
             : "Sin carrera seleccionada"
 
-        const downloadData = {
-            ...dataToDownload,
-            careerTitle: careerInfo,
-            fechaInscripcion: new Date().toISOString(),
-            fotoDni: dataToDownload.fotoDni ? dataToDownload.fotoDni.name : null,
-            fotoCertificado: dataToDownload.fotoCertificado ? dataToDownload.fotoCertificado.name : null,
+        setDescargando(true)
+        setErrorDescarga("")
+        try {
+            await downloadInscripcionXlsx({
+                careerTitle: careerInfo,
+                registros: [
+                    {
+                        ...dataToDownload,
+                        // El form manda "DNI" fijo en `c_documento`; se replica
+                        // acá para que el archivo diga lo mismo que la base.
+                        c_documento: "DNI",
+                        careerTitle: careerInfo,
+                        fechaInscripcion: new Date(),
+                    },
+                ],
+            })
+        } catch (err) {
+            setErrorDescarga(err instanceof Error ? err.message : "No se pudo generar el archivo de Excel")
+        } finally {
+            setDescargando(false)
         }
-
-        const safeName = [dataToDownload.apellido, dataToDownload.nombre]
-            .map((part) => String(part ?? "").replace(/[^a-zA-Z0-9]+/g, "_"))
-            .filter(Boolean)
-            .join("-")
-        downloadCsv(downloadData, `inscripcion-${safeName}-${Date.now()}.csv`)
     }
 
     const containerRef = useRef<HTMLDivElement | null>(null)
@@ -346,14 +364,28 @@ const InfoForm = ({ careerId }: InfoFormProps) => {
                                         : " La escuela te va a contactar a la brevedad."}
                                 </p>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                                    <button type="button" onClick={downloadFormData} className={`${btnPrimary} sm:w-auto`}>
-                                        <Download className="w-4 h-4" />
-                                        Descargar Excel
+                                    <button
+                                        type="button"
+                                        onClick={downloadFormData}
+                                        disabled={descargando}
+                                        className={`${btnPrimary} sm:w-auto`}
+                                    >
+                                        {descargando ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Download className="w-4 h-4" />
+                                        )}
+                                        {descargando ? "Generando archivo" : "Descargar Excel"}
                                     </button>
                                     <button type="button" onClick={resetForm} className="text-[#4d0706] font-bold text-sm cursor-pointer rounded-lg px-4 py-3 hover:bg-[#4d0706]/5">
                                         Cargar otro formulario
                                     </button>
                                 </div>
+                                {errorDescarga && (
+                                    <p role="alert" className="text-sm font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 max-w-md">
+                                        {errorDescarga}
+                                    </p>
+                                )}
                             </div>
                         ) : (
                             /* ── NO <form> — usamos <div> para evitar submit nativo del navegador ── */

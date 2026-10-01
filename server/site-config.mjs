@@ -11,6 +11,34 @@ const FILE = path.join(DATA_DIR, "site-config.json")
 
 const TABLE = "site_config"
 
+/**
+ * Tope por campo de texto libre del panel. La config se guarda en un JSON
+ * (o en una columna `jsonb`), así que sin un límite cada tecla que escribe un
+ * admin se convierte en payload grande de la API pública.
+ */
+const TEXT_LIMITS = {
+  title: 120,
+  description: 400,
+  longDescription: 3000,
+  duration: 60,
+  modality: 40,
+  icon: 40,
+  inscriptionDate: 60,
+  month: 40,
+  schedule: 200,
+  inscriptionFee: 60,
+  inscriptionDocs: 300,
+  video: 500,
+  ejes: 2000,
+}
+
+const VALID_CATEGORIES = new Set(["carrera", "curso-presencial", "curso-virtual"])
+const MAX_LIST_ITEMS = 40
+const MAX_ITEM_LENGTH = 300
+const MAX_TEACHERS = 25
+const MAX_SYLLABUS_ENTRIES = 10
+const MAX_SUBJECTS_PER_ENTRY = 30
+
 const COURSE_DEFAULT_IMAGES = {
   "curso-danza": "/img/cursos/CURSO DE DANZA.webp",
   "curso-estilismo-moda": "/img/cursos/ESTILISMO DE MODA.webp",
@@ -68,8 +96,148 @@ function buildDefaults() {
 
 let cache = null
 
+/** Parte un valor en líneas, descarta vacíos y corta cada una. */
+function splitLines(value) {
+  return (value || "")
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
+/**
+ * Normaliza una lista de textos (salida laboral, perfil del egresado).
+ * Acepta newline en texto plano o un JSON array: el panel antes mandaba el
+ * campo como string y ahora lo manda como array.
+ */
+function normalizeList(raw) {
+  let items = []
+  if (Array.isArray(raw)) {
+    items = raw
+  } else if (typeof raw === "string" && raw.trim()) {
+    const trimmed = raw.trim()
+    if (trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) items = parsed
+      } catch {
+        items = splitLines(raw)
+      }
+    } else {
+      items = splitLines(raw)
+    }
+  }
+  return items
+    .map((s) => String(s ?? "").trim().slice(0, MAX_ITEM_LENGTH))
+    .filter(Boolean)
+    .slice(0, MAX_LIST_ITEMS)
+}
+
+function normalizeSyllabus(raw) {
+  const entries = []
+  const push = (year, subjects) => {
+    const list = normalizeList(subjects).slice(0, MAX_SUBJECTS_PER_ENTRY)
+    if (!list.length) return
+    const cleanYear = String(year ?? "").trim().slice(0, 60)
+    entries.push({ year: cleanYear || "Nivel Único", subjects: list })
+  }
+
+  let source = raw
+  if (typeof raw === "string" && raw.trim()) {
+    const trimmed = raw.trim()
+    if (trimmed.startsWith("[")) {
+      try {
+        source = JSON.parse(trimmed)
+      } catch {
+        // No era JSON: se trata como el campo plano de siempre.
+        push("", trimmed)
+        return entries
+      }
+    } else {
+      push("", trimmed)
+      return entries
+    }
+  }
+
+  if (!Array.isArray(source)) return entries
+  for (const entry of source.slice(0, MAX_SYLLABUS_ENTRIES)) {
+    if (!entry || typeof entry !== "object") continue
+    // `subjects` llega como array desde el panel, pero tolerate un string con
+    // un eje por línea antes que descartar la carga completa.
+    const { subjects, ...rest } = entry
+    if (Array.isArray(subjects) || typeof subjects === "string") push(rest.year, subjects)
+  }
+  return entries
+}
+
+function normalizeTeachers(raw) {
+  let source = raw
+  if (typeof raw === "string" && raw.trim()) {
+    try {
+      source = JSON.parse(raw.trim())
+    } catch {
+      return []
+    }
+  }
+  if (!Array.isArray(source)) return []
+
+  const out = []
+  for (const t of source.slice(0, MAX_TEACHERS)) {
+    if (!t || typeof t !== "object") continue
+    const name = String(t.name ?? "").trim().slice(0, 120)
+    if (!name) continue
+    const teacher = { name }
+    const title = String(t.title ?? "").trim().slice(0, 160)
+    if (title) teacher.title = title
+    const legajo = String(t.legajo ?? "").trim().slice(0, 80)
+    if (legajo) teacher.legajo = legajo
+    // La URL de la foto solo se pisa si viene una; si el admin la borró a
+    // propósito llega vacía y se respeta como tal.
+    const image = String(t.image ?? "").trim().slice(0, 500)
+    if (image) teacher.image = image
+    if (t.removeImage === true) teacher.removeImage = true
+    out.push(teacher)
+  }
+  return out
+}
+
 function ensureDir() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true })
+}
+
+/**
+ * Pasa un ítem de la config por los mismos filtros que la entrada del panel.
+ * Sirve para los ítems que nunca pasaron por `updateItem` (por ejemplo los
+ * que ya estaban guardados antes de que existieran estos campos) y para
+ * dejar de exponer al cliente datos con formato raro.
+ */
+function sanitizeItem(item) {
+  const out = { ...item }
+  for (const [key, max] of Object.entries(TEXT_LIMITS)) {
+    if (typeof out[key] === "string") out[key] = out[key].trim().slice(0, max)
+    else if (out[key] === undefined || out[key] === null) delete out[key]
+  }
+  if (out.category !== undefined && !VALID_CATEGORIES.has(out.category)) delete out.category
+  if (Array.isArray(out.syllabus)) out.syllabus = normalizeSyllabus(out.syllabus)
+  if (Array.isArray(out.teachers)) out.teachers = normalizeTeachers(out.teachers)
+  if (Array.isArray(out.salidaLaboral)) out.salidaLaboral = normalizeList(out.salidaLaboral)
+  if (Array.isArray(out.perfilEgresado)) out.perfilEgresado = normalizeList(out.perfilEgresado)
+  return out
+}
+
+/**
+ * Las fotos de los docentes y el video van al bucket público, así que
+ * necesitan la URL pública y no la clave cruda que se guarda.
+ */
+function resolveItemAssets(item) {
+  const out = { ...item }
+  if (typeof out.image === "string" && out.image) out.image = resolveAssetUrl(out.image)
+  if (typeof out.video === "string" && out.video) out.video = resolveAssetUrl(out.video)
+  if (Array.isArray(out.teachers)) {
+    out.teachers = out.teachers.map((t) =>
+      t && typeof t.image === "string" && t.image ? { ...t, image: resolveAssetUrl(t.image) } : t,
+    )
+  }
+  return out
 }
 
 function mergeWithDefaults(saved) {
@@ -77,14 +245,16 @@ function mergeWithDefaults(saved) {
   const out = {}
   for (const id of Object.keys(defaults)) {
     const s = saved && saved[id]
-    out[id] = s ? { ...s } : {}
+    const item = sanitizeItem(s || {})
     // Banners de cursos: públicos a propósito, así que no llevan firma.
-    out[id].image = s && typeof s.image === "string" && s.image ? resolveAssetUrl(s.image) : defaults[id].image
-    out[id].available = s && typeof s.available === "boolean" ? s.available : defaults[id].available
-    if (s && typeof s.title === "string" && s.title) out[id].title = s.title
+    item.image = s && typeof s.image === "string" && s.image ? item.image : defaults[id].image
+    item.available = s && typeof s.available === "boolean" ? s.available : defaults[id].available
+    out[id] = resolveItemAssets(item)
   }
   for (const id of Object.keys(saved || {})) {
-    if (!out[id]) out[id] = saved[id]
+    // Las carreras y cursos que se agregaron desde el panel no están en los
+    // defaults, así que se mergean tal cual vinieron.
+    if (!out[id]) out[id] = resolveItemAssets(sanitizeItem(saved[id]))
   }
   return out
 }
@@ -150,6 +320,8 @@ export async function updateItem(id, patch) {
   }
   return data?.data || merged
 }
+
+export { normalizeList, normalizeSyllabus, normalizeTeachers, TEXT_LIMITS, VALID_CATEGORIES }
 
 export function resetCache() {
   cache = null

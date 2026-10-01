@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Clock, FileText, CheckCircle2, BookOpen, Play, X } from "lucide-react";
 import { type Career } from "@/config/careerData";
 
@@ -82,7 +82,23 @@ interface CareerSyllabusProps {
 }
 
 export const CareerSyllabus = ({ career }: CareerSyllabusProps) => {
-    const syllabusList = career.syllabus?.[0]?.subjects || [];
+    /*
+     * Se aplana el syllabus a una sola lista de ejes. Antes solo se tomaba
+     * `syllabus[0]`, así que en las carreras de dos años el segundo año nunca
+     * se veía. El año se guarda en cada eje para poder etiquetarlo.
+     */
+    const syllabusList = useMemo(
+        () =>
+            (career.syllabus || []).flatMap((entry) =>
+                (entry.subjects || []).map((subject) => ({
+                    subject,
+                    year: entry.year,
+                })),
+            ),
+        [career.syllabus],
+    );
+    /* Con un solo año el etiqueta sería ruido repetido en cada tarjeta. */
+    const showYear = (career.syllabus || []).length > 1;
     const sliderRef = useRef<HTMLDivElement>(null);
     const [activeIndex, setActiveIndex] = useState(0);
 
@@ -126,7 +142,7 @@ export const CareerSyllabus = ({ career }: CareerSyllabusProps) => {
 
             {/* Desktop: 3-column grid */}
             <div className="hidden lg:grid grid-cols-3 gap-6">
-                {syllabusList.map((subject: string, idx: number) => {
+                {syllabusList.map(({ subject, year }: { subject: string; year: string }, idx: number) => {
                     const moduleNum = String(idx + 1).padStart(2, "0");
                     const description = SUBJECT_DESCRIPTIONS[subject] ||
                         `Formación integral y práctica en ${subject.toLowerCase()}, orientada a las necesidades del mercado laboral actual.`;
@@ -134,7 +150,7 @@ export const CareerSyllabus = ({ career }: CareerSyllabusProps) => {
                     return (
                         <div key={idx} className="border-l-4 border-[#4d0706] pl-4 py-2 space-y-2">
                             <span className="text-[10px] font-black tracking-widest text-[#4d0706]/70 uppercase block">
-                                Eje {moduleNum}
+                                {showYear ? `${year} · Eje ${moduleNum}` : `Eje ${moduleNum}`}
                             </span>
                             <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-tight">
                                 {subject}
@@ -150,7 +166,7 @@ export const CareerSyllabus = ({ career }: CareerSyllabusProps) => {
             {/* Mobile: slider con mismo estilo border-left */}
             <style>{`.ejes-slider::-webkit-scrollbar { display: none; }`}</style>
             <div ref={sliderRef} className="lg:hidden flex overflow-x-auto snap-x snap-mandatory gap-6 ejes-slider" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                {syllabusList.map((subject: string, idx: number) => {
+                {syllabusList.map(({ subject, year }: { subject: string; year: string }, idx: number) => {
                     const moduleNum = String(idx + 1).padStart(2, "0");
                     const description = SUBJECT_DESCRIPTIONS[subject] ||
                         `Formación integral y práctica en ${subject.toLowerCase()}, orientada a las necesidades del mercado laboral actual.`;
@@ -158,7 +174,7 @@ export const CareerSyllabus = ({ career }: CareerSyllabusProps) => {
                     return (
                         <div key={idx} className="border-l-4 border-[#4d0706] pl-4 py-3 space-y-1.5 w-full shrink-0 snap-start">
                             <span className="text-[9px] font-black tracking-widest text-[#4d0706]/70 uppercase block leading-none">
-                                Eje {moduleNum}
+                                {showYear ? `${year} · Eje ${moduleNum}` : `Eje ${moduleNum}`}
                             </span>
                             <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-tight">
                                 {subject}
@@ -199,34 +215,38 @@ interface CareerDetailsGridProps {
     career: Career;
 }
 
-export const CAREER_VIDEOS: Record<string, string[]> = {
-    "tec-mecanica-automotor": ["/videos/MECANICA AUTOMOTOR.webm"],
-    "tec-metalmecanica": ["/videos/video metal mecanica.webm"],
-    "tec-torneria-mecanica": ["/videos/torneria mecanica.webm"],
-    "tec-dibujo-publicitario": ["/videos/video dibujo.webm"],
-    "tec-administracion-contable": ["/videos/administracion contable.webm"],
-    "tec-refrigeracion-aire-acondicionado": ["/videos/Refrigeracion.webm"],
-    "tec-electronica-domiciliaria": ["/videos/Electricidad domiciliaria.webm"],
-    "tec-industria-madera": ["/videos/Carrera Industria de la madera.webm"],
-    "tec-reparacion-pc": ["/videos/Reparacion de PC.webm"],
-    "tec-gastronomia-profesional": ["/videos/video gastronomia.webm"],
-};
+export { CAREER_VIDEOS } from "@/config/careerVideos";
+
+/**
+ * El tipo sale de la extensión. Estaba fijo en `video/webm`, así que un
+ * archivo mp4 cargado desde el admin se reproducía con el codec equivocado.
+ */
+function videoMimeFor(src: string): string {
+    const ext = src.split("?")[0].split(".").pop()?.toLowerCase() || "";
+    if (ext === "mp4") return "video/mp4";
+    if (ext === "ogv" || ext === "ogg") return "video/ogg";
+    return "video/webm";
+}
 
 export const ExpandableVideo = ({ src, center }: { src: string; center?: boolean }) => {
     const [open, setOpen] = useState(false);
-    const [visible, setVisible] = useState(false);
     const fullRef = useRef<HTMLVideoElement>(null);
 
+    /*
+     * El modal nunca se desmonta, siempre está en el árbol: por eso la
+     * transición de `opacity-0` a `opacity-100` funciona sin necesidad de un
+     * estado `visible` que se setease en un effect (y que provocaba un render
+     * en cascada). Acá solo se maneja el `<video>`, que sí es un sistema
+     * externo al que hay que imperarle play/pause.
+     */
     useEffect(() => {
+        const el = fullRef.current;
+        if (!el) return;
         if (open) {
-            requestAnimationFrame(() => setVisible(true));
-            if (fullRef.current) fullRef.current.play();
+            el.play();
         } else {
-            setVisible(false);
-            if (fullRef.current) {
-                fullRef.current.pause();
-                fullRef.current.currentTime = 0;
-            }
+            el.pause();
+            el.currentTime = 0;
         }
     }, [open]);
 
@@ -255,13 +275,13 @@ export const ExpandableVideo = ({ src, center }: { src: string; center?: boolean
 
             <div
                 className={`fixed inset-0 z-[999] flex items-center justify-center p-4 transition-all duration-300 ${
-                    visible ? "bg-black/80 opacity-100" : "bg-black/0 opacity-0 pointer-events-none"
+                    open ? "bg-black/80 opacity-100" : "bg-black/0 opacity-0 pointer-events-none"
                 }`}
                 onClick={() => setOpen(false)}
             >
                 <div
                     className={`relative w-full max-w-5xl transition-all duration-300 ${
-                        visible ? "scale-100 opacity-100" : "scale-95 opacity-0"
+                        open ? "scale-100 opacity-100" : "scale-95 opacity-0"
                     }`}
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -278,7 +298,7 @@ export const ExpandableVideo = ({ src, center }: { src: string; center?: boolean
                                 controls
                                 className="w-full rounded-xl shadow-2xl max-h-[70vh]"
                             >
-                                <source src={src} type="video/webm" />
+                                <source src={src} type={videoMimeFor(src)} />
                             </video>
                         </div>
                     </div>

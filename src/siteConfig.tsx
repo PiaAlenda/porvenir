@@ -1,7 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
 import { api, type CursoConfig, type SiteConfigMap } from "./api"
-import { CAREER_DATA, type Career } from "./config/careerData"
+import { CAREER_DATA, type Career, type CareerSubject, type Teacher } from "./config/careerData"
+import { CAREER_VIDEOS } from "./config/careerVideos"
 
 export const DEFAULT_COURSE_IMAGES: Record<string, string> = {
     "curso-danza": "/img/cursos/CURSO DE DANZA.webp",
@@ -59,51 +60,104 @@ export function isAvailableFor(id: string, config: SiteConfigMap): boolean {
     return c ? c.available !== false : true
 }
 
-const splitEjes = (value?: string): string[] =>
+const splitLines = (value?: string): string[] =>
     (value || "")
         .split(/\r?\n/)
         .map((s) => s.trim())
         .filter(Boolean)
 
-function buildFromConfig(id: string, c: CursoConfig): Career {
+const splitEjes = splitLines
+
+/**
+ * Normaliza el syllabus guardado en la config. Acepta dos formatos: el nuevo
+ * (`[{ year, subjects }]`) y el plano heredado (`ejes` con un eje por línea),
+ * para no dejar ninguna carrera sin contenido.
+ */
+function normalizeSyllabus(c: CursoConfig, fallbackYear: string): CareerSubject[] {
+    const fromStructured = (c.syllabus || [])
+        .map((entry) => ({
+            year: (entry?.year || "").trim(),
+            subjects: splitLines((entry?.subjects || []).join("\n")),
+        }))
+        .filter((entry) => entry.subjects.length > 0)
+        .map((entry) => ({ year: entry.year || fallbackYear, subjects: entry.subjects }))
+
+    if (fromStructured.length) return fromStructured
+
     const ejes = splitEjes(c.ejes)
+    return ejes.length ? [{ year: fallbackYear, subjects: ejes }] : []
+}
+
+function normalizeTeachers(c: CursoConfig): Teacher[] {
+    const fromStructured = (c.teachers || [])
+        .map((t) => ({
+            name: (t?.name || "").trim(),
+            title: (t?.title || "").trim(),
+            legajo: (t?.legajo || "").trim(),
+            image: (t?.image || "").trim() || undefined,
+        }))
+        .filter((t) => t.name)
+
+    if (fromStructured.length) return fromStructured
+
+    const legacy = (c.teacher || "").trim()
+    return legacy ? [{ name: legacy, title: "Docente" }] : []
+}
+
+function buildFromConfig(id: string, c: CursoConfig): Career {
+    const isCareer = id.startsWith("tec-")
     return {
         id,
         title: c.title || id,
-        icon: "GraduationCap",
-        description: "",
-        longDescription: "",
-        duration: "",
-        modality: "Presencial",
-        category: id.startsWith("tec-") ? "carrera" : "curso-presencial",
-        perfilEgresado: [],
-        syllabus: ejes.length ? [{ year: "Nivel Único", subjects: ejes }] : [],
-        teachers: c.teacher ? [{ name: c.teacher, title: "Docente" }] : [],
+        icon: c.icon || "GraduationCap",
+        description: c.description || "",
+        longDescription: c.longDescription || "",
+        duration: c.duration || "",
+        modality: c.modality || "Presencial",
+        category: c.category || (isCareer ? "carrera" : "curso-presencial"),
+        perfilEgresado: (c.perfilEgresado || []).map((s) => s.trim()).filter(Boolean),
+        syllabus: normalizeSyllabus(c, "Nivel Único"),
+        teachers: normalizeTeachers(c),
         schedule: c.schedule || "",
         inscriptionDate: c.inscriptionDate || "",
         month: c.month || undefined,
-        inscriptionFee: "",
-        inscriptionDocs: "",
-        salidaLaboral: [],
+        inscriptionFee: c.inscriptionFee || "",
+        inscriptionDocs: c.inscriptionDocs || "",
+        salidaLaboral: (c.salidaLaboral || []).map((s) => s.trim()).filter(Boolean),
     }
 }
 
 function applyConfig(base: Career, c: CursoConfig): Career {
-    const ejes = splitEjes(c.ejes)
     const next: Career = { ...base }
     if (c.title) next.title = c.title
-    if (c.inscriptionDate) next.inscriptionDate = c.inscriptionDate
-    if (c.month) next.month = c.month
-    if (c.schedule) next.schedule = c.schedule
-    if (c.teacher) {
+    if (c.icon) next.icon = c.icon
+    if (c.description !== undefined) next.description = c.description
+    if (c.longDescription !== undefined) next.longDescription = c.longDescription
+    if (c.duration !== undefined) next.duration = c.duration
+    if (c.modality !== undefined) next.modality = c.modality
+    if (c.category) next.category = c.category
+    if (c.inscriptionDate !== undefined) next.inscriptionDate = c.inscriptionDate
+    if (c.month !== undefined) next.month = c.month || undefined
+    if (c.schedule !== undefined) next.schedule = c.schedule
+    if (c.inscriptionFee !== undefined) next.inscriptionFee = c.inscriptionFee
+    if (c.inscriptionDocs !== undefined) next.inscriptionDocs = c.inscriptionDocs
+    if (c.salidaLaboral) next.salidaLaboral = c.salidaLaboral.map((s) => s.trim()).filter(Boolean)
+    if (c.perfilEgresado) next.perfilEgresado = c.perfilEgresado.map((s) => s.trim()).filter(Boolean)
+
+    const syllabus = normalizeSyllabus(c, base.syllabus[0]?.year || "Nivel Único")
+    if (syllabus.length) next.syllabus = syllabus
+
+    // Un docente sin foto no es un motivo para perder la foto que ya estaba
+    // cargada: solo se pisa el campo cuando la config trae algo.
+    const teachers = normalizeTeachers(c)
+    if (teachers.length) {
+        next.teachers = teachers.map((t, i) => ({
+            ...t,
+            image: t.image || base.teachers[i]?.image || undefined,
+        }))
+    } else if (c.teacher) {
         const alreadyListed = base.teachers.some((t) => t.name === c.teacher)
         next.teachers = alreadyListed ? base.teachers : [{ name: c.teacher, title: "Docente" }, ...base.teachers]
-    }
-    if (ejes.length) {
-        next.syllabus = [
-            { year: base.syllabus[0]?.year || "Nivel Único", subjects: ejes },
-            ...base.syllabus.slice(1),
-        ]
     }
     return next
 }
@@ -124,6 +178,17 @@ export function getCareers(config: SiteConfigMap): Career[] {
         if (career) out.push(career)
     })
     return out
+}
+
+/**
+ * Videos de una carrera. Si el admin cargó uno, gana sobre el archivo que ya
+ * estaba en `public/videos`. Siempre devuelve un array porque el detalle
+ * puede mostrar más de un video.
+ */
+export function getVideosFor(id: string, config: SiteConfigMap): string[] {
+    const uploaded = (config[id]?.video || "").trim()
+    if (uploaded) return [uploaded]
+    return CAREER_VIDEOS[id] || []
 }
 
 export function getCantidadTitularesFor(id: string, config: SiteConfigMap): number {

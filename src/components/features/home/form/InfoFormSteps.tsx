@@ -308,7 +308,11 @@ export function StepContacto({ values, errors, isTouched, onFieldChange, onBlur 
 
 export function StepInscripcion({ values, errors, isTouched, onFieldChange, onBlur }: StepsProps) {
     const { config } = useSiteConfig()
-    const careerOptions = getCareers(config).map((c) => ({ value: c.id, label: c.title }))
+    const allCareers = getCareers(config)
+    const careerOptions = [
+        ...allCareers.filter((c) => c.id.startsWith("tec-")).map((c) => ({ value: c.id, label: c.title, group: "Carreras" })),
+        ...allCareers.filter((c) => !c.id.startsWith("tec-")).map((c) => ({ value: c.id, label: c.title, group: "Cursos" })),
+    ]
     const espOptions = ESPECIALIDADES.map((e) => ({ value: e, label: e }))
 
     return (
