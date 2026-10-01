@@ -63,11 +63,13 @@ export async function authenticate(email, password) {
       password: String(password ?? ""),
     })
     if (error || !data?.session) {
-      return { error: "Credenciales incorrectas" }
+      console.warn("[supabase auth] Error de login:", error?.message || "Sin sesión")
+      return { error: error?.message || "Credenciales incorrectas" }
     }
     // Si se definió ADMIN_EMAILS o ADMIN_EMAIL explícito y no coincide, filtrar; si no, permitir
     if (!isAdminEmail(data.user?.email)) {
-      return { error: "Credenciales incorrectas" }
+      console.warn(`[supabase auth] El usuario ${data.user?.email} no está en la lista de administradores`)
+      return { error: "Usuario no autorizado como administrador" }
     }
     return {
       token: data.session.access_token,

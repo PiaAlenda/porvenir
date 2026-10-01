@@ -113,14 +113,19 @@ export async function getConfig() {
     return cache
   }
 
-  const { data, error } = await supabase.from(TABLE).select("id, data")
-  if (error) {
-    console.error("[supabase] no se pudo leer la configuración:", error.message)
-    throw new PublicError("No se pudo leer la configuración del sitio.", 503)
+  try {
+    const { data, error } = await supabase.from(TABLE).select("id, data")
+    if (error) {
+      console.warn("[supabase] no se pudo leer la tabla site_config, usando configuración por defecto:", error.message)
+      return mergeWithDefaults({})
+    }
+    const saved = {}
+    for (const row of data || []) saved[row.id] = row.data || {}
+    return mergeWithDefaults(saved)
+  } catch (err) {
+    console.warn("[supabase] error inesperado en getConfig:", err.message)
+    return mergeWithDefaults({})
   }
-  const saved = {}
-  for (const row of data || []) saved[row.id] = row.data || {}
-  return mergeWithDefaults(saved)
 }
 
 export async function updateItem(id, patch) {
