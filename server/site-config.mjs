@@ -1,10 +1,14 @@
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+import { supabase, supabaseEnabled } from "./supabase.mjs"
+import { resolveMediaUrl } from "./storage.mjs"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = path.join(__dirname, "data")
 const FILE = path.join(DATA_DIR, "site-config.json")
+
+const TABLE = "site_config"
 
 const COURSE_DEFAULT_IMAGES = {
   "curso-danza": "/img/cursos/CURSO DE DANZA.webp",
@@ -33,6 +37,23 @@ const CAREER_IDS = [
   "tec-reparacion-pc",
 ]
 
+export const MIN_CANTIDAD_TITULARES = 0
+export const MAX_CANTIDAD_TITULARES = 999
+const DEFAULT_CANTIDAD_TITULARES = 0
+
+/**
+ * Normaliza el cupo de titulares guardado en la configuracion.
+ * Devuelve null cuando el valor no es un entero dentro del rango permitido.
+ */
+export function parseCantidadTitulares(raw) {
+  if (raw === undefined || raw === null) return null
+  if (typeof raw === "string" && !raw.trim()) return null
+  const n = typeof raw === "number" ? raw : Number(String(raw).trim())
+  if (!Number.isInteger(n)) return null
+  if (n < MIN_CANTIDAD_TITULARES || n > MAX_CANTIDAD_TITULARES) return null
+  return n
+}
+
 function buildDefaults() {
   const map = {}
   for (const id of Object.keys(COURSE_DEFAULT_IMAGES)) {
@@ -55,10 +76,10 @@ function mergeWithDefaults(saved) {
   const out = {}
   for (const id of Object.keys(defaults)) {
     const s = saved && saved[id]
-    out[id] = {
-      image: s && typeof s.image === "string" && s.image ? s.image : defaults[id].image,
-      available: s && typeof s.available === "boolean" ? s.available : defaults[id].available,
-    }
+    out[id] = s ? { ...s } : {}
+    out[id].image = s && typeof s.image === "string" && s.image ? resolveMediaUrl(s.image) : defaults[id].image
+    out[id].available = s && typeof s.available === "boolean" ? s.available : defaults[id].available
+    if (s && typeof s.title === "string" && s.title) out[id].title = s.title
   }
   for (const id of Object.keys(saved || {})) {
     if (!out[id]) out[id] = saved[id]
@@ -66,33 +87,61 @@ function mergeWithDefaults(saved) {
   return out
 }
 
-export function getConfig() {
-  if (cache) return cache
+function readFile() {
   ensureDir()
-  let saved = null
-  if (fs.existsSync(FILE)) {
-    try {
-      saved = JSON.parse(fs.readFileSync(FILE, "utf8"))
-    } catch {
-      saved = null
-    }
+  if (!fs.existsSync(FILE)) return {}
+  try {
+    return JSON.parse(fs.readFileSync(FILE, "utf8"))
+  } catch {
+    return {}
   }
-  cache = mergeWithDefaults(saved)
-  return cache
 }
 
-function persist() {
+function writeFile(map) {
   ensureDir()
   const tmp = FILE + ".tmp"
-  fs.writeFileSync(tmp, JSON.stringify(getConfig(), null, 2), "utf8")
+  fs.writeFileSync(tmp, JSON.stringify(map, null, 2), "utf8")
   fs.renameSync(tmp, FILE)
 }
 
-export function updateItem(id, patch) {
-  const cfg = getConfig()
-  cfg[id] = { ...(cfg[id] || {}), ...patch }
-  persist()
-  return cfg[id]
+export async function getConfig() {
+  if (!supabaseEnabled) {
+    if (cache) return cache
+    cache = mergeWithDefaults(readFile())
+    return cache
+  }
+
+  const { data, error } = await supabase.from(TABLE).select("id, data")
+  if (error) {
+    console.error("[supabase] no se pudo leer la configuración:", error.message)
+    throw new Error("No se pudo leer la configuración del sitio.")
+  }
+  const saved = {}
+  for (const row of data || []) saved[row.id] = row.data || {}
+  return mergeWithDefaults(saved)
+}
+
+export async function updateItem(id, patch) {
+  const cfg = await getConfig()
+  const merged = { ...(cfg[id] || {}), ...patch }
+
+  if (!supabaseEnabled) {
+    cfg[id] = merged
+    cache = cfg
+    writeFile(cfg)
+    return merged
+  }
+
+  const { data, error } = await supabase
+    .from(TABLE)
+    .upsert({ id, data: merged, updated_at: new Date().toISOString() })
+    .select("id, data")
+    .single()
+  if (error) {
+    console.error("[supabase] no se pudo guardar la configuración:", error.message)
+    throw new Error("No se pudo guardar la configuración del sitio.")
+  }
+  return data?.data || merged
 }
 
 export function resetCache() {

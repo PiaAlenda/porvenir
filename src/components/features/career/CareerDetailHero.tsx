@@ -1,6 +1,7 @@
 import { Clock, MapPin, ArrowLeft, GraduationCap } from "lucide-react";
 import { useState } from "react";
 import { type Career } from "@/config/careerData";
+import { getImageFor, useSiteConfig } from "@/siteConfig";
 import { CAREER_VIDEOS, ExpandableVideo } from "@/components/features/career/CareerDetailAbout";
 
 interface CareerDetailHeroProps {
@@ -17,6 +18,8 @@ function getCareerBadge(id: string) {
 
 const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
     const [imgError, setImgError] = useState(false);
+    const { config } = useSiteConfig();
+    const heroSrc = getImageFor(career.id, config);
 
     return (
         <header className="relative min-h-[380px] lg:min-h-[480px] flex items-center overflow-hidden bg-[#4d0706] border-b-4 border-[#ffcc00]">
@@ -25,11 +28,12 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                 <div className="absolute inset-0 bg-gradient-to-r from-[#4d0706] via-[#4d0706]/95 to-[#4d0706]/80 z-10" />
 
                 <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/4 opacity-[0.07] pointer-events-none z-0">
-                    {!imgError && (
+                    {!imgError && heroSrc && (
                         <img
-                            src={`/icons/${career.id}.webp`}
+                            src={heroSrc}
                             alt=""
                             aria-hidden="true"
+                            onError={() => setImgError(true)}
                             className="w-72 h-72 lg:w-96 lg:h-96 object-contain"
                         />
                     )}
@@ -48,13 +52,13 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                         </button>
 
                         <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 mb-4 lg:hidden">
-                            {imgError ? (
+                            {imgError || !heroSrc ? (
                                 <div className="w-full h-full bg-white/10 flex items-center justify-center">
                                     <GraduationCap className="w-8 h-8 text-[#ffcc00]" />
                                 </div>
                             ) : (
                                 <img
-                                    src={`/icons/${career.id}.webp`}
+                                    src={heroSrc}
                                     alt={career.title}
                                     onError={() => setImgError(true)}
                                     className="w-full h-full object-cover"
@@ -92,11 +96,11 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                             <div className="absolute inset-0 bg-[#ffcc00] opacity-10 blur-2xl rounded-full group-hover:opacity-20 transition-opacity duration-500" />
 
                             <div className="relative w-48 h-48 lg:w-56 lg:h-56 rounded-full bg-white/10 border-2 border-[#ffcc00]/30 flex items-center justify-center overflow-hidden shadow-lg shadow-black/30">
-                                {imgError ? (
+                                {imgError || !heroSrc ? (
                                     <GraduationCap className="z-10 w-20 h-20 lg:w-24 lg:h-24 text-[#ffcc00] transition-transform duration-500 group-hover:scale-110" />
                                 ) : (
                                     <img
-                                        src={`/icons/${career.id}.webp`}
+                                        src={heroSrc}
                                         alt={career.title}
                                         onError={() => setImgError(true)}
                                         className="z-10 w-full h-full object-cover rounded-full transition-transform duration-500 group-hover:scale-110"

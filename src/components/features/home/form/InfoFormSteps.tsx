@@ -1,4 +1,4 @@
-import { CAREER_DATA } from "@/config/careerData"
+import { getCareers, useSiteConfig } from "@/siteConfig"
 import CuilInput from "./CuilInput"
 import DocInput from "./DocInput"
 import { PhoneInput } from "./PhoneInput"
@@ -307,7 +307,8 @@ export function StepContacto({ values, errors, isTouched, onFieldChange, onBlur 
 }
 
 export function StepInscripcion({ values, errors, isTouched, onFieldChange, onBlur }: StepsProps) {
-    const careerOptions = Object.values(CAREER_DATA).map((c) => ({ value: c.id, label: c.title }))
+    const { config } = useSiteConfig()
+    const careerOptions = getCareers(config).map((c) => ({ value: c.id, label: c.title }))
     const espOptions = ESPECIALIDADES.map((e) => ({ value: e, label: e }))
 
     return (

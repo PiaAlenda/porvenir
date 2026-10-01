@@ -1,10 +1,8 @@
 import express from "express"
 import cors from "cors"
-import multer from "multer"
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
-import { randomUUID } from "node:crypto"
 import {
   getAll,
   getById,
@@ -12,11 +10,10 @@ import {
   updateAlumno,
   deleteAlumno,
 } from "./db.mjs"
-import { getConfig, updateItem } from "./site-config.mjs"
+import { getConfig, updateItem, parseCantidadTitulares, MAX_CANTIDAD_TITULARES } from "./site-config.mjs"
 import {
+  authenticate,
   changePassword,
-  checkCredentials,
-  issueToken,
   verifyToken,
   isDefaultPassword,
   isLocked,
@@ -24,6 +21,8 @@ import {
   registerFailure,
   resetFailures,
 } from "./auth.mjs"
+import { upload, saveUpload, deleteUpload, UPLOADS_URL_PREFIX } from "./storage.mjs"
+import { ensureUploadsBucket, supabaseEnabled } from "./supabase.mjs"
 import { generarFichaPdf } from "./pdf.mjs"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -33,35 +32,55 @@ const DIST_DIR = path.join(__dirname, "..", "dist")
 const app = express()
 const PORT = process.env.PORT || 3001
 
-app.use(cors())
+/* ---------- CORS ---------- */
+/* El frontend vive en Vercel, la API en Render: hay que permitir ese origen. */
+
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean)
+
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin) return cb(null, true)
+      if (!ALLOWED_ORIGINS.length) return cb(null, true)
+      cb(null, ALLOWED_ORIGINS.includes(origin.replace(/\/$/, "")))
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+)
+
 app.use(express.json({ limit: "1mb" }))
 app.use(express.urlencoded({ extended: true, limit: "1mb" }))
 
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true })
+if (!supabaseEnabled && fs.existsSync(UPLOADS_DIR)) {
+  app.use(UPLOADS_URL_PREFIX, express.static(UPLOADS_DIR))
+}
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || ".jpg"
-    cb(null, `${Date.now()}-${randomUUID().slice(0, 8)}${ext}`)
-  },
+app.get("/api/health", (_req, res) => {
+  res.json({
+    ok: true,
+    storage: supabaseEnabled ? "supabase" : "local",
+    auth: supabaseEnabled ? "supabase" : "local",
+    time: new Date().toISOString(),
+  })
 })
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } })
-
-app.use("/uploads", express.static(UPLOADS_DIR))
 
 /* ---------- auth ---------- */
 
-function requireAdmin(req, res, next) {
+async function requireAdmin(req, res, next) {
   const header = req.headers.authorization || ""
   const token = header.startsWith("Bearer ") ? header.slice(7) : req.query.token
-  if (!verifyToken(token)) {
+  if (!(await verifyToken(token))) {
     return res.status(401).json({ error: "No autorizado" })
   }
+  req.adminToken = token
   next()
 }
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   const ip = req.ip || (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown"
   if (isLocked(ip)) {
     const mins = Math.max(1, Math.ceil(lockRemainingMs(ip) / 60000))
@@ -69,18 +88,19 @@ app.post("/api/auth/login", (req, res) => {
   }
 
   const { email, password } = req.body || {}
-  if (!checkCredentials(email, password)) {
+  const result = await authenticate(email, password)
+  if (result.error) {
     registerFailure(ip)
-    return res.status(401).json({ error: "Credenciales incorrectas" })
+    return res.status(401).json({ error: result.error })
   }
 
   resetFailures(ip)
-  res.json({ token: issueToken() })
+  res.json({ token: result.token, email: result.user?.email || String(email).trim().toLowerCase() })
 })
 
-app.post("/api/auth/password", requireAdmin, (req, res) => {
+app.post("/api/auth/password", requireAdmin, async (req, res) => {
   const { currentPassword, newPassword } = req.body || {}
-  const result = changePassword(currentPassword, newPassword)
+  const result = await changePassword(req.adminToken, currentPassword, newPassword)
   if (!result.ok) {
     return res.status(400).json({ error: result.message })
   }
@@ -132,14 +152,18 @@ const uploader = upload.fields([
 const inscripcionUpload = (req, res, next) => {
   uploader(req, res, (err) => {
     if (err) {
-      console.error("[multer error]", err)
-      return res.status(400).json({ error: "No se pudieron adjuntar los archivos. Verificá que las imágenes pesen menos de 10MB." })
+      console.error("[multer error]", err.message)
+      return res.status(400).json({
+        error: err.code === "LIMIT_FILE_SIZE"
+          ? "Cada imagen debe pesar menos de 10MB."
+          : err.message || "No se pudieron adjuntar los archivos.",
+      })
     }
     next()
   })
 }
 
-app.post("/api/inscripciones", inscripcionUpload, (req, res) => {
+app.post("/api/inscripciones", inscripcionUpload, async (req, res) => {
   const body = req.body || {}
   const err = validateRequeridos(body)
   if (err) return res.status(400).json({ error: err })
@@ -152,14 +176,10 @@ app.post("/api/inscripciones", inscripcionUpload, (req, res) => {
   let fotoDni = ""
   let fotoCertificado = ""
 
-  if (req.files?.fotoDni?.[0]) {
-    fotoDni = `/uploads/${req.files.fotoDni[0].filename}`
-  }
-  if (req.files?.fotoCertificado?.[0]) {
-    fotoCertificado = `/uploads/${req.files.fotoCertificado[0].filename}`
-  }
+  if (req.files?.fotoDni?.[0]) fotoDni = await saveUpload(req.files.fotoDni[0])
+  if (req.files?.fotoCertificado?.[0]) fotoCertificado = await saveUpload(req.files.fotoCertificado[0])
 
-  const record = createAlumno({
+  const record = await createAlumno({
     apellido: String(body.apellido).trim(),
     nombre: String(body.nombre).trim(),
     c_documento: String(body.c_documento).trim(),
@@ -194,44 +214,55 @@ app.post("/api/inscripciones", inscripcionUpload, (req, res) => {
   })
 })
 
-app.get("/api/inscripciones", requireAdmin, (_req, res) => {
-  res.json({ inscripciones: getAll() })
+app.get("/api/inscripciones", requireAdmin, async (_req, res) => {
+  res.json({ inscripciones: await getAll() })
 })
 
-app.put("/api/inscripciones/:id", requireAdmin, (req, res) => {
+app.put("/api/inscripciones/:id", requireAdmin, async (req, res) => {
   const body = req.body || {}
   const patch = {}
   for (const f of [...FIELDS_7, ...INTERNAL_FIELDS]) {
     if (body[f] !== undefined) patch[f] = typeof body[f] === "string" ? body[f].trim() : body[f]
   }
-  const updated = updateAlumno(req.params.id, patch)
+  const updated = await updateAlumno(req.params.id, patch)
   if (!updated) return res.status(404).json({ error: "No existe la inscripción" })
   res.json({ inscripcion: updated })
 })
 
-app.post("/api/inscripciones/:id/archivos", requireAdmin, inscripcionUpload, (req, res) => {
-  const alumno = getById(req.params.id)
+app.post("/api/inscripciones/:id/archivos", requireAdmin, inscripcionUpload, async (req, res) => {
+  const alumno = await getById(req.params.id)
   if (!alumno) return res.status(404).json({ error: "No existe la inscripción" })
 
   const patch = {}
   if (req.files?.fotoDni?.[0]) {
-    patch.fotoDni = `/uploads/${req.files.fotoDni[0].filename}`
+    patch.fotoDni = await saveUpload(req.files.fotoDni[0])
+    await deleteUpload(alumno.fotoDni)
   } else if (req.body?.removeFotoDni === "true") {
     patch.fotoDni = ""
+    await deleteUpload(alumno.fotoDni)
   }
 
   if (req.files?.fotoCertificado?.[0]) {
-    patch.fotoCertificado = `/uploads/${req.files.fotoCertificado[0].filename}`
+    patch.fotoCertificado = await saveUpload(req.files.fotoCertificado[0])
+    await deleteUpload(alumno.fotoCertificado)
   } else if (req.body?.removeFotoCertificado === "true") {
     patch.fotoCertificado = ""
+    await deleteUpload(alumno.fotoCertificado)
   }
 
-  const updated = updateAlumno(req.params.id, patch)
+  const updated = await updateAlumno(req.params.id, patch)
   res.json({ inscripcion: updated })
 })
 
-app.delete("/api/inscripciones/:id", requireAdmin, (req, res) => {
-  if (!deleteAlumno(req.params.id)) return res.status(404).json({ error: "No existe la inscripción" })
+app.delete("/api/inscripciones/:id", requireAdmin, async (req, res) => {
+  const alumno = await getById(req.params.id)
+  if (alumno) {
+    await deleteUpload(alumno.fotoDni)
+    await deleteUpload(alumno.fotoCertificado)
+  }
+  if (!(await deleteAlumno(req.params.id))) {
+    return res.status(404).json({ error: "No existe la inscripción" })
+  }
   res.json({ ok: true })
 })
 
@@ -244,7 +275,7 @@ async function sendPdf(res, bytes, filename) {
 }
 
 app.get("/api/inscripciones/:id/ficha", requireAdmin, async (req, res) => {
-  const alumno = getById(req.params.id)
+  const alumno = await getById(req.params.id)
   if (!alumno) return res.status(404).json({ error: "No existe la inscripción" })
   try {
     const bytes = await generarFichaPdf(alumno)
@@ -257,39 +288,77 @@ app.get("/api/inscripciones/:id/ficha", requireAdmin, async (req, res) => {
 
 /* ---------- config de cursos ---------- */
 
-app.get("/api/config", (_req, res) => {
-  res.json({ cursos: getConfig() })
+app.get("/api/config", async (_req, res) => {
+  res.json({ cursos: await getConfig() })
 })
 
-app.put("/api/config/:id", requireAdmin, upload.single("image"), (req, res) => {
-  const cfg = getConfig()
+app.put("/api/config/:id", requireAdmin, upload.single("image"), async (req, res) => {
+  const cfg = await getConfig()
   const existing = cfg[req.params.id] || { image: "", available: true }
 
   const patch = { ...existing }
   if (req.body.available !== undefined) {
     patch.available = req.body.available === "true" || req.body.available === true
   }
+  const textFields = { title: 120, inscriptionDate: 60, month: 40, schedule: 200, teacher: 120, ejes: 2000 }
+  for (const [key, max] of Object.entries(textFields)) {
+    if (typeof req.body[key] === "string") {
+      patch[key] = req.body[key].trim().slice(0, max)
+    }
+  }
+  if (req.body.cantidadTitulares !== undefined) {
+    const cupo = parseCantidadTitulares(req.body.cantidadTitulares)
+    if (cupo === null) {
+      return res.status(400).json({
+        error: `El cupo de titulares debe ser un número entero entre 0 y ${MAX_CANTIDAD_TITULARES}.`,
+      })
+    }
+    patch.cantidadTitulares = cupo
+  }
   if (req.body.removeImage === "true") {
+    await deleteUpload(existing.image)
     patch.image = ""
   }
   if (req.file) {
-    patch.image = `/uploads/${req.file.filename}`
+    await deleteUpload(existing.image)
+    patch.image = await saveUpload(req.file)
   }
 
-  const updated = updateItem(req.params.id, patch)
+  const updated = await updateItem(req.params.id, patch)
   res.json({ item: updated })
 })
 
 /* ---------- produccion ---------- */
 
-if (fs.existsSync(DIST_DIR)) {
+const SERVE_STATIC = process.env.SERVE_STATIC === "1" || (!process.env.SERVE_STATIC && fs.existsSync(DIST_DIR))
+
+app.use("/api", (_req, res) => res.status(404).json({ error: "Endpoint no encontrado" }))
+
+if (SERVE_STATIC) {
   app.use(express.static(DIST_DIR))
   app.get(/.*/, (_req, res) => res.sendFile(path.join(DIST_DIR, "index.html")))
 }
 
+/* ---------- errores ---------- */
+
+app.use((err, _req, res, _next) => {
+  console.error("[error]", err?.message || err)
+  if (res.headersSent) return
+  const status = err?.status || err?.statusCode || 500
+  res.status(status).json({ error: err?.message || "Error interno del servidor" })
+})
+
+/* ---------- arranque ---------- */
+
+await ensureUploadsBucket()
+
 app.listen(PORT, () => {
   console.log(`Servidor corrriendo en http://localhost:${PORT}`)
+  console.log(`Datos: ${supabaseEnabled ? "Supabase" : "archivos locales (respaldo)"}`)
   if (isDefaultPassword()) {
     console.warn("[aviso] Se está usando la contraseña por defecto. Creá la variable ADMIN_PASSWORD en el archivo .env")
+  }
+  if (supabaseEnabled && !ALLOWED_ORIGINS.length) {
+    console.warn("[aviso] No definiste ALLOWED_ORIGIN: la API aceptará requests desde cualquier origen.")
   }
 })

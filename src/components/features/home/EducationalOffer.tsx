@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Laptop, MapPin, CheckCircle, GraduationCap, Clock, ChevronLeft, ChevronRight, UserX } from "lucide-react";
-import { CAREER_DATA } from "../../../config/careerData";
-import { getImageFor, isAvailableFor, useSiteConfig } from "@/siteConfig";
+import { getImageFor, getCareers, isAvailableFor, useSiteConfig } from "@/siteConfig";
 
 interface EducationalOfferProps {
     onViewDetail: (id: string) => void;
@@ -187,7 +186,7 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
 
                             const isCursos = activeCard.id === "bach";
 
-                            const filteredCourses = Object.values(CAREER_DATA).filter((career) => {
+                            const filteredCourses = getCareers(config).filter((career) => {
                                 if (isCursos) {
                                     return career.category === "curso-presencial" || career.category === "curso-virtual";
                                 }

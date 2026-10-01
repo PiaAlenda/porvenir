@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react"
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Download } from "lucide-react"
 import { api } from "@/api"
-import { CAREER_DATA } from "@/config/careerData"
+import { getCareerById, useSiteConfig } from "@/siteConfig"
+import * as XLSX from "xlsx"
 import Stepper, { type StepperStep } from "./form/Stepper"
 import {
     StepContacto,
@@ -69,6 +70,7 @@ const initialForm = (careerId?: string | null): InscriptionFormValues => ({
 })
 
 const InfoForm = ({ careerId }: InfoFormProps) => {
+    const { config } = useSiteConfig()
     const [formData, setFormData] = useState<InscriptionFormValues>(() => initialForm(careerId))
     const [errors, setErrors] = useState<FormErrors>({})
     const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set())
@@ -76,8 +78,9 @@ const InfoForm = ({ careerId }: InfoFormProps) => {
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
     const [errorMsg, setErrorMsg] = useState("")
     const [registeredName, setRegisteredName] = useState("")
+    const [submittedData, setSubmittedData] = useState<InscriptionFormValues | null>(null)
 
-    const career = careerId ? CAREER_DATA[careerId] : undefined
+    const career = careerId ? getCareerById(careerId, config) : undefined
 
     const isTouched = (name: keyof InscriptionFormValues) => touched.has(name)
 
@@ -148,7 +151,7 @@ const InfoForm = ({ careerId }: InfoFormProps) => {
         setStatus("loading")
         setErrorMsg("")
         try {
-            const courseTitle = formData.careerId && CAREER_DATA[formData.careerId] ? CAREER_DATA[formData.careerId].title : ""
+            const courseTitle = formData.careerId ? getCareerById(formData.careerId, config)?.title ?? "" : ""
             let result: { id: string; nombre: string; message: string }
 
             if (formData.fotoDni || formData.fotoCertificado) {
@@ -210,6 +213,7 @@ const InfoForm = ({ careerId }: InfoFormProps) => {
             }
 
             setRegisteredName(result.nombre)
+            setSubmittedData(formData)
             if (cardRef.current) {
                 scrollAnchorRef.current = {
                     y: window.scrollY,
@@ -245,6 +249,36 @@ const InfoForm = ({ careerId }: InfoFormProps) => {
         setStep(1)
         setStatus("idle")
         setErrorMsg("")
+        setSubmittedData(null)
+    }
+
+    const downloadFormData = () => {
+        const dataToDownload = submittedData || formData
+        const careerInfo = dataToDownload.careerId
+            ? getCareerById(dataToDownload.careerId, config)?.title ?? "Sin carrera seleccionada"
+            : "Sin carrera seleccionada"
+
+        const downloadData = {
+            ...dataToDownload,
+            careerTitle: careerInfo,
+            fechaInscripcion: new Date().toISOString(),
+            fotoDni: dataToDownload.fotoDni ? dataToDownload.fotoDni.name : null,
+            fotoCertificado: dataToDownload.fotoCertificado ? dataToDownload.fotoCertificado.name : null,
+        }
+
+        const ws = XLSX.utils.json_to_sheet([downloadData])
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, "Inscripción")
+        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" })
+        const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `inscripcion-${dataToDownload.apellido}-${dataToDownload.nombre}-${Date.now()}.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
     }
 
     const containerRef = useRef<HTMLDivElement | null>(null)
@@ -315,11 +349,15 @@ const InfoForm = ({ careerId }: InfoFormProps) => {
                                 <h4 className="text-2xl font-black text-gray-900">¡Inscripción registrada!</h4>
                                 <p className="text-sm text-gray-500 font-medium">
                                     {registeredName}, tus datos y documentación se guardaron correctamente.
-                                    {formData.careerId && CAREER_DATA[formData.careerId]
-                                        ? ` Te inscribiste a ${CAREER_DATA[formData.careerId].title}.`
+                                    {formData.careerId && getCareerById(formData.careerId, config)
+                                        ? ` Te inscribiste a ${getCareerById(formData.careerId, config)?.title}.`
                                         : " La escuela te va a contactar a la brevedad."}
                                 </p>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                                    <button type="button" onClick={downloadFormData} className={`${btnPrimary} sm:w-auto`}>
+                                        <Download className="w-4 h-4" />
+                                        Descargar Excel
+                                    </button>
                                     <button type="button" onClick={resetForm} className="text-[#4d0706] font-bold text-sm cursor-pointer rounded-lg px-4 py-3 hover:bg-[#4d0706]/5">
                                         Cargar otro formulario
                                     </button>

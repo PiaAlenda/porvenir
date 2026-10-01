@@ -24,6 +24,7 @@ export interface Career {
     teachers: Teacher[];
     schedule: string;
     inscriptionDate: string;
+    month?: string;
     inscriptionFee: string;
     inscriptionDocs: string;
     salidaLaboral: string[];

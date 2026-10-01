@@ -39,6 +39,12 @@ export const CareerCohortCard = ({ career, onBack, available = true }: CohortCar
                         <span className="text-xs font-bold text-stone-300">Modalidad</span>
                         <span className="text-sm font-black text-white">{career.modality}</span>
                     </div>
+                    {career.month && (
+                        <div className="flex justify-between items-center border-t border-white/5 pt-3">
+                            <span className="text-xs font-bold text-stone-300">Mes de inicio</span>
+                            <span className="text-sm font-black text-white">{career.month}</span>
+                        </div>
+                    )}
                 </div>
             </div>
 

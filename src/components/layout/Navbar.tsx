@@ -4,8 +4,8 @@ import {
     Briefcase, ChevronDown, Clock, GraduationCap, History, Library,
     MapPin, Search, User, X, type LucideIcon
 } from "lucide-react";
-import { CAREER_DATA, type Career } from "@/config/careerData";
-import { getImageFor, useSiteConfig } from "@/siteConfig";
+import { type Career } from "@/config/careerData";
+import { getImageFor, getCareers, useSiteConfig } from "@/siteConfig";
 
 interface NavbarProps {
     onNavigateHome?: () => void;
@@ -88,14 +88,14 @@ const Navbar = ({
     const results = useMemo<Career[]>(() => {
         const q = searchQuery.trim().toLowerCase();
         if (!q) return [];
-        return Object.values(CAREER_DATA)
+        return getCareers(config)
             .filter(
                 (c) =>
                     c.title.toLowerCase().includes(q) ||
                     c.description.toLowerCase().includes(q)
             )
             .slice(0, 6);
-    }, [searchQuery]);
+    }, [searchQuery, config]);
 
     const selectCareer = (id: string) => {
         setSearchQuery("");

@@ -47,6 +47,9 @@ const CareerMobileQuickInfo = ({ career }: Props) => {
                         <p className="text-[9px] font-bold text-stone-500 mt-0.5">
                             {career.inscriptionFee || "Consultar"} · {career.modality}
                         </p>
+                        {career.month && (
+                            <p className="text-[9px] font-black text-[#c85a17] mt-0.5">Inicio: {career.month}</p>
+                        )}
                     </div>
                 </div>
             </div>

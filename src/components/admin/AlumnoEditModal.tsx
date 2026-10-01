@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ChangeEvent } from "react"
 import { X, Save, Trash2 } from "lucide-react"
 import { api, type Alumno } from "@/api"
-import { CAREER_DATA } from "@/config/careerData"
+import { getCareerById, getCareers, useSiteConfig } from "@/siteConfig"
 import {
     PAISES,
     NACIONALIDADES,
@@ -29,6 +29,7 @@ const textareaClass =
     "focus:outline-none focus:ring-4 focus:ring-[#4d0706]/5 focus:border-[#4d0706] focus:bg-white transition-all duration-300"
 
 export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Props) {
+    const { config } = useSiteConfig()
     const [form, setForm] = useState<Partial<Alumno>>({
         apellido: alumno.apellido,
         nombre: alumno.nombre,
@@ -73,7 +74,8 @@ export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Pro
         setSaving(true)
         setError("")
         try {
-            const courseTitle = form.careerId && CAREER_DATA[form.careerId] ? CAREER_DATA[form.careerId].title : form.courseTitle ?? ""
+            const selectedCareer = form.careerId ? getCareerById(form.careerId, config) : undefined
+            const courseTitle = selectedCareer ? selectedCareer.title : form.courseTitle ?? ""
             let updated = (await api.updateInscripcion(token, alumno.id, {
                 ...form,
                 courseTitle,
@@ -232,7 +234,7 @@ export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Pro
                                     <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Curso / Carrera</label>
                                     <select className={selectClass} value={form.careerId ?? ""} onChange={set("careerId")}>
                                         <option value="">Sin asignar</option>
-                                        {Object.values(CAREER_DATA).map((c) => (
+                                        {getCareers(config).map((c) => (
                                             <option key={c.id} value={c.id}>{c.title}</option>
                                         ))}
                                     </select>

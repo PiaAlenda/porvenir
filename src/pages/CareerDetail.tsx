@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { FileEdit, Users } from "lucide-react";
-import { CAREER_DATA, type Career } from "@/config/careerData";
+import { type Career } from "@/config/careerData";
 import CareerDetailHero from "@/components/features/career/CareerDetailHero";
 import { CareerSyllabus, CareerDetailsGrid } from "@/components/features/career/CareerDetailAbout";
 import { CareerCohortCard, CareerTeachersList } from "@/components/features/career/CareerDetailSidebar";
 import CareerMobileQuickInfo from "@/components/features/career/CareerMobileQuickInfo";
-import { isAvailableFor, useSiteConfig } from "@/siteConfig";
+import { getCareerById, isAvailableFor, useSiteConfig } from "@/siteConfig";
 
 interface CareerDetailProps {
     careerId: string;
@@ -14,8 +14,8 @@ interface CareerDetailProps {
 }
 
 const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => {
-    const career: Career | undefined = CAREER_DATA[careerId];
     const { config } = useSiteConfig();
+    const career: Career | undefined = getCareerById(careerId, config);
     const available = career ? isAvailableFor(career.id, config) : true;
 
     useEffect(() => {
@@ -74,9 +74,11 @@ const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => 
                     <CareerDetailsGrid career={career} />
 
                     {/* Teachers: full width on mobile after all content, desktop sidebar */}
-                    <div>
-                        <CareerTeachersList career={career} />
-                    </div>
+                    {career.teachers.length > 0 && (
+                        <div>
+                            <CareerTeachersList career={career} />
+                        </div>
+                    )}
                 </div>
             </main>
 

@@ -2,6 +2,7 @@ import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+import { supabase, supabaseAnon, supabaseEnabled } from "./supabase.mjs"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -12,7 +13,7 @@ const TOKEN_TTL_MS = 8 * 60 * 60 * 1000 // 8 horas
 const MAX_FAILURES = 5
 const LOCK_MS = 15 * 60 * 1000 // 15 minutos
 
-const tokens = new Map() // token -> expiración (ms)
+const tokens = new Map() // token -> expiración (ms), solo en modo local
 const failures = new Map() // ip -> { count, lockUntil }
 
 function safeEqual(a, b) {
@@ -23,14 +24,10 @@ function safeEqual(a, b) {
 }
 
 export function isDefaultPassword() {
-  return PASSWORD === "admin"
+  return !supabaseEnabled && PASSWORD === "admin"
 }
 
-export function checkCredentials(email, password) {
-  const okEmail = safeEqual(String(email ?? "").trim().toLowerCase(), ADMIN_EMAIL.toLowerCase())
-  const okPass = safeEqual(password, PASSWORD)
-  return okEmail && okPass
-}
+/* ---------- bloqueo por intentos fallidos ---------- */
 
 export function isLocked(ip) {
   const f = failures.get(ip)
@@ -62,10 +59,69 @@ export function resetFailures(ip) {
   failures.delete(ip)
 }
 
-export function changePassword(currentPassword, newPassword) {
-  if (!safeEqual(currentPassword, PASSWORD)) {
-    return { ok: false, message: "La contraseña actual no es correcta." }
+/* ---------- Supabase Auth ---------- */
+
+/**
+ * Valida las credenciales contra Supabase Auth.
+ * Devuelve { token, user } o { error }.
+ */
+export async function authenticate(email, password) {
+  if (supabaseEnabled) {
+    if (!supabaseAnon) {
+      return { error: "Falta configurar SUPABASE_ANON_KEY en el servidor." }
+    }
+    const { data, error } = await supabaseAnon.auth.signInWithPassword({
+      email: String(email ?? "").trim().toLowerCase(),
+      password: String(password ?? ""),
+    })
+    if (error || !data?.session) {
+      return { error: "Credenciales incorrectas" }
+    }
+    return {
+      token: data.session.access_token,
+      user: { id: data.user.id, email: data.user.email },
+    }
   }
+
+  const okEmail = safeEqual(String(email ?? "").trim().toLowerCase(), ADMIN_EMAIL.toLowerCase())
+  const okPass = safeEqual(password, PASSWORD)
+  if (!okEmail || !okPass) return { error: "Credenciales incorrectas" }
+  return {
+    token: issueLocalToken(),
+    user: { id: "local", email: ADMIN_EMAIL },
+  }
+}
+
+/** Valida un access token de Supabase (o del modo local). */
+export async function verifyToken(token) {
+  if (!token) return false
+  if (supabaseEnabled) {
+    if (!supabase) return false
+    const { data, error } = await supabase.auth.getUser(token)
+    if (error || !data?.user) return false
+    return true
+  }
+
+  const exp = tokens.get(token)
+  if (!exp) return false
+  if (Date.now() > exp) {
+    tokens.delete(token)
+    return false
+  }
+  return true
+}
+
+/** Datos del usuario dueño del token, para el cambio de contraseña. */
+async function userFromToken(token) {
+  if (!supabaseEnabled) return { id: "local", email: ADMIN_EMAIL }
+  const { data, error } = await supabase.auth.getUser(token)
+  if (error || !data?.user) return null
+  return { id: data.user.id, email: data.user.email }
+}
+
+/* ---------- cambio de contraseña ---------- */
+
+export async function changePassword(token, currentPassword, newPassword) {
   if (String(newPassword ?? "").length < 8) {
     return { ok: false, message: "La nueva contraseña debe tener al menos 8 caracteres." }
   }
@@ -73,6 +129,34 @@ export function changePassword(currentPassword, newPassword) {
     return { ok: false, message: "La nueva contraseña debe ser distinta a la actual." }
   }
 
+  if (supabaseEnabled) {
+    const user = await userFromToken(token)
+    if (!user) return { ok: false, message: "La sesión venció. Volvé a iniciar sesión." }
+
+    if (!supabaseAnon) {
+      return { ok: false, message: "Falta configurar SUPABASE_ANON_KEY en el servidor." }
+    }
+    const { error: signInError } = await supabaseAnon.auth.signInWithPassword({
+      email: user.email,
+      password: String(currentPassword ?? ""),
+    })
+    if (signInError) {
+      return { ok: false, message: "La contraseña actual no es correcta." }
+    }
+
+    const { error } = await supabase.auth.admin.updateUserById(user.id, {
+      password: String(newPassword),
+    })
+    if (error) {
+      console.error("[supabase] no se pudo actualizar la contraseña:", error.message)
+      return { ok: false, message: "No se pudo actualizar la contraseña." }
+    }
+    return { ok: true }
+  }
+
+  if (!safeEqual(currentPassword, PASSWORD)) {
+    return { ok: false, message: "La contraseña actual no es correcta." }
+  }
   PASSWORD = String(newPassword)
   persistEnvPassword(PASSWORD)
   return { ok: true }
@@ -96,21 +180,12 @@ function persistEnvPassword(password) {
   }
 }
 
-export function issueToken() {
+/* ---------- modo local ---------- */
+
+function issueLocalToken() {
   const token = crypto.randomBytes(24).toString("hex")
   tokens.set(token, Date.now() + TOKEN_TTL_MS)
   return token
-}
-
-export function verifyToken(token) {
-  if (!token) return false
-  const exp = tokens.get(token)
-  if (!exp) return false
-  if (Date.now() > exp) {
-    tokens.delete(token)
-    return false
-  }
-  return true
 }
 
 export function isValidPassword() {

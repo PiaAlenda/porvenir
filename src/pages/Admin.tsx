@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Briefcase, ChevronsLeft, ChevronsRight, GraduationCap, LogOut, Settings, UserRound, Users } from "lucide-react"
+import { Briefcase, ChevronLeft, ChevronRight, GraduationCap, LogOut, Settings, UserRound, Users } from "lucide-react"
 import { api } from "@/api"
 import AlumnosPanel from "@/components/admin/AlumnosPanel"
 import AdminMobileNav from "@/components/admin/AdminMobileNav"
@@ -7,12 +7,13 @@ import CursosPanel from "@/components/admin/CursosPanel"
 import AjustesPanel from "@/components/admin/AjustesPanel"
 import { useSiteConfig } from "@/siteConfig"
 
+const PROFILE_IMAGE_KEY = "obreros_admin_profile_image"
+
 interface AdminProps {
     onExit: () => void
 }
 
 const TOKEN_KEY = "obreros_admin_token"
-const SIDEBAR_KEY = "obreros_admin_sidebar"
 
 type TabId = "alumnos" | "cursos" | "carreras" | "ajustes"
 
@@ -25,12 +26,12 @@ const tabs = {
     cursos: {
         label: "Cursos",
         icon: GraduationCap,
-        description: "Capacitaciones breves con alta salida laboral. Gestioná cupos y portadas.",
+        description: "Gestioná cupos e información de los cursos.",
     },
     carreras: {
         label: "Carreras",
         icon: Briefcase,
-        description: "Oferta presencial de mayor duración. Gestioná cupos y portadas.",
+        description: "Gestioná cupos e información de las carreras.",
     },
     ajustes: {
         label: "Ajustes",
@@ -44,11 +45,17 @@ const navOrder: TabId[] = ["alumnos", "cursos", "carreras"]
 export default function Admin({ onExit }: AdminProps) {
     const [token, setToken] = useState(() => sessionStorage.getItem(TOKEN_KEY) ?? "")
     const [tab, setTab] = useState<TabId>("alumnos")
-    const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem(SIDEBAR_KEY) !== "collapse")
+    const [sidebarOpen, setSidebarOpen] = useState(true)
     const [profileOpen, setProfileOpen] = useState(false)
     const [inscripcionesCount, setInscripcionesCount] = useState(0)
+    const [profileImage, setProfileImage] = useState<string | null>(null)
 
     const { config } = useSiteConfig()
+
+    useEffect(() => {
+        const saved = localStorage.getItem(PROFILE_IMAGE_KEY)
+        if (saved) setProfileImage(saved)
+    }, [])
 
     useEffect(() => {
         if (!token) return
@@ -57,7 +64,7 @@ export default function Admin({ onExit }: AdminProps) {
             .then((r) => {
                 if (!cancelled) setInscripcionesCount(r.inscripciones.length)
             })
-            .catch(() => {})
+            .catch(() => { })
         return () => {
             cancelled = true
         }
@@ -74,17 +81,14 @@ export default function Admin({ onExit }: AdminProps) {
         ajustes: 0,
     }
 
-    const toggleSidebar = () => {
-        setSidebarOpen((open) => {
-            localStorage.setItem(SIDEBAR_KEY, open ? "collapse" : "expand")
-            return !open
-        })
-    }
-
     const handleLogout = () => {
         sessionStorage.removeItem(TOKEN_KEY)
         setToken("")
         onExit()
+    }
+
+    const toggleSidebar = () => {
+        setSidebarOpen((open) => !open)
     }
 
     if (!token) return null
@@ -94,12 +98,8 @@ export default function Admin({ onExit }: AdminProps) {
     return (
         <div className="min-h-screen bg-[#fcfaf7]">
             <div className="lg:flex min-h-screen">
-                <aside
-                    className={`hidden lg:flex flex-col bg-[#4d0706] text-white h-screen sticky top-0 shrink-0 transition-all duration-300 ${
-                        sidebarOpen ? "w-64" : "w-[76px]"
-                    }`}
-                >
-                    <div className={`flex items-center gap-3 h-16 border-b border-white/10 ${sidebarOpen ? "px-4" : "px-3"}`}>
+                <aside className={`hidden lg:flex flex-col bg-[#4d0706] text-white h-screen sticky top-0 shrink-0 transition-all duration-300 ${sidebarOpen ? "w-64" : "w-20"}`}>
+                    <div className="flex items-center gap-3 h-16 border-b border-white/10 px-3">
                         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-white/15">
                             <img src="/icons/escuela.png" alt="Escuela" className="w-6 h-6 object-contain" />
                         </div>
@@ -112,18 +112,13 @@ export default function Admin({ onExit }: AdminProps) {
                         <button
                             onClick={toggleSidebar}
                             title={sidebarOpen ? "Contraer menú" : "Expandir menú"}
-                            className={`flex items-center justify-center w-8 h-8 rounded-lg text-white/70 hover:bg-white/10 hover:text-white cursor-pointer ${
-                                sidebarOpen ? "ml-auto" : ""
-                            }`}
+                            className={`flex items-center justify-center w-8 h-8 rounded-lg text-white/70 hover:bg-white/10 hover:text-white cursor-pointer ${sidebarOpen ? "ml-auto" : "ml-auto"}`}
                         >
-                            {sidebarOpen ? <ChevronsLeft className="w-4 h-4" /> : <ChevronsRight className="w-4 h-4" />}
+                            {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                         </button>
                     </div>
 
-                    <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
-                        {sidebarOpen && (
-                            <p className="text-xs font-black uppercase tracking-widest text-white/40 px-3 mb-2">Oferta académica</p>
-                        )}
+                    <nav className="flex-1 px-2 py-4 space-y-1.5 overflow-y-auto">
                         {navOrder.map((id) => {
                             const t = tabs[id]
                             const Icon = t.icon
@@ -133,20 +128,18 @@ export default function Admin({ onExit }: AdminProps) {
                                     key={id}
                                     onClick={() => setTab(id)}
                                     title={sidebarOpen ? undefined : t.label}
-                                    className={`flex items-center gap-3 w-full py-2.5 rounded-xl text-sm font-black transition-all cursor-pointer ${
-                                        active
-                                            ? "bg-[#ffcc00] text-[#4d0706] shadow-lg shadow-black/20"
-                                            : "text-white/70 hover:bg-white/10 hover:text-white"
-                                    } ${sidebarOpen ? "px-3" : "justify-center px-0"}`}
+                                    className={`flex items-center gap-3 w-full py-2.5 rounded-xl text-sm font-black transition-all cursor-pointer ${active
+                                        ? "bg-[#ffcc00] text-[#4d0706] shadow-lg shadow-black/20"
+                                        : "text-white/70 hover:bg-white/10 hover:text-white"
+                                        } ${sidebarOpen ? "px-3" : "justify-center px-0"}`}
                                 >
                                     <Icon className="w-5 h-5 shrink-0" />
                                     {sidebarOpen && (
                                         <>
                                             <span className="flex-1 text-left truncate">{t.label}</span>
                                             <span
-                                                className={`px-2 py-0.5 rounded-full text-xs font-black ${
-                                                    active ? "bg-[#4d0706]/10" : "bg-white/10 text-white/80"
-                                                }`}
+                                                className={`px-2 py-0.5 rounded-full text-xs font-black ${active ? "bg-[#4d0706]/10" : "bg-white/10 text-white/80"
+                                                    }`}
                                             >
                                                 {counts[id]}
                                             </span>
@@ -157,13 +150,11 @@ export default function Admin({ onExit }: AdminProps) {
                         })}
                     </nav>
 
-                    <div className="border-t border-white/10 px-3 py-4">
+                    <div className="border-t border-white/10 px-2 py-4">
                         <button
                             onClick={handleLogout}
                             title="Cerrar sesión"
-                            className={`flex items-center gap-3 w-full py-2.5 rounded-xl text-sm font-bold text-white/70 hover:bg-red-500/20 hover:text-white transition-all cursor-pointer ${
-                                sidebarOpen ? "px-3" : "justify-center px-0"
-                            }`}
+                            className={`flex items-center gap-3 w-full py-2.5 rounded-xl text-sm font-bold text-white/70 hover:bg-red-500/20 hover:text-white transition-all cursor-pointer ${sidebarOpen ? "px-3" : "justify-center px-0"}`}
                         >
                             <LogOut className="w-5 h-5 shrink-0" />
                             {sidebarOpen && <span className="flex-1 text-left truncate">Cerrar sesión</span>}
@@ -175,17 +166,8 @@ export default function Admin({ onExit }: AdminProps) {
                     <header className="sticky top-0 z-50 bg-[#4d0706] text-white shadow-lg shadow-[#4d0706]/25">
                         <div className="max-w-7xl mx-auto px-4 sm:px-8">
                             <div className="flex items-center justify-between gap-3 py-3">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-white/15">
-                                        <img src="/icons/escuela.png" alt="Escuela" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <h1 className="text-sm sm:text-lg font-black leading-none truncate">Panel de Gestión</h1>
-                                        <p className="hidden md:block text-xs text-white/70 font-medium mt-1 truncate">
-                                            Escuela de Capacitación Laboral "Obreros del Porvenir"
-                                        </p>
-                                        <p className="md:hidden text-xs text-white/60 font-semibold mt-0.5 truncate">Obreros del Porvenir</p>
-                                    </div>
+                                <div className="min-w-0">
+                                    <h1 className="text-sm sm:text-lg font-black leading-none truncate">Panel de Gestión</h1>
                                 </div>
 
                                 <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -193,13 +175,16 @@ export default function Admin({ onExit }: AdminProps) {
                                         <button
                                             onClick={() => setProfileOpen((v) => !v)}
                                             title="Perfil"
-                                            className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all ${
-                                                profileOpen || tab === "ajustes"
-                                                    ? "bg-[#ffcc00] text-[#4d0706] ring-2 ring-[#ffcc00] ring-offset-2 ring-offset-[#4d0706]"
-                                                    : "bg-[#ffcc00] text-[#4d0706] hover:bg-white"
-                                            }`}
+                                            className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all overflow-hidden ${profileOpen || tab === "ajustes"
+                                                ? "bg-[#ffcc00] text-[#4d0706] ring-2 ring-[#ffcc00] ring-offset-2 ring-offset-[#4d0706]"
+                                                : "bg-[#ffcc00] text-[#4d0706] hover:bg-white"
+                                                }`}
                                         >
-                                            <UserRound className="w-5 h-5" />
+                                            {profileImage ? (
+                                                <img src={profileImage} alt="Perfil" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <UserRound className="w-5 h-5" />
+                                            )}
                                         </button>
 
                                         {profileOpen && (

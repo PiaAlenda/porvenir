@@ -1,4 +1,4 @@
-const API_BASE = ""
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "")
 
 export interface Alumno {
     id: string
@@ -34,6 +34,13 @@ export interface Alumno {
 export interface CursoConfig {
     image?: string
     available: boolean
+    title?: string
+    cantidadTitulares?: number
+    inscriptionDate?: string
+    month?: string
+    schedule?: string
+    teacher?: string
+    ejes?: string
 }
 
 export type SiteConfigMap = Record<string, CursoConfig>
@@ -154,9 +161,19 @@ export const api = {
         })
     },
 
+    async updateCantidadTitulares(token: string, id: string, cantidadTitulares: number) {
+        const form = new FormData()
+        form.append("cantidadTitulares", String(cantidadTitulares))
+        return request<{ item: CursoConfig }>(`/api/config/${id}`, {
+            method: "PUT",
+            headers: auth(token),
+            body: form,
+        })
+    },
+
     urls: {
         ficha(id: string, token: string) {
-            return `/api/inscripciones/${id}/ficha?token=${encodeURIComponent(token)}`
+            return `${API_BASE}/api/inscripciones/${id}/ficha?token=${encodeURIComponent(token)}`
         },
     },
 }

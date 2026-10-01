@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: obreros-api
+    runtime: node
+    plan: free
+    region: southamerica
+    buildCommand: npm install
+    startCommand: npm run serve
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ALLOWED_ORIGIN
+        sync: false
+      - key: SERVE_STATIC
+        value: "0"
