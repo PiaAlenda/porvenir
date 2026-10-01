@@ -194,7 +194,47 @@ await check("cambiar disponibilidad de un curso", async () => {
   return `${configId} ahora available=${payload.cursos[configId].available}`
 })
 
-/* 9. limpieza: revertir configuracion y borrar la inscripcion */
+/* 9. eliminar un curso */
+const E2E_CURSO = `curso-e2e-borrable-${Date.now()}`
+await check("crear un curso descartable", async () => {
+  const fd = new FormData()
+  fd.append("title", "Curso E2E descartable")
+  fd.append("available", "true")
+  fd.append("category", "curso-virtual")
+  await api(`/api/config/${E2E_CURSO}`, { method: "PUT", token, body: fd, raw: true })
+  const { payload } = await api("/api/config")
+  if (!payload.cursos[E2E_CURSO]) throw new Error("no se creo")
+  return E2E_CURSO
+})
+
+await check("eliminar el curso lo saca de la config", async () => {
+  await api(`/api/config/${E2E_CURSO}`, { method: "DELETE", token })
+  const { payload } = await api("/api/config")
+  if (payload.cursos[E2E_CURSO]) throw new Error("sigue en la config")
+  return "eliminado"
+})
+
+await check("eliminar un curso inexistente da 404", async () => {
+  try {
+    await api(`/api/config/${E2E_CURSO}`, { method: "DELETE", token })
+    throw new Error("respondio bien para un id que no existe")
+  } catch (err) {
+    if (err.message.includes("respondio bien")) throw err
+    return "404"
+  }
+})
+
+await check("sin token no se pueden eliminar cursos", async () => {
+  try {
+    await api(`/api/config/${E2E_CURSO}`, { method: "DELETE" })
+    throw new Error("permitio eliminar sin token")
+  } catch (err) {
+    if (err.message.includes("permitio eliminar")) throw err
+    return "401"
+  }
+})
+
+/* 10. limpieza: revertir configuracion y borrar la inscripcion */
 await check("revertir la configuracion", async () => {
   const fd = new FormData()
   fd.append("available", String(configOriginal.available))

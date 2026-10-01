@@ -94,6 +94,14 @@ function buildDefaults() {
   return map
 }
 
+/**
+ * Ids que existen aunque no estén guardados. Borrar la fila de uno de estos no
+ * alcanza: `mergeWithDefaults` los vuelve a crear, así que la eliminación se
+ * guarda como una lápida `{ removed: true }` en lugar de como una ausencia.
+ */
+const DEFAULT_IDS = new Set([...Object.keys(COURSE_DEFAULT_IMAGES), ...CAREER_IDS])
+
+/** Mapa guardado tal cual, con las lápidas incluidas. Sin Supabase se cachea. */
 let cache = null
 
 /** Parte un valor en líneas, descarta vacíos y corta cada una. */
@@ -217,6 +225,8 @@ function sanitizeItem(item) {
     else if (out[key] === undefined || out[key] === null) delete out[key]
   }
   if (out.category !== undefined && !VALID_CATEGORIES.has(out.category)) delete out.category
+  // La lápida solo se propaga como el literal `true`: nada más la escribe.
+  if (out.removed !== true) delete out.removed
   if (Array.isArray(out.syllabus)) out.syllabus = normalizeSyllabus(out.syllabus)
   if (Array.isArray(out.teachers)) out.teachers = normalizeTeachers(out.teachers)
   if (Array.isArray(out.salidaLaboral)) out.salidaLaboral = normalizeList(out.salidaLaboral)
@@ -244,7 +254,9 @@ function mergeWithDefaults(saved) {
   const defaults = buildDefaults()
   const out = {}
   for (const id of Object.keys(defaults)) {
-    const s = saved && saved[id]
+    const s = saved[id]
+    // Lápida: el admin lo eliminó, así que el default no se vuelve a ofrecer.
+    if (s?.removed) continue
     const item = sanitizeItem(s || {})
     // Banners de cursos: públicos a propósito, así que no llevan firma.
     item.image = s && typeof s.image === "string" && s.image ? item.image : defaults[id].image
@@ -252,9 +264,11 @@ function mergeWithDefaults(saved) {
     out[id] = resolveItemAssets(item)
   }
   for (const id of Object.keys(saved || {})) {
+    if (out[id] || DEFAULT_IDS.has(id)) continue
+    if (saved[id]?.removed) continue
     // Las carreras y cursos que se agregaron desde el panel no están en los
     // defaults, así que se mergean tal cual vinieron.
-    if (!out[id]) out[id] = resolveItemAssets(sanitizeItem(saved[id]))
+    out[id] = resolveItemAssets(sanitizeItem(saved[id]))
   }
   return out
 }
@@ -276,49 +290,110 @@ function writeFile(map) {
   fs.renameSync(tmp, FILE)
 }
 
-export async function getConfig() {
-  if (!supabaseEnabled) {
-    if (cache) return cache
-    cache = mergeWithDefaults(readFile())
-    return cache
+/**
+ * Mapa guardado, sin sanear y sin filtrar: incluye las lápidas de los ítems
+ * eliminados, que `getConfig` esconde pero que hay que conservar para no
+ * resucitar un curso borrado al guardar cualquier otra cosa.
+ */
+async function readStored() {
+  if (supabaseEnabled) {
+    try {
+      const { data, error } = await supabase.from(TABLE).select("id, data")
+      if (error) {
+        console.warn("[supabase] no se pudo leer la tabla site_config, usando configuración por defecto:", error.message)
+        return {}
+      }
+      const saved = {}
+      for (const row of data || []) saved[row.id] = row.data || {}
+      return saved
+    } catch (err) {
+      console.warn("[supabase] error inesperado en getConfig:", err.message)
+      return {}
+    }
   }
 
-  try {
-    const { data, error } = await supabase.from(TABLE).select("id, data")
-    if (error) {
-      console.warn("[supabase] no se pudo leer la tabla site_config, usando configuración por defecto:", error.message)
-      return mergeWithDefaults({})
-    }
-    const saved = {}
-    for (const row of data || []) saved[row.id] = row.data || {}
-    return mergeWithDefaults(saved)
-  } catch (err) {
-    console.warn("[supabase] error inesperado en getConfig:", err.message)
-    return mergeWithDefaults({})
-  }
+  if (!cache) cache = readFile()
+  return cache
 }
 
-export async function updateItem(id, patch) {
-  const cfg = await getConfig()
-  const merged = { ...(cfg[id] || {}), ...patch }
+export async function getConfig() {
+  return mergeWithDefaults(await readStored())
+}
 
+/**
+ * Guarda (o pisa) un ítem del mapa.
+ * Se escribe sobre el mapa guardado y no sobre la vista que devuelve
+ * `getConfig`: esa ya viene filtrada y sin lápidas, así que guardarla tal cual
+ * borraría de un plumazo las eliminaciones y los ítems sin datos guardados.
+ */
+async function writeStored(id, data) {
   if (!supabaseEnabled) {
-    cfg[id] = merged
-    cache = cfg
-    writeFile(cfg)
-    return merged
+    const stored = await readStored()
+    cache = { ...stored, [id]: data }
+    writeFile(cache)
+    return data
   }
 
-  const { data, error } = await supabase
+  const { data: saved, error } = await supabase
     .from(TABLE)
-    .upsert({ id, data: merged, updated_at: new Date().toISOString() })
+    .upsert({ id, data, updated_at: new Date().toISOString() })
     .select("id, data")
     .single()
   if (error) {
     console.error("[supabase] no se pudo guardar la configuración:", error.message)
     throw new PublicError("No se pudo guardar la configuración del sitio.", 503)
   }
-  return data?.data || merged
+  return saved?.data || data
+}
+
+/** Quita la fila de un ítem que se creó desde el panel. */
+async function removeStored(id) {
+  if (!supabaseEnabled) {
+    const stored = await readStored()
+    cache = { ...stored }
+    delete cache[id]
+    writeFile(cache)
+    return
+  }
+
+  const { error } = await supabase.from(TABLE).delete().eq("id", id)
+  if (error) {
+    console.error("[supabase] no se pudo eliminar la configuración:", error.message)
+    throw new PublicError("No se pudo eliminar el curso del sitio.", 503)
+  }
+}
+
+export async function updateItem(id, patch) {
+  const stored = await readStored()
+  const saved = stored[id]
+  // Una lápida no se pisa con el merge: si el admin vuelve a crear un curso con
+  // el mismo id, arranca de cero en vez de quedar marcado como eliminado.
+  const previous = saved && !saved.removed ? saved : {}
+  const merged = { ...previous, ...patch }
+  return writeStored(id, merged)
+}
+
+/**
+ * Elimina un curso o una carrera de la configuración.
+ *
+ * Devuelve false cuando el id no existe, para que la ruta pueda responder 404.
+ * Los ids que vienen por defecto no se borran del mapa: se marcan con
+ * `removed`, porque `mergeWithDefaults` los volvería a crear.
+ */
+export async function deleteItem(id) {
+  const stored = await readStored()
+  const saved = stored[id]
+  if (!saved && !DEFAULT_IDS.has(id)) return false
+
+  if (DEFAULT_IDS.has(id)) await writeStored(id, { ...(saved || {}), removed: true })
+  else await removeStored(id)
+  return true
+}
+
+/** Ids que el admin eliminó y que por eso no se ofrecen más. */
+export async function getRemovedIds() {
+  const stored = await readStored()
+  return Object.keys(stored).filter((id) => stored[id]?.removed)
 }
 
 export { normalizeList, normalizeSyllabus, normalizeTeachers, TEXT_LIMITS, VALID_CATEGORIES }

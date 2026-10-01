@@ -5,7 +5,7 @@ import AlumnosPanel from "@/components/admin/AlumnosPanel"
 import AdminMobileNav from "@/components/admin/AdminMobileNav"
 import CursosPanel from "@/components/admin/CursosPanel"
 import AjustesPanel from "@/components/admin/AjustesPanel"
-import { useSiteConfig } from "@/siteConfig"
+import { activeIds, useSiteConfig } from "@/siteConfig"
 
 const PROFILE_IMAGE_KEY = "obreros_admin_profile_image"
 
@@ -70,7 +70,7 @@ export default function Admin({ onExit }: AdminProps) {
         }
     }, [token])
 
-    const configIds = Object.keys(config)
+    const configIds = activeIds(config)
     const cursosCount = configIds.filter((id) => id.startsWith("curso-")).length
     const carrerasCount = configIds.filter((id) => id.startsWith("tec-")).length
 

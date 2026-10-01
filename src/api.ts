@@ -50,6 +50,8 @@ export interface CursoConfig {
     available: boolean
     title?: string
     cantidadTitulares?: number
+    /** El admin lo eliminó: el ítem vuelve como lápida y no se ofrece más. */
+    removed?: true
     /* hero / encabezado */
     description?: string
     longDescription?: string
@@ -212,6 +214,14 @@ export const api = {
             method: "PUT",
             headers: auth(token),
             body: form,
+        })
+    },
+
+    /** Elimina un curso o una carrera del sitio y borra sus archivos. */
+    async deleteCurso(token: string, id: string) {
+        return request<{ ok: boolean }>(`/api/config/${encodeURIComponent(id)}`, {
+            method: "DELETE",
+            headers: auth(token),
         })
     },
 

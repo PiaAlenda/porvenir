@@ -15,6 +15,7 @@ import {
 import {
   getConfig,
   updateItem,
+  deleteItem,
   parseCantidadTitulares,
   MAX_CANTIDAD_TITULARES,
   normalizeList,
@@ -426,10 +427,49 @@ const careerUploadMiddleware = (req, res, next) => {
   })
 }
 
+/**
+ * Borra un curso o una carrera de la configuración y limpia los archivos que
+ * había subido el admin: si no, quedan huérfanos en el bucket de por vida.
+ *
+ * Las imágenes de fábrica (las del repo, servidas como estáticas) no se tocan:
+ * `deleteUpload` solo Borra lo que está guardado en Storage.
+ */
+async function removeConfigItem(id) {
+  const item = (await getConfig())[id]
+  if (!item) return false
+
+  await deleteUpload(item.image)
+  await deleteUpload(item.video)
+  for (const teacher of item.teachers || []) {
+    await deleteUpload(teacher?.image)
+  }
+  return deleteItem(id)
+}
+
+app.delete("/api/config/:id", requireAdmin, async (req, res) => {
+  if (!(await removeConfigItem(req.params.id))) {
+    return res.status(404).json({ error: "No existe ese curso o carrera" })
+  }
+  res.json({ ok: true })
+})
+
 app.put("/api/config/:id", requireAdmin, careerUploadMiddleware, async (req, res) => {
+  const body = req.body || {}
+
+  /*
+   * El panel deployed antes del endpoint DELETE mandaba `delete=true` por el
+   * mismo PUT. Se sigue aceptando para que un deploy viejo del front no rompa
+   * el botón de eliminar.
+   */
+  if (body.delete === "true" || body.delete === true) {
+    if (!(await removeConfigItem(req.params.id))) {
+      return res.status(404).json({ error: "No existe ese curso o carrera" })
+    }
+    return res.json({ item: null, deleted: true })
+  }
+
   const cfg = await getConfig()
   const existing = cfg[req.params.id] || { image: "", available: true }
-  const body = req.body || {}
 
   /*
    * Los archivos llegan con el nombre del campo: "image", "video" y

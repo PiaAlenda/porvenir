@@ -57,7 +57,19 @@ export function getImageFor(id: string, config: SiteConfigMap): string {
 
 export function isAvailableFor(id: string, config: SiteConfigMap): boolean {
     const c = config[id]
-    return c ? c.available !== false : true
+    if (!c) return true
+    if (isRemoved(id, config)) return false
+    return c.available !== false
+}
+
+/** El item existe pero el admin lo eliminó: queda como lápida en la config. */
+export function isRemoved(id: string, config: SiteConfigMap): boolean {
+    return config[id]?.removed === true
+}
+
+/** Ids que hay que mostrar de verdad, sin las lápidas de los eliminados. */
+export function activeIds(config: SiteConfigMap): string[] {
+    return Object.keys(config).filter((id) => !isRemoved(id, config))
 }
 
 const splitLines = (value?: string): string[] =>
@@ -163,6 +175,7 @@ function applyConfig(base: Career, c: CursoConfig): Career {
 }
 
 export function getCareerById(id: string, config: SiteConfigMap): Career | undefined {
+    if (isRemoved(id, config)) return undefined
     const base = CAREER_DATA[id]
     const c = config[id]
     if (base) return c ? applyConfig(base, c) : base
@@ -171,7 +184,13 @@ export function getCareerById(id: string, config: SiteConfigMap): Career | undef
 }
 
 export function getCareers(config: SiteConfigMap): Career[] {
-    const ids = new Set([...Object.keys(CAREER_DATA), ...Object.keys(config)])
+    /*
+     * Los ids hardcodeados de `CAREER_DATA` entran siempre: el panel puede
+     * crear ofertas nuevas, pero borrar una no puede sacar el id del código.
+     * Por eso la eliminación se guarda como lápida en la config y se filtra
+     * acá en lugar de intentar borrar el registro.
+     */
+    const ids = new Set([...Object.keys(CAREER_DATA), ...activeIds(config)])
     const out: Career[] = []
     ids.forEach((id) => {
         const career = getCareerById(id, config)
