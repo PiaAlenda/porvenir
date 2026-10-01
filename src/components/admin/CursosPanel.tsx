@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import {
     Briefcase,
     Building2,
@@ -24,7 +24,6 @@ import {
     Sparkles,
     Sun,
     Trash2,
-    Upload,
     Wrench,
     X,
     type LucideIcon,
@@ -243,7 +242,6 @@ export default function CursosPanel({ token, section }: Props) {
         if (w >= 640) return "tablet"
         return "mobile"
     })
-    const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
     const [alumnos, setAlumnos] = useState<Alumno[] | null>(null)
 
     useEffect(() => {
@@ -288,20 +286,10 @@ export default function CursosPanel({ token, section }: Props) {
         }
     }
 
-    const toggleAvailable = (id: string, current: boolean) => {
+const toggleAvailable = (id: string, current: boolean) => {
         const form = new FormData()
         form.append("available", String(!current))
         save(id, form)
-    }
-
-    const onPickImage = (id: string, e: ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file) return
-        const form = new FormData()
-        form.append("image", file)
-        form.append("available", String(isAvailableFor(id, config)))
-        save(id, form)
-        e.target.value = ""
     }
 
     const handleEditCareer = (careerId: string) => {
@@ -426,20 +414,12 @@ export default function CursosPanel({ token, section }: Props) {
                 <div className="mt-auto flex items-center gap-1.5 sm:gap-2 border-t border-gray-100 p-2.5 sm:p-3">
                     <button
                         type="button"
-                        onClick={() => fileInputRefs.current[id]?.click()}
-                        title="Subir una imagen"
-                        className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 transition-colors cursor-pointer"
-                    >
-                        <Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                        <span className="truncate">Subir imagen</span>
-                    </button>
-                    <button
-                        type="button"
                         onClick={() => setEditingId(id)}
                         title="Editar curso o carrera"
-                        className="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 shrink-0 rounded-lg text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 transition-colors cursor-pointer"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 transition-colors cursor-pointer"
                     >
-                        <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                        <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                        Editar
                     </button>
                     <button
                         type="button"
@@ -450,15 +430,6 @@ export default function CursosPanel({ token, section }: Props) {
                     >
                         <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
-                    <input
-                        ref={(el) => {
-                            fileInputRefs.current[id] = el
-                        }}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => onPickImage(id, e)}
-                    />
                 </div>
             </div>
         )

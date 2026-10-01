@@ -6,8 +6,7 @@ import AdminMobileNav from "@/components/admin/AdminMobileNav"
 import CursosPanel from "@/components/admin/CursosPanel"
 import AjustesPanel from "@/components/admin/AjustesPanel"
 import { activeIds, useSiteConfig } from "@/siteConfig"
-
-const PROFILE_IMAGE_KEY = "obreros_admin_profile_image"
+import { getAdminProfileImage, subscribeAdminProfileImage } from "@/lib/adminProfileImage"
 
 interface AdminProps {
     onExit: () => void
@@ -48,14 +47,11 @@ export default function Admin({ onExit }: AdminProps) {
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [profileOpen, setProfileOpen] = useState(false)
     const [inscripcionesCount, setInscripcionesCount] = useState(0)
-    const [profileImage, setProfileImage] = useState<string | null>(null)
+    const [profileImage, setProfileImage] = useState<string | null>(getAdminProfileImage)
 
     const { config } = useSiteConfig()
 
-    useEffect(() => {
-        const saved = localStorage.getItem(PROFILE_IMAGE_KEY)
-        if (saved) setProfileImage(saved)
-    }, [])
+    useEffect(() => subscribeAdminProfileImage(() => setProfileImage(getAdminProfileImage())), [])
 
     useEffect(() => {
         if (!token) return

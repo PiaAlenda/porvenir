@@ -1,13 +1,13 @@
-import { useState, type FormEvent, type ChangeEvent, useEffect } from "react"
-import { AlertCircle, Check, Camera, Eye, EyeOff, KeyRound, Loader2, User } from "lucide-react"
+import { useState, useSyncExternalStore, type FormEvent, type ChangeEvent } from "react"
+import { AlertCircle, Camera, Check, Eye, EyeOff, KeyRound, Loader2, Trash2, User } from "lucide-react"
 import { api } from "@/api"
+import { getAdminProfileImage, setAdminProfileImage, subscribeAdminProfileImage } from "@/lib/adminProfileImage"
 
 interface Props {
     token: string
 }
 
 const MIN_LENGTH = 8
-const PROFILE_IMAGE_KEY = "obreros_admin_profile_image"
 
 export default function AjustesPanel({ token }: Props) {
     const [currentPassword, setCurrentPassword] = useState("")
@@ -17,12 +17,11 @@ export default function AjustesPanel({ token }: Props) {
     const [error, setError] = useState("")
     const [success, setSuccess] = useState("")
     const [saving, setSaving] = useState(false)
-    const [profileImage, setProfileImage] = useState<string | null>(null)
-
-    useEffect(() => {
-        const saved = localStorage.getItem(PROFILE_IMAGE_KEY)
-        if (saved) setProfileImage(saved)
-    }, [])
+    const profileImage = useSyncExternalStore(
+        subscribeAdminProfileImage,
+        getAdminProfileImage,
+        getAdminProfileImage
+    )
 
     const toggleShow = (field: keyof typeof show) => setShow((s) => ({ ...s, [field]: !s[field] }))
 
@@ -72,13 +71,17 @@ export default function AjustesPanel({ token }: Props) {
         }
         const reader = new FileReader()
         reader.onload = () => {
-            const dataUrl = reader.result as string
-            setProfileImage(dataUrl)
-            localStorage.setItem(PROFILE_IMAGE_KEY, dataUrl)
+            setAdminProfileImage(reader.result as string)
             setError("")
             setSuccess("Foto de perfil actualizada")
         }
         reader.readAsDataURL(file)
+    }
+
+    const handleRemoveImage = () => {
+        setAdminProfileImage(null)
+        setError("")
+        setSuccess("Foto de perfil eliminada")
     }
 
     const passwordInput = (
@@ -136,10 +139,30 @@ export default function AjustesPanel({ token }: Props) {
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             />
                         </label>
+                        {profileImage && (
+                            <button
+                                type="button"
+                                onClick={handleRemoveImage}
+                                title="Eliminar foto de perfil"
+                                className="absolute top-0 left-0 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-red-600 transition-colors shadow-lg"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
                     <div>
                         <h3 className="text-lg font-black text-gray-900">Foto de perfil</h3>
                         <p className="text-sm text-gray-500 font-medium mt-0.5">Subí una imagen para tu perfil (máx. 5MB)</p>
+                        {profileImage && (
+                            <button
+                                type="button"
+                                onClick={handleRemoveImage}
+                                className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Eliminar foto
+                            </button>
+                        )}
                     </div>
                 </div>
 
