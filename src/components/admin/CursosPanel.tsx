@@ -34,6 +34,7 @@ import { CAREER_DATA } from "@/config/careerData"
 import { activeIds, getCantidadTitularesFor, getImageFor, isAvailableFor, useSiteConfig } from "@/siteConfig"
 import { clasificarParticipantes, resumenCupo } from "@/lib/titulares"
 import CarreraDetalle from "./CarreraDetalle"
+import ConfirmDialog from "./ConfirmDialog"
 import CursoModal from "./CursoModal"
 
 interface Props {
@@ -232,6 +233,9 @@ export default function CursosPanel({ token, section }: Props) {
     const [editingId, setEditingId] = useState<string | null>(null)
     const [imgError, setImgError] = useState<Record<string, boolean>>({})
     const [selected, setSelected] = useState<{ id: string; section: Props["section"] } | null>(null)
+    const [deleting, setDeleting] = useState<{ id: string; label: string; section: Props["section"] } | null>(null)
+    const [deletingBusy, setDeletingBusy] = useState(false)
+    const [deleteError, setDeleteError] = useState("")
     const [pagination, setPagination] = useState<{ section: Props["section"]; page: number }>({ section, page: 0 })
     const [viewport, setViewport] = useState<"mobile" | "tablet" | "desktop">(() => {
         const w = window.innerWidth
@@ -300,13 +304,6 @@ export default function CursosPanel({ token, section }: Props) {
         e.target.value = ""
     }
 
-    const removeImage = (id: string) => {
-        const form = new FormData()
-        form.append("removeImage", "true")
-        form.append("available", String(isAvailableFor(id, config)))
-        save(id, form)
-    }
-
     const handleEditCareer = (careerId: string) => {
         setEditingId(careerId)
     }
@@ -326,28 +323,36 @@ export default function CursosPanel({ token, section }: Props) {
     /**
      * Elimina un curso o una carrera. El backend lo saca de la config y borra
      * los archivos que se habían subido, así que no hay que hacer limpieza acá.
+     * La confirmación va en un popup del panel, no en el `confirm()` del
+     * navegador.
      */
-    const remove = async (id: string, label: string, section: Props["section"]) => {
-        const tipo = section === "cursos" ? "curso" : "carrera"
-        if (!confirm(`¿Eliminar ${label}? Se va a quitar del sitio y no se puede deshacer.`)) return
-
-        setSavingId(id)
+    const confirmDelete = async () => {
+        if (!deleting) return
+        const { id } = deleting
+        setDeletingBusy(true)
+        setDeleteError("")
         try {
             await api.deleteCurso(token, id)
             // Si se estaba viendo el detalle de esa carrera, el panel queda
             // en la lista: el detalle ya no tiene nada que mostrar.
             setSelected((prev) => (prev?.id === id ? null : prev))
             setEditingId((prev) => (prev === id ? null : prev))
+            setDeleting(null)
             await refresh()
         } catch (err) {
-            alert(err instanceof Error ? err.message : `No se pudo eliminar ${tipo === "curso" ? "el curso" : "la carrera"}`)
+            setDeleteError(err instanceof Error ? err.message : "No se pudo eliminar")
         } finally {
-            setSavingId(null)
+            setDeletingBusy(false)
         }
     }
 
-    const handleDeleteCareer = (careerId: string) => remove(careerId, titleOf(careerId), "carreras")
-    const handleDeleteCourse = (courseId: string) => remove(courseId, titleOf(courseId), "cursos")
+    const askDelete = (id: string, section: Props["section"]) => {
+        setDeleteError("")
+        setDeleting({ id, label: titleOf(id), section })
+    }
+
+    const handleDeleteCareer = (careerId: string) => askDelete(careerId, "carreras")
+    const handleDeleteCourse = (courseId: string) => askDelete(courseId, "cursos")
 
     if (selected && selected.section === section) {
         return <CarreraDetalle key={selected.id} token={token} careerId={selected.id} onBack={() => setSelected(null)} />
@@ -435,14 +440,6 @@ export default function CursosPanel({ token, section }: Props) {
                         className="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 shrink-0 rounded-lg text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 transition-colors cursor-pointer"
                     >
                         <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => removeImage(id)}
-                        title="Volver a la imagen original"
-                        className="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 shrink-0 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
-                    >
-                        <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
                     <button
                         type="button"
@@ -588,6 +585,24 @@ export default function CursosPanel({ token, section }: Props) {
                         setEditingId(null)
                         refresh()
                         if (wasCreate) setPagination({ section, page: Number.MAX_SAFE_INTEGER })
+                    }}
+                />
+            )}
+
+            {deleting && (
+                <ConfirmDialog
+                    title={`Eliminar ${deleting.section === "cursos" ? "curso" : "carrera"}`}
+                    message={
+                        <>
+                            <span className="font-black text-gray-900">{deleting.label}</span> se va a quitar del
+                            sitio y de la lista de inscripción. Esta acción no se puede deshacer.
+                        </>
+                    }
+                    busy={deletingBusy}
+                    error={deleteError}
+                    onConfirm={confirmDelete}
+                    onCancel={() => {
+                        if (!deletingBusy) setDeleting(null)
                     }}
                 />
             )}
