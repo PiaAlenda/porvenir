@@ -1,5 +1,7 @@
 import express from "express"
 import cors from "cors"
+import rateLimit from "express-rate-limit"
+import helmet from "helmet"
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -16,14 +18,12 @@ import {
   changePassword,
   verifyToken,
   isDefaultPassword,
-  isLocked,
-  lockRemainingMs,
-  registerFailure,
-  resetFailures,
+  hasUsableAdminConfig,
 } from "./auth.mjs"
 import { upload, saveUpload, deleteUpload, UPLOADS_URL_PREFIX } from "./storage.mjs"
-import { ensureUploadsBucket, supabaseEnabled } from "./supabase.mjs"
+import { ensureBuckets, supabaseEnabled } from "./supabase.mjs"
 import { generarFichaPdf } from "./pdf.mjs"
+import { PublicError } from "./errors.mjs"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const UPLOADS_DIR = path.join(__dirname, "data", "uploads")
@@ -31,6 +31,108 @@ const DIST_DIR = path.join(__dirname, "..", "dist")
 
 const app = express()
 const PORT = process.env.PORT || 3001
+
+const IS_PRODUCTION = process.env.NODE_ENV === "production"
+
+/* ---------- guardas de arranque ---------- */
+/*
+ * En producción la configuración incompleta tiene que frenar el arranque en vez
+ * de dejarlo en un estado medio seguro. Todas estas condiciones antes solo
+ * imprimían una advertencia y seguían adelante.
+ */
+const missingInProduction = []
+if (IS_PRODUCTION) {
+  if (!supabaseEnabled) missingInProduction.push("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY")
+  if (!process.env.ALLOWED_ORIGIN) missingInProduction.push("ALLOWED_ORIGIN")
+  if (!hasUsableAdminConfig()) missingInProduction.push("ADMIN_EMAIL / ADMIN_EMAILS")
+}
+if (missingInProduction.length) {
+  console.error(
+    `[config] Faltan variables obligatorias en producción: ${missingInProduction.join(", ")}. No se inicia el servidor.`,
+  )
+  process.exit(1)
+}
+if (isDefaultPassword()) {
+  console.error("[config] ADMIN_PASSWORD sigue con el valor por defecto. No se inicia el servidor.")
+  process.exit(1)
+}
+
+/* ---------- proxy ---------- */
+/*
+ * En Render la app corre detrás de un proxy inverso. Sin esto, `req.ip` vale
+ * la IP del proxy — la misma para todos los usuarios — y el rate limiting del
+ * login agruparía a toda la escuela en un único bucket, con lo que cinco
+ * intentos fallidos bloquearían el acceso de todos a la vez.
+ */
+app.set("trust proxy", 1)
+
+/* ---------- rate limiting ---------- */
+
+const RATE_LIMIT_MESSAGE = "Demasiados intentos. Probá de nuevo en unos minutos."
+
+/** Login: estricto. Solo cuenta los intentos fallidos. */
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: { error: RATE_LIMIT_MESSAGE },
+})
+
+/*
+ * Inscripción pública: tiene que tolerar que una escuela entera se conecte
+ * desde la misma IP (mismo wifi, NAT de la institución), por eso el tope es
+ * alto. Igual pone un techo al antiflood: cada request puede arrastrar hasta
+ * 20MB de adjuntos en memoria.
+ */
+const inscriptionLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 40,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Demasiadas inscripciones desde esta conexión. Probá más tarde." },
+})
+
+/** API en general: holgado, solo para frenar scripts automatizados. */
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: RATE_LIMIT_MESSAGE },
+})
+
+/* ---------- headers de seguridad ---------- */
+
+/*
+ * helmet endurece las cabeceras por defecto. El CSP es el único que hay que
+ * ajustar: el panel carga adjuntos desde el dominio de Storage de Supabase y
+ * los PDF generados se descargan como blob.
+ */
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
+        fontSrc: ["'self'", "data:", "https://*.supabase.co"],
+        connectSrc: ["'self'", "https://*.supabase.co"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    // Los adjuntos y banners se sirven desde otro origen (Supabase Storage).
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    // Detrás del proxy de Render, HSTS solo se agrega si el request llegó por
+    // HTTPS; helmet lo resuelve solo con esto.
+    hsts: IS_PRODUCTION ? { maxAge: 15552000, includeSubDomains: true } : false,
+  }),
+)
 
 /* ---------- CORS ---------- */
 /* El frontend vive en Vercel, la API en Render: hay que permitir ese origen. */
@@ -43,8 +145,16 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGIN || "")
 app.use(
   cors({
     origin(origin, cb) {
+      // Sin Origin (curl, apps nativas, same-origin) no hay CORS que aplicar.
       if (!origin) return cb(null, true)
-      if (!ALLOWED_ORIGINS.length) return cb(null, true)
+      /*
+       * Fail-closed: si la allow-list está vacía, el origen se rechaza en vez
+       * de aceptarse cualquiera. Antes devolvía `true` y dejaba la API
+       * abierta a cualquier sitio. En producción, el arranque ya se aborta
+       * cuando falta ALLOWED_ORIGIN, así que acá solo queda el camino de
+       * desarrollo.
+       */
+      if (!ALLOWED_ORIGINS.length) return cb(null, false)
       cb(null, ALLOWED_ORIGINS.includes(origin.replace(/\/$/, "")))
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -72,7 +182,9 @@ app.get("/api/health", (_req, res) => {
 
 async function requireAdmin(req, res, next) {
   const header = req.headers.authorization || ""
-  const token = header.startsWith("Bearer ") ? header.slice(7) : req.query.token
+  // Solo por header: el token nunca se acepta en la query string porque
+  // ahí quedaría en los logs de acceso, en el Referer y en el historial.
+  const token = header.startsWith("Bearer ") ? header.slice(7) : ""
   if (!(await verifyToken(token))) {
     return res.status(401).json({ error: "No autorizado" })
   }
@@ -80,21 +192,14 @@ async function requireAdmin(req, res, next) {
   next()
 }
 
-app.post("/api/auth/login", async (req, res) => {
+app.post("/api/auth/login", loginLimiter, async (req, res) => {
   const ip = req.ip || (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown"
-  if (isLocked(ip)) {
-    const mins = Math.max(1, Math.ceil(lockRemainingMs(ip) / 60000))
-    return res.status(429).json({ error: `Demasiados intentos fallidos. Probá de nuevo en ${mins} min.` })
-  }
-
   const { email, password } = req.body || {}
   const result = await authenticate(email, password)
   if (result.error) {
-    registerFailure(ip)
     return res.status(401).json({ error: result.error })
   }
 
-  resetFailures(ip)
   res.json({ token: result.token, email: result.user?.email || String(email).trim().toLowerCase() })
 })
 
@@ -163,7 +268,7 @@ const inscripcionUpload = (req, res, next) => {
   })
 }
 
-app.post("/api/inscripciones", inscripcionUpload, async (req, res) => {
+app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req, res) => {
   const body = req.body || {}
   const err = validateRequeridos(body)
   if (err) return res.status(400).json({ error: err })
@@ -178,7 +283,6 @@ app.post("/api/inscripciones", inscripcionUpload, async (req, res) => {
 
   if (req.files?.fotoDni?.[0]) fotoDni = await saveUpload(req.files.fotoDni[0])
   if (req.files?.fotoCertificado?.[0]) fotoCertificado = await saveUpload(req.files.fotoCertificado[0])
-
   const record = await createAlumno({
     apellido: String(body.apellido).trim(),
     nombre: String(body.nombre).trim(),
@@ -282,7 +386,10 @@ app.get("/api/inscripciones/:id/ficha", requireAdmin, async (req, res) => {
     const nombre = `${(alumno.apellido || "alumno").replace(/[^a-zA-Z0-9]+/g, "_")}_ficha.pdf`
     await sendPdf(res, bytes, nombre)
   } catch (err) {
-    res.status(500).json({ error: "No se pudo generar la ficha", detalle: err.message })
+    // El motivo real (tipografía faltante, error de pdfmake) se queda en el
+    // log; el cliente recibe un mensaje genérico.
+    console.error("[pdf] no se pudo generar la ficha:", err?.stack || err?.message || err)
+    res.status(500).json({ error: "No se pudo generar la ficha" })
   }
 })
 
@@ -321,7 +428,9 @@ app.put("/api/config/:id", requireAdmin, upload.single("image"), async (req, res
   }
   if (req.file) {
     await deleteUpload(existing.image)
-    patch.image = await saveUpload(req.file)
+    // La imagen de un curso se muestra en el home público: va al bucket
+    // público, no al de los documentos de identidad.
+    patch.image = await saveUpload(req.file, { visibility: "public" })
   }
 
   const updated = await updateItem(req.params.id, patch)
@@ -332,7 +441,7 @@ app.put("/api/config/:id", requireAdmin, upload.single("image"), async (req, res
 
 const SERVE_STATIC = process.env.SERVE_STATIC === "1" || (!process.env.SERVE_STATIC && fs.existsSync(DIST_DIR))
 
-app.use("/api", (_req, res) => res.status(404).json({ error: "Endpoint no encontrado" }))
+app.use("/api", apiLimiter, (_req, res) => res.status(404).json({ error: "Endpoint no encontrado" }))
 
 if (SERVE_STATIC) {
   app.use(express.static(DIST_DIR))
@@ -342,23 +451,26 @@ if (SERVE_STATIC) {
 /* ---------- errores ---------- */
 
 app.use((err, _req, res, _next) => {
-  console.error("[error]", err?.message || err)
   if (res.headersSent) return
-  const status = err?.status || err?.statusCode || 500
-  res.status(status).json({ error: err?.message || "Error interno del servidor" })
+  const status = err?.status || err?.statusCode || (err?.name === "PublicError" ? 400 : 500)
+
+  if (err?.name === "PublicError" || err?.expose === true) {
+    const message = err?.message || "Solicitud inválida"
+    console.warn(`[error public] ${message}`)
+    return res.status(status).json({ error: message })
+  }
+
+  // Nunca se filtra el detalle al cliente: se loguea completo para poder
+  // investigar en los logs de Render.
+  console.error("[error interno]", err?.stack || err?.message || err)
+  res.status(500).json({ error: "Error interno del servidor" })
 })
 
 /* ---------- arranque ---------- */
 
-await ensureUploadsBucket()
+await ensureBuckets()
 
 app.listen(PORT, () => {
-  console.log(`Servidor corrriendo en http://localhost:${PORT}`)
+  console.log(`Servidor corriendo en http://localhost:${PORT}`)
   console.log(`Datos: ${supabaseEnabled ? "Supabase" : "archivos locales (respaldo)"}`)
-  if (isDefaultPassword()) {
-    console.warn("[aviso] Se está usando la contraseña por defecto. Creá la variable ADMIN_PASSWORD en el archivo .env")
-  }
-  if (supabaseEnabled && !ALLOWED_ORIGINS.length) {
-    console.warn("[aviso] No definiste ALLOWED_ORIGIN: la API aceptará requests desde cualquier origen.")
-  }
 })

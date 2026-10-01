@@ -9,12 +9,25 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@escuela.com"
 let PASSWORD = process.env.ADMIN_PASSWORD || "admin"
 
+/**
+ * Correos con acceso al panel. `ADMIN_EMAILS` acepta varios separados por
+ * coma; si no está, se usa el `ADMIN_EMAIL` de siempre.
+ *
+ * Esto no es opcional: en modo Supabase, verifyToken solo comprobaba que el
+ * token fuera de un usuario válido, así que cualquier cuenta creada en el
+ * proyecto de Supabase entraba como administrador. Con el signup por email
+ * abierto, eso alcanzaba para que cualquiera se metiera al panel.
+ */
+const ADMIN_EMAILS = new Set(
+  (process.env.ADMIN_EMAILS || ADMIN_EMAIL)
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
+)
+
 const TOKEN_TTL_MS = 8 * 60 * 60 * 1000 // 8 horas
-const MAX_FAILURES = 5
-const LOCK_MS = 15 * 60 * 1000 // 15 minutos
 
 const tokens = new Map() // token -> expiración (ms), solo en modo local
-const failures = new Map() // ip -> { count, lockUntil }
 
 function safeEqual(a, b) {
   const bufA = Buffer.from(String(a ?? ""))
@@ -23,41 +36,19 @@ function safeEqual(a, b) {
   return crypto.timingSafeEqual(bufA, bufB)
 }
 
+function isAdminEmail(email) {
+  return ADMIN_EMAILS.has(String(email ?? "").trim().toLowerCase())
+}
+
 export function isDefaultPassword() {
   return !supabaseEnabled && PASSWORD === "admin"
 }
 
-/* ---------- bloqueo por intentos fallidos ---------- */
-
-export function isLocked(ip) {
-  const f = failures.get(ip)
-  if (!f || !f.lockUntil) return false
-  if (Date.now() >= f.lockUntil) {
-    failures.delete(ip)
-    return false
-  }
-  return true
+/** ¿La configuración de acceso del panel es la de desarrollo? */
+export function hasUsableAdminConfig() {
+  return ADMIN_EMAILS.size > 0
 }
 
-export function lockRemainingMs(ip) {
-  const f = failures.get(ip)
-  if (!f?.lockUntil) return 0
-  return Math.max(0, f.lockUntil - Date.now())
-}
-
-export function registerFailure(ip) {
-  const f = failures.get(ip) || { count: 0, lockUntil: 0 }
-  f.count += 1
-  if (f.count >= MAX_FAILURES) {
-    f.lockUntil = Date.now() + LOCK_MS
-    f.count = 0
-  }
-  failures.set(ip, f)
-}
-
-export function resetFailures(ip) {
-  failures.delete(ip)
-}
 
 /* ---------- Supabase Auth ---------- */
 
@@ -75,6 +66,11 @@ export async function authenticate(email, password) {
       password: String(password ?? ""),
     })
     if (error || !data?.session) {
+      return { error: "Credenciales incorrectas" }
+    }
+    // Credenciales válidas no necesariamente son de un administrador: el
+    // proyecto de Supabase puede tener otros usuarios dados de alta.
+    if (!isAdminEmail(data.user?.email)) {
       return { error: "Credenciales incorrectas" }
     }
     return {
@@ -99,7 +95,9 @@ export async function verifyToken(token) {
     if (!supabase) return false
     const { data, error } = await supabase.auth.getUser(token)
     if (error || !data?.user) return false
-    return true
+    // Segunda barrera, además de la del login: aunque un token válido llegue a
+    // una ruta protegida, tiene que ser de un correo administrador.
+    return isAdminEmail(data.user.email)
   }
 
   const exp = tokens.get(token)

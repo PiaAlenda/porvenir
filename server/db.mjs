@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto"
 import { fileURLToPath } from "node:url"
 import { supabase, supabaseEnabled } from "./supabase.mjs"
 import { resolveMediaUrl } from "./storage.mjs"
+import { PublicError } from "./errors.mjs"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = path.join(__dirname, "data")
@@ -83,21 +84,33 @@ function normalize(data) {
   return out
 }
 
-function toRecord(row) {
-  const record = {
+/** Record tal como está persistido, con las claves crudas de los adjuntos. */
+function toRawRecord(row) {
+  return {
     id: row.id,
     ...row.data,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
-  record.fotoDni = resolveMediaUrl(record.fotoDni)
-  record.fotoCertificado = resolveMediaUrl(record.fotoCertificado)
+}
+
+/**
+ * Record listo para la API: los adjuntos de identidad se sirven con URL firmada
+ * de corta duración. Nunca usar esto para volver a escribir en la base, porque
+ * la URL firmada expira en 10 minutos.
+ */
+async function toRecord(row) {
+  const record = toRawRecord(row)
+  record.fotoDni = await resolveMediaUrl(record.fotoDni)
+  record.fotoCertificado = await resolveMediaUrl(record.fotoCertificado)
   return record
 }
 
 function fail(context, error) {
   console.error(`[supabase] ${context}:`, error?.message || error)
-  throw new Error("No se pudo completar la operación en la base de datos.")
+  // El detalle de Supabase se queda en el log; el cliente recibe un mensaje
+  // genérico para no filtrar nombres de tablas ni de columnas.
+  throw new PublicError("No se pudo completar la operación en la base de datos.", 503)
 }
 
 /* ---------- API pública ---------- */
@@ -111,7 +124,19 @@ export async function getAll() {
     .select("id, data, created_at, updated_at")
     .order("created_at", { ascending: false })
   if (error) fail("no se pudieron leer las inscripciones", error)
-  return (data || []).map(toRecord)
+  return Promise.all((data || []).map(toRecord))
+}
+
+/** Lectura interna: devuelve las claves crudas, sin firmar URLs. */
+async function getRawById(id) {
+  if (!supabaseEnabled) return readFile().find((r) => r.id === id) || null
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("id, data, created_at, updated_at")
+    .eq("id", id)
+    .maybeSingle()
+  if (error) fail("no se pudo leer la inscripción", error)
+  return data ? toRawRecord(data) : null
 }
 
 export async function getById(id) {
@@ -122,7 +147,7 @@ export async function getById(id) {
     .eq("id", id)
     .maybeSingle()
   if (error) fail("no se pudo leer la inscripción", error)
-  return data ? toRecord(data) : null
+  return data ? await toRecord(data) : null
 }
 
 export async function createAlumno(data) {
@@ -145,7 +170,6 @@ export async function createAlumno(data) {
   if (error) fail("no se pudo guardar la inscripción", error)
   return toRecord(row)
 }
-
 export async function updateAlumno(id, patch) {
   if (!supabaseEnabled) {
     const list = readFile()
@@ -164,7 +188,9 @@ export async function updateAlumno(id, patch) {
     return list[idx]
   }
 
-  const actual = await getById(id)
+  // El merge parte del record CRUDO: si se usara getById() se persistirían
+  // las URLs firmadas de los adjuntos, que expiran a los 10 minutos.
+  const actual = await getRawById(id)
   if (!actual) return null
   const { id: _ignored, createdAt: _created, updatedAt: _updated, ...rest } = patch
   const merged = normalize({ ...actual, ...rest })
@@ -176,7 +202,7 @@ export async function updateAlumno(id, patch) {
     .select("id, data, created_at, updated_at")
     .maybeSingle()
   if (error) fail("no se pudo actualizar la inscripción", error)
-  return data ? toRecord(data) : null
+  return data ? await toRecord(data) : null
 }
 
 export async function deleteAlumno(id) {

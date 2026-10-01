@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Download } from "lucide-react"
 import { api } from "@/api"
 import { getCareerById, useSiteConfig } from "@/siteConfig"
-import * as XLSX from "xlsx"
+import { downloadCsv } from "@/lib/csv"
 import Stepper, { type StepperStep } from "./form/Stepper"
 import {
     StepContacto,
@@ -266,19 +266,11 @@ const InfoForm = ({ careerId }: InfoFormProps) => {
             fotoCertificado: dataToDownload.fotoCertificado ? dataToDownload.fotoCertificado.name : null,
         }
 
-        const ws = XLSX.utils.json_to_sheet([downloadData])
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, "Inscripción")
-        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" })
-        const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = `inscripcion-${dataToDownload.apellido}-${dataToDownload.nombre}-${Date.now()}.xlsx`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        const safeName = [dataToDownload.apellido, dataToDownload.nombre]
+            .map((part) => String(part ?? "").replace(/[^a-zA-Z0-9]+/g, "_"))
+            .filter(Boolean)
+            .join("-")
+        downloadCsv(downloadData, `inscripcion-${safeName}-${Date.now()}.csv`)
     }
 
     const containerRef = useRef<HTMLDivElement | null>(null)

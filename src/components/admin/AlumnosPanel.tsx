@@ -19,6 +19,7 @@ export default function AlumnosPanel({ token }: Props) {
     const [confirmDelete, setConfirmDelete] = useState<Alumno | null>(null)
     const [search, setSearch] = useState("")
     const [downloadingId, setDownloadingId] = useState<string | null>(null)
+    const [fichaId, setFichaId] = useState<string | null>(null)
     const [expandedStat, setExpandedStat] = useState<StatId | null>(null)
     const [detailAlumno, setDetailAlumno] = useState<Alumno | null>(null)
     const [menuOpen, setMenuOpen] = useState<string | null>(null)
@@ -103,6 +104,20 @@ export default function AlumnosPanel({ token }: Props) {
             setError(err instanceof Error ? err.message : "No se pudo generar el contrato")
         } finally {
             setDownloadingId(null)
+        }
+    }
+
+    const handleDownloadFicha = async (alumno: Alumno) => {
+        if (fichaId) return
+        setFichaId(alumno.id)
+        setMenuOpen(null)
+        setError("")
+        try {
+            await api.downloadFicha(token, alumno.id)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "No se pudo generar la ficha")
+        } finally {
+            setFichaId(null)
         }
     }
 
@@ -311,16 +326,18 @@ export default function AlumnosPanel({ token }: Props) {
                                     <FileText className="w-4 h-4" />
                                     Contrato
                                 </button>
-                                <a
-                                    href={api.urls.ficha(a.id, token)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    onClick={() => setMenuOpen(null)}
-                                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-bold text-green-700 hover:bg-green-50 cursor-pointer transition-colors"
+                                <button
+                                    onClick={() => handleDownloadFicha(a)}
+                                    disabled={fichaId === a.id}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-bold text-green-700 hover:bg-green-50 disabled:opacity-60 cursor-pointer transition-colors"
                                 >
-                                    <FileSpreadsheet className="w-4 h-4" />
+                                    {fichaId === a.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <FileSpreadsheet className="w-4 h-4" />
+                                    )}
                                     Plantilla
-                                </a>
+                                </button>
                                 <button
                                     onClick={() => {
                                         setMenuOpen(null)
@@ -648,15 +665,18 @@ export default function AlumnosPanel({ token }: Props) {
                                 )}
                                 {downloadingId === detailAlumno.id ? "Generando..." : "Contrato"}
                             </button>
-                            <a
-                                href={api.urls.ficha(detailAlumno.id, token)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 cursor-pointer transition-colors"
+                            <button
+                                onClick={() => handleDownloadFicha(detailAlumno)}
+                                disabled={fichaId === detailAlumno.id}
+                                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-60 cursor-pointer transition-colors"
                             >
-                                <FileSpreadsheet className="w-3.5 h-3.5" />
+                                {fichaId === detailAlumno.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                                )}
                                 Plantilla
-                            </a>
+                            </button>
                             <button
                                 onClick={() => {
                                     const a = detailAlumno

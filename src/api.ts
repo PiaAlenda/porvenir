@@ -171,9 +171,33 @@ export const api = {
         })
     },
 
-    urls: {
-        ficha(id: string, token: string) {
-            return `${API_BASE}/api/inscripciones/${id}/ficha?token=${encodeURIComponent(token)}`
-        },
+    /**
+     * Descarga la ficha PDF del alumno. Va con `Authorization` por header en
+     * lugar de `?token=`: una query string deja el JWT en los logs del
+     * servidor, en el Referer y en el historial del navegador.
+     */
+    async downloadFicha(token: string, id: string) {
+        const res = await fetch(`${API_BASE}/api/inscripciones/${id}/ficha`, {
+            headers: auth(token),
+        })
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}))
+            throw new Error(body?.error || `Error en el servidor (${res.status})`)
+        }
+
+        const disposition = res.headers.get("Content-Disposition") || ""
+        const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)
+        const filename = match
+            ? decodeURIComponent(match[1].replace(/^"|"$/g, ""))
+            : "ficha.pdf"
+
+        const url = URL.createObjectURL(await res.blob())
+        const link = document.createElement("a")
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        URL.revokeObjectURL(url)
     },
 }

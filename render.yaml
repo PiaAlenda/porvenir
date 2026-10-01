@@ -4,12 +4,14 @@ services:
     runtime: node
     plan: free
     region: southamerica
-    buildCommand: npm install
+    buildCommand: pnpm install --frozen-lockfile
     startCommand: npm run serve
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: "22"
+      - key: NODE_ENV
+        value: "production"
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
@@ -20,3 +22,11 @@ services:
         sync: false
       - key: SERVE_STATIC
         value: "0"
+      # Correo con acceso al panel. Con Supabase Auth, cualquier otra cuenta
+      # del proyecto queda rechazada, aunque tenga la contraseña correcta.
+      - key: ADMIN_EMAIL
+        sync: false
+      # Si el panel necesita más de un usuario, listalos separados por coma.
+      # Tiene prioridad sobre ADMIN_EMAIL.
+      - key: ADMIN_EMAILS
+        sync: false

@@ -2,7 +2,8 @@ import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { supabase, supabaseEnabled } from "./supabase.mjs"
-import { resolveMediaUrl } from "./storage.mjs"
+import { resolveAssetUrl } from "./storage.mjs"
+import { PublicError } from "./errors.mjs"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = path.join(__dirname, "data")
@@ -77,7 +78,8 @@ function mergeWithDefaults(saved) {
   for (const id of Object.keys(defaults)) {
     const s = saved && saved[id]
     out[id] = s ? { ...s } : {}
-    out[id].image = s && typeof s.image === "string" && s.image ? resolveMediaUrl(s.image) : defaults[id].image
+    // Banners de cursos: públicos a propósito, así que no llevan firma.
+    out[id].image = s && typeof s.image === "string" && s.image ? resolveAssetUrl(s.image) : defaults[id].image
     out[id].available = s && typeof s.available === "boolean" ? s.available : defaults[id].available
     if (s && typeof s.title === "string" && s.title) out[id].title = s.title
   }
@@ -114,7 +116,7 @@ export async function getConfig() {
   const { data, error } = await supabase.from(TABLE).select("id, data")
   if (error) {
     console.error("[supabase] no se pudo leer la configuración:", error.message)
-    throw new Error("No se pudo leer la configuración del sitio.")
+    throw new PublicError("No se pudo leer la configuración del sitio.", 503)
   }
   const saved = {}
   for (const row of data || []) saved[row.id] = row.data || {}
@@ -139,7 +141,7 @@ export async function updateItem(id, patch) {
     .single()
   if (error) {
     console.error("[supabase] no se pudo guardar la configuración:", error.message)
-    throw new Error("No se pudo guardar la configuración del sitio.")
+    throw new PublicError("No se pudo guardar la configuración del sitio.", 503)
   }
   return data?.data || merged
 }
