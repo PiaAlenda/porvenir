@@ -424,11 +424,12 @@ const toggleAvailable = (id: string, current: boolean) => {
                     <button
                         type="button"
                         onClick={() => handleDeleteCourse(id)}
-                        title="Eliminar curso"
+                        title={`Eliminar ${section === "cursos" ? "curso" : "carrera"}`}
                         disabled={saving}
-                        className="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 shrink-0 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
                     >
-                        <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                        <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                        Eliminar
                     </button>
                 </div>
             </div>

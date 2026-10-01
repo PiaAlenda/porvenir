@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore, type FormEvent, type ChangeEvent } from "react"
-import { AlertCircle, Camera, Check, Eye, EyeOff, KeyRound, Loader2, Trash2, User } from "lucide-react"
+import { AlertCircle, Camera, Check, Eye, EyeOff, KeyRound, Loader2, User } from "lucide-react"
 import { api } from "@/api"
 import { getAdminProfileImage, setAdminProfileImage, subscribeAdminProfileImage } from "@/lib/adminProfileImage"
 
@@ -139,16 +139,6 @@ export default function AjustesPanel({ token }: Props) {
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             />
                         </label>
-                        {profileImage && (
-                            <button
-                                type="button"
-                                onClick={handleRemoveImage}
-                                title="Eliminar foto de perfil"
-                                className="absolute top-0 left-0 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-red-600 transition-colors shadow-lg"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        )}
                     </div>
                     <div>
                         <h3 className="text-lg font-black text-gray-900">Foto de perfil</h3>
@@ -157,9 +147,8 @@ export default function AjustesPanel({ token }: Props) {
                             <button
                                 type="button"
                                 onClick={handleRemoveImage}
-                                className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
+                                className="mt-2 text-sm font-bold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
                             >
-                                <Trash2 className="w-4 h-4" />
                                 Eliminar foto
                             </button>
                         )}
