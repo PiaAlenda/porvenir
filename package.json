@@ -10,6 +10,8 @@
     "build": "tsc -b && vite build",
     "img:convert": "node scripts/convert-to-webp.mjs",
     "migrate:supabase": "node --env-file-if-exists=.env scripts/migrate-to-supabase.mjs",
+    "admin:user": "node --env-file-if-exists=.env scripts/create-admin-user.mjs",
+    "test:e2e": "node --env-file-if-exists=.env scripts/test-e2e.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "serve": "node --env-file-if-exists=.env server/index.mjs"
