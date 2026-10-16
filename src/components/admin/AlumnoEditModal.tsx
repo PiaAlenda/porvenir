@@ -9,7 +9,7 @@ import {
     DEPARTAMENTOS_SAN_JUAN,
     DISCAPACIDAD,
     PUEBLOS_INDIGENAS,
-    ESPECIALIDADES,
+    DEFAULT_ANIOS_DIVISIONES,
 } from "../features/home/form/options"
 
 interface Props {
@@ -29,7 +29,8 @@ const textareaClass =
     "focus:outline-none focus:ring-4 focus:ring-[#4d0706]/5 focus:border-[#4d0706] focus:bg-white transition-all duration-300"
 
 export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Props) {
-    const { config } = useSiteConfig()
+    const { config, formOptions } = useSiteConfig()
+    const anioOptions = formOptions.campos.find((c) => c.id === "anioDivision")?.options ?? DEFAULT_ANIOS_DIVISIONES.map((v) => ({ value: v, label: v }))
     const [form, setForm] = useState<Partial<Alumno>>({
         apellido: alumno.apellido,
         nombre: alumno.nombre,
@@ -44,7 +45,7 @@ export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Pro
         c_nacionalidad: alumno.c_nacionalidad ?? "Argentina",
         careerId: alumno.careerId ?? "",
         courseTitle: alumno.courseTitle ?? "",
-        especialidad: alumno.especialidad ?? "General / Sin especialidad",
+        anioDivision: alumno.anioDivision ?? "",
         domicilio: alumno.domicilio ?? "",
         departamento: alumno.departamento ?? "Capital",
         celular: alumno.celular ?? "",
@@ -228,7 +229,7 @@ export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Pro
                         </div>
 
                         <div className="pt-4 border-t border-gray-100">
-                            <p className="text-xs font-black text-[#4d0706] uppercase tracking-widest mb-3">4. Inscripción y especialidad</p>
+                            <p className="text-xs font-black text-[#4d0706] uppercase tracking-widest mb-3">4. Inscripción y año / división</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Curso / Carrera</label>
@@ -240,10 +241,11 @@ export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Pro
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Especialidad</label>
-                                    <select className={selectClass} value={form.especialidad} onChange={set("especialidad")}>
-                                        {ESPECIALIDADES.map((e) => (
-                                            <option key={e} value={e}>{e}</option>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Año / División</label>
+                                    <select className={selectClass} value={form.anioDivision ?? ""} onChange={set("anioDivision")}>
+                                        <option value="">Sin asignar</option>
+                                        {anioOptions.map((o) => (
+                                            <option key={o.value} value={o.value}>{o.label}</option>
                                         ))}
                                     </select>
                                 </div>

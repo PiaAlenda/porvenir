@@ -1,22 +1,27 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FileEdit, Users } from "lucide-react";
 import { type Career } from "@/config/careerData";
 import CareerDetailHero from "@/components/features/career/CareerDetailHero";
 import { CareerSyllabus, CareerDetailsGrid } from "@/components/features/career/CareerDetailAbout";
 import { CareerCohortCard, CareerTeachersList } from "@/components/features/career/CareerDetailSidebar";
 import CareerMobileQuickInfo from "@/components/features/career/CareerMobileQuickInfo";
+import InfoForm from "@/components/features/home/InfoForm";
 import { getCareerById, isAvailableFor, useSiteConfig } from "@/siteConfig";
 
 interface CareerDetailProps {
     careerId: string;
     onBack: () => void;
-    onBackToForm?: (careerId?: string) => void;
 }
 
-const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => {
+const CareerDetail = ({ careerId, onBack }: CareerDetailProps) => {
     const { config } = useSiteConfig();
     const career: Career | undefined = getCareerById(careerId, config);
     const available = career ? isAvailableFor(career.id, config) : true;
+    /*
+     * El formulario de inscripción se despliega dentro de esta misma página
+     * (con la carrera ya fija) en vez de volver al Home.
+     */
+    const [showForm, setShowForm] = useState(false);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -24,7 +29,7 @@ const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => 
             document.title = `${career.title} - Obreros del Porvenir`;
         }
         return () => {
-            document.title = "Obreros del Porvenir - Escuela Superior de Comercio N° 44";
+            document.title = "Obreros del Porvenir - Escuela Técnica de Capacitación Laboral N° 917";
         };
     }, [careerId, career]);
 
@@ -41,7 +46,11 @@ const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => 
     }
 
     const handleEnroll = () => {
-        onBackToForm?.(career.id);
+        setShowForm(true);
+        // Se espera un instante a que React monte la sección antes de bajar.
+        setTimeout(() => {
+            document.getElementById("inscripcion-form")?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
     };
 
     return (
@@ -61,7 +70,7 @@ const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => 
                             <CareerSyllabus career={career} />
                         </div>
                         <div className="lg:col-span-4 col-span-1 hidden lg:block">
-                            <CareerCohortCard career={career} onBack={onBack} available={available} />
+                            <CareerCohortCard career={career} onEnroll={handleEnroll} available={available} />
                         </div>
                     </div>
 
@@ -81,6 +90,13 @@ const CareerDetail = ({ careerId, onBack, onBackToForm }: CareerDetailProps) => 
                     )}
                 </div>
             </main>
+
+            {available && showForm && (
+                <div className="border-t border-stone-200/70">
+                    {/* Formulario inline: carrera ya elegida, sin paso de tipo ni selector */}
+                    <InfoForm careerId={career.id} embedded />
+                </div>
+            )}
 
             <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/80 backdrop-blur-md border-t border-stone-200/80 z-50">
                 {available ? (

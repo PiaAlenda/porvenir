@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { CalendarDays, FileText, FileSpreadsheet, Mail, MoreVertical, Pencil, Phone, Trash2, RefreshCw, Loader2, Users, Search, GraduationCap, X } from "lucide-react"
+import { CalendarDays, ChevronDown, FileText, FileSpreadsheet, Mail, MoreVertical, Pencil, Phone, Trash2, RefreshCw, Loader2, Users, Search, GraduationCap, X } from "lucide-react"
 import { api, type Alumno } from "@/api"
 import { sexoLabel } from "@/components/features/home/form/options"
 import AlumnoEditModal from "./AlumnoEditModal"
 import { downloadContractPdf } from "@/pdf/downloadContract"
+import { downloadInscripcionXlsx } from "@/lib/excelExport"
+import { activeIds, useSiteConfig } from "@/siteConfig"
 
 interface Props {
     token: string
 }
 
 type StatId = "total" | "mostrando" | "sinAsignar"
+
+/** Valor del filtro de carrera para "lo que no tiene nada asignado". */
+const SIN_ASIGNAR = "__sin_asignar__"
 
 export default function AlumnosPanel({ token }: Props) {
     const [alumnos, setAlumnos] = useState<Alumno[]>([])
@@ -19,12 +24,17 @@ export default function AlumnosPanel({ token }: Props) {
     const [editing, setEditing] = useState<Alumno | null>(null)
     const [confirmDelete, setConfirmDelete] = useState<Alumno | null>(null)
     const [search, setSearch] = useState("")
+    /** Carrera/curso elegido en el desplegable. Vacío = todas. */
+    const [careerFilter, setCareerFilter] = useState("")
+    const [exporting, setExporting] = useState(false)
     const [downloadingId, setDownloadingId] = useState<string | null>(null)
     const [fichaId, setFichaId] = useState<string | null>(null)
     const [expandedStat, setExpandedStat] = useState<StatId | null>(null)
     const [detailAlumno, setDetailAlumno] = useState<Alumno | null>(null)
     const [menuOpen, setMenuOpen] = useState<string | null>(null)
     const actionsRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
+    const { config } = useSiteConfig()
 
     useEffect(() => {
         if (!menuOpen) return
@@ -122,18 +132,84 @@ export default function AlumnosPanel({ token }: Props) {
         }
     }
 
+    /**
+     * Opciones del desplegable de carrera: las que el sitio ofrece (config)
+     * más las que ya tienen inscriptos, por si una carrera vieja quedó fuera
+     * de la grilla pero sus inscripciones siguen en la base.
+     */
+    const careerOptions = useMemo(() => {
+        const titulos = new Set<string>()
+        activeIds(config).forEach((id) => {
+            const title = (config[id]?.title || "").trim()
+            if (title) titulos.add(title)
+        })
+        alumnos.forEach((a) => {
+            const title = (a.courseTitle || "").trim()
+            if (title) titulos.add(title)
+        })
+        return [...titulos].sort((a, b) => a.localeCompare(b, "es"))
+    }, [config, alumnos])
+
+    /** Título de la carrera filtrada, o vacío si no hay filtro. */
+    const careerLabel = careerFilter === SIN_ASIGNAR ? "Sin asignar" : careerFilter
+
+    /**
+     * Filtro combinado: el desplegable acota por carrera/curso y la caja de
+     * texto busca dentro de ese subconjunto (apellido, nombre, documento,
+     * CUIL o el nombre de la carrera).
+     */
     const filtered = useMemo(() => {
         const q = search.toLowerCase().trim()
-        if (!q) return alumnos
-        return alumnos.filter(
-            (a) =>
+        return alumnos.filter((a) => {
+            const titulo = (a.courseTitle ?? "").trim()
+
+            if (careerFilter === SIN_ASIGNAR && titulo) return false
+            if (careerFilter && careerFilter !== SIN_ASIGNAR && titulo !== careerFilter) return false
+
+            if (!q) return true
+            return (
                 a.apellido.toLowerCase().includes(q) ||
                 a.nombre.toLowerCase().includes(q) ||
                 a.numeroDocumento.toLowerCase().includes(q) ||
                 a.cuil.toLowerCase().includes(q) ||
-                (a.courseTitle ?? "").toLowerCase().includes(q),
-        )
-    }, [alumnos, search])
+                titulo.toLowerCase().includes(q)
+            )
+        })
+    }, [alumnos, search, careerFilter])
+
+    /**
+     * Vuelca lo que se está viendo a un .xlsx: con una carrera elegida eso es
+     * exactamente "todos los inscriptos de esa carrera" (y con una búsqueda
+     * de texto, el recorte más chico que se le pidió).
+     */
+    const handleDownloadExcel = async () => {
+        if (exporting || loading || !filtered.length) return
+        setExporting(true)
+        setError("")
+        try {
+            await downloadInscripcionXlsx({
+                careerTitle: careerFilter ? careerLabel : "Todas las carreras",
+                registros: filtered.map((a) => ({
+                    ...a,
+                    // La planilla llama "Carrera o curso" a `careerTitle`; el
+                    // dato guardado en la base es `courseTitle`.
+                    careerTitle: (a.courseTitle ?? "").trim() || "Sin asignar",
+                    // Lo que para el admin es "fecha de inscripción" en la
+                    // base se guarda como `createdAt`.
+                    fechaInscripcion: a.createdAt || "",
+                })),
+            })
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "No se pudo generar el archivo de Excel")
+        } finally {
+            setExporting(false)
+        }
+    }
+
+    const limpiarFiltros = () => {
+        setSearch("")
+        setCareerFilter("")
+    }
 
     const unassigned = useMemo(() => alumnos.filter((a) => !a.courseTitle).length, [alumnos])
     const unassignedAlumnos = useMemo(() => alumnos.filter((a) => !a.courseTitle), [alumnos])
@@ -168,16 +244,23 @@ export default function AlumnosPanel({ token }: Props) {
                         <p className="text-sm text-gray-600 font-medium">
                             Estás viendo <strong>{filtered.length}</strong> de <strong>{alumnos.length}</strong> inscripciones.
                         </p>
-                        {search.trim() ? (
+                        {search.trim() || careerFilter ? (
                             <div className="flex flex-wrap items-center gap-2">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black text-[#4d0706] bg-[#4d0706]/5">
-                                    Búsqueda: "{search.trim()}"
-                                </span>
+                                {careerFilter && (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black text-[#4d0706] bg-[#4d0706]/5">
+                                        Carrera: {careerLabel}
+                                    </span>
+                                )}
+                                {search.trim() && (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black text-[#4d0706] bg-[#4d0706]/5">
+                                        Búsqueda: "{search.trim()}"
+                                    </span>
+                                )}
                                 <button
-                                    onClick={() => setSearch("")}
+                                    onClick={limpiarFiltros}
                                     className="text-xs font-bold text-gray-500 hover:text-[#4d0706] cursor-pointer underline underline-offset-2"
                                 >
-                                    Limpiar búsqueda
+                                    Limpiar filtros
                                 </button>
                             </div>
                         ) : (
@@ -394,23 +477,64 @@ export default function AlumnosPanel({ token }: Props) {
                 </AnimatePresence>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="relative w-full sm:w-96">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <input
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Buscar por apellido, nombre, DNI o CUIL..."
-                        className="w-full h-12 pl-11 pr-4 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:outline-none focus:ring-4 focus:ring-[#4d0706]/5 focus:border-[#4d0706]"
-                    />
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                    <div className="relative w-full sm:w-72 lg:w-80">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Buscar por apellido, nombre, DNI, CUIL o carrera..."
+                            className="w-full h-12 pl-11 pr-4 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:outline-none focus:ring-4 focus:ring-[#4d0706]/5 focus:border-[#4d0706]"
+                        />
+                    </div>
+
+                    <div className="relative w-full sm:w-72">
+                        <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <select
+                            value={careerFilter}
+                            onChange={(e) => setCareerFilter(e.target.value)}
+                            aria-label="Filtrar por carrera o curso"
+                            className="w-full h-12 pl-11 pr-10 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:outline-none focus:ring-4 focus:ring-[#4d0706]/5 focus:border-[#4d0706] appearance-none cursor-pointer"
+                        >
+                            <option value="">Todas las carreras y cursos</option>
+                            {careerOptions.map((titulo) => (
+                                <option key={titulo} value={titulo}>
+                                    {titulo}
+                                </option>
+                            ))}
+                            {unassigned > 0 && <option value={SIN_ASIGNAR}>Sin asignar</option>}
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
                 </div>
-                <button
-                    onClick={load}
-                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 cursor-pointer"
-                >
-                    <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-                    Actualizar
-                </button>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                        onClick={handleDownloadExcel}
+                        disabled={exporting || loading || filtered.length === 0}
+                        title={
+                            filtered.length === 0
+                                ? "No hay inscripciones para exportar con estos filtros"
+                                : `Descargar en Excel los ${filtered.length} inscriptos que se están mostrando`
+                        }
+                        className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    >
+                        {exporting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <FileSpreadsheet className="w-4 h-4" />
+                        )}
+                        {exporting ? "Generando..." : `Descargar Excel (${filtered.length})`}
+                    </button>
+                    <button
+                        onClick={load}
+                        className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 cursor-pointer"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                        Actualizar
+                    </button>
+                </div>
             </div>
 
             {error && <p className="text-sm text-red-600 font-medium bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>}
@@ -588,8 +712,8 @@ export default function AlumnosPanel({ token }: Props) {
                                 <h4 className="text-xs font-black uppercase tracking-widest text-[#4d0706] mb-3">Datos complementarios y documentación</h4>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Especialidad</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.especialidad || "—"}</p>
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Año / División</p>
+                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.anioDivision || "—"}</p>
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Discapacidad</p>

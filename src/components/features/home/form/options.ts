@@ -106,15 +106,10 @@ export const PUEBLOS_INDIGENAS = [
     "Otro",
 ]
 
-export const ESPECIALIDADES = [
-    "General / Sin especialidad",
-    "Electricidad",
-    "Carpintería",
-    "Gastronomía / Cocina",
-    "Peluquería y Estética",
-    "Corte y Confección Textil",
-    "Computación e Informática",
-    "Administración y Comercio",
-    "Mecánica",
-    "Manualidades y Artesanías",
-]
+/**
+ * Opciones por defecto del campo "Año / División" del formulario. El valor
+ * real lo define el admin desde el panel (se guarda en la config del sitio);
+ * esto solo es el respaldo para el primer render, antes de que llegue la API,
+ * y para cuando no hay nada guardado.
+ */
+export const DEFAULT_ANIOS_DIVISIONES = ["1 año", "2 año", "3 año"]

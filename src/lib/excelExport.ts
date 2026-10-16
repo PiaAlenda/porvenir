@@ -98,7 +98,7 @@ export interface RegistroExportable {
     careerId?: ValorExportable
     courseTitle?: ValorExportable
     careerTitle?: ValorExportable
-    especialidad?: ValorExportable
+    anioDivision?: ValorExportable
     c_discapacidad?: ValorExportable
     cud?: ValorExportable
     c_pueblo_indigena?: ValorExportable
@@ -381,7 +381,7 @@ const COLUMNAS: Columna[] = [
 
     // ── Académicos ──
     { campo: "careerTitle", titulo: "Carrera o curso", grupo: GRUPOS.academicos, ancho: 28, alineacion: "left", wrap: true, valor: (r) => tituloCarrera(r) },
-    { campo: "especialidad", titulo: "Especialidad", grupo: GRUPOS.academicos, ancho: 24, alineacion: "left", wrap: true, valor: (r) => texto(r.especialidad) },
+    { campo: "anioDivision", titulo: "Año / División", grupo: GRUPOS.academicos, ancho: 24, alineacion: "left", wrap: true, valor: (r) => texto(r.anioDivision) },
 
     // ── Información adicional ──
     {
@@ -482,7 +482,7 @@ const COLUMNAS_TECNICAS: ColumnaTecnica[] = [
     { campo: "departamento", titulo: "departamento", ancho: 18 },
     { campo: "careerId", titulo: "careerId", ancho: 26 },
     { campo: "courseTitle", titulo: "courseTitle", ancho: 28 },
-    { campo: "especialidad", titulo: "especialidad", ancho: 24 },
+    { campo: "anioDivision", titulo: "anioDivision", ancho: 24 },
     { campo: "c_discapacidad", titulo: "c_discapacidad", ancho: 16 },
     { campo: "cud", titulo: "cud", ancho: 14 },
     { campo: "c_pueblo_indigena", titulo: "c_pueblo_indigena", ancho: 20 },
@@ -806,7 +806,7 @@ function escribirResumen(wb: ExcelWorkbook, registros: RegistroExportable[], car
 
     ws.mergeCells(`${RESUMEN_B}${fila}:${RESUMEN_ULTIMA}${fila}`)
     const subtitulo = ws.getCell(`${RESUMEN_B}${fila}`)
-    subtitulo.value = "Obreros del Porvenir · Escuela Superior de Comercio N° 44"
+    subtitulo.value = "Obreros del Porvenir · Escuela Técnica de Capacitación Laboral N° 917"
     subtitulo.font = { name: FUENTE, size: 10, color: { argb: MUTED } }
     subtitulo.alignment = { vertical: "middle", horizontal: "left" }
     siguiente(18)
@@ -980,7 +980,7 @@ const exceljs = await import("exceljs")
     const Workbook = exceljs.Workbook ?? (exceljs.default as typeof exceljs | undefined)?.Workbook
     if (!Workbook) throw new Error("No se pudo cargar la librería de Excel.")
     const wb = new Workbook()
-    wb.creator = "Obreros del Porvenir · Escuela Superior de Comercio N° 44"
+    wb.creator = "Obreros del Porvenir · Escuela Técnica de Capacitación Laboral N° 917"
     wb.created = generado
 
     const carrera = careerTitle.trim() || "Sin carrera seleccionada"

@@ -39,6 +39,22 @@ const MAX_TEACHERS = 25
 const MAX_SYLLABUS_ENTRIES = 10
 const MAX_SUBJECTS_PER_ENTRY = 30
 
+/*
+ * Las opciones del formulario de inscripción (por ahora los años y divisiones)
+ * viven en el mismo almacén que la config de cursos, pero bajo una clave
+ * reservada: no son un curso y no tienen que aparecer como tal. `getConfig` las
+ * saca del mapa de cursos y `getFormOptions` las devuelve aparte.
+ */
+export const FORM_OPTIONS_KEY = "__formulario__"
+export const DEFAULT_ANIOS_DIVISIONES = ["1 año", "2 año", "3 año"]
+const MAX_FORM_ITEMS = 40
+const MAX_FORM_ITEM_LENGTH = 60
+const MAX_FORM_CAMPOS = 40
+const MAX_FORM_OPTIONS = 80
+const MAX_FORM_ID = 40
+const MAX_FORM_LABEL = 120
+const MAX_FORM_TEXT = 200
+
 const COURSE_DEFAULT_IMAGES = {
   "curso-danza": "/img/cursos/CURSO DE DANZA.webp",
   "curso-estilismo-moda": "/img/cursos/ESTILISMO DE MODA.webp",
@@ -208,6 +224,64 @@ function normalizeTeachers(raw) {
   return out
 }
 
+function normalizeAniosDivisiones(raw) {
+  if (!Array.isArray(raw)) return []
+  const seen = new Set()
+  const out = []
+  for (const item of raw.slice(0, MAX_FORM_ITEMS)) {
+    const limpio = String(item ?? "").trim().slice(0, MAX_FORM_ITEM_LENGTH)
+    if (!limpio || seen.has(limpio)) continue
+    seen.add(limpio)
+    out.push(limpio)
+  }
+  return out
+}
+
+/** Opciones de un desplegable: pares { value, label }, sin vacíos. */
+function normalizeOptions(raw) {
+  if (!Array.isArray(raw)) return undefined
+  const out = []
+  for (const o of raw.slice(0, MAX_FORM_OPTIONS)) {
+    if (!o || typeof o !== "object") continue
+    const value = String(o.value ?? "").trim().slice(0, 80)
+    const label = String(o.label ?? "").trim().slice(0, MAX_FORM_LABEL)
+    if (!value || !label) continue
+    out.push({ value, label })
+  }
+  return out
+}
+
+/**
+ * Normaliza el esquema del formulario que manda el panel. Solo recorta textos
+ * y límites: no conoce los campos válidos (eso lo hace el cliente), pero evita
+ * que un payload malicioso deje el config con basura o tamaños absurdos.
+ */
+function normalizeCampos(raw) {
+  if (!Array.isArray(raw)) return []
+  const out = []
+  for (const item of raw.slice(0, MAX_FORM_CAMPOS)) {
+    if (!item || typeof item !== "object") continue
+    const id = String(item.id ?? "").trim().slice(0, MAX_FORM_ID)
+    if (!id) continue
+    const campo = {
+      id,
+      kind: String(item.kind ?? "").trim().slice(0, 20),
+      step: Number(item.step),
+      label: String(item.label ?? "").trim().slice(0, MAX_FORM_LABEL),
+      placeholder: String(item.placeholder ?? "").trim().slice(0, 160),
+      placeholderOption: String(item.placeholderOption ?? "").trim().slice(0, MAX_FORM_LABEL),
+      hint: String(item.hint ?? "").trim().slice(0, MAX_FORM_TEXT),
+      required: item.required === true,
+      visible: item.visible !== false,
+      span: item.span === 2 ? 2 : 1,
+    }
+    const options = normalizeOptions(item.options)
+    if (options) campo.options = options
+    out.push(campo)
+  }
+  return out
+}
+
 function ensureDir() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true })
 }
@@ -229,6 +303,8 @@ function sanitizeItem(item) {
   if (out.removed !== true) delete out.removed
   if (Array.isArray(out.syllabus)) out.syllabus = normalizeSyllabus(out.syllabus)
   if (Array.isArray(out.teachers)) out.teachers = normalizeTeachers(out.teachers)
+  if (Array.isArray(out.aniosDivisiones)) out.aniosDivisiones = normalizeAniosDivisiones(out.aniosDivisiones)
+  if (Array.isArray(out.campos)) out.campos = normalizeCampos(out.campos)
   if (Array.isArray(out.salidaLaboral)) out.salidaLaboral = normalizeList(out.salidaLaboral)
   if (Array.isArray(out.perfilEgresado)) out.perfilEgresado = normalizeList(out.perfilEgresado)
   return out
@@ -317,7 +393,39 @@ async function readStored() {
 }
 
 export async function getConfig() {
-  return mergeWithDefaults(await readStored())
+  const merged = await mergeWithDefaults(await readStored())
+  // Las opciones del formulario no son un curso: se devuelven aparte para que
+  // no se filtren como si fueran una carrera en el cliente.
+  delete merged[FORM_OPTIONS_KEY]
+  return merged
+}
+
+/**
+ * Opciones del formulario de inscripción. Si nunca se guardaron, se ofrecen
+ * los años por defecto; si se guardaron pero quedaron vacíos, se vuelve a los
+ * defaults para no dejar el select sin ninguna opción.
+ *
+ * También responde a la versión anterior, que guardaba las opciones de años
+ * sueltas en `aniosDivisiones` y todavía no tenía el esquema de campos.
+ */
+export async function getFormOptions() {
+  const stored = (await readStored())[FORM_OPTIONS_KEY] || {}
+  const campos = normalizeCampos(stored.campos)
+  const out = { campos }
+  if (!campos.length && Array.isArray(stored.aniosDivisiones)) {
+    out.aniosDivisiones = normalizeAniosDivisiones(stored.aniosDivisiones)
+  }
+  return out
+}
+
+/** Guarda el esquema del formulario. Exige al menos un campo. */
+export async function updateFormOptions(patch) {
+  const campos = normalizeCampos(patch?.campos)
+  if (!campos.length) {
+    throw new PublicError("El formulario no puede quedar vacío.", 400)
+  }
+  const saved = await updateItem(FORM_OPTIONS_KEY, { campos })
+  return { campos: normalizeCampos(saved?.campos) }
 }
 
 /**
@@ -396,7 +504,7 @@ export async function getRemovedIds() {
   return Object.keys(stored).filter((id) => stored[id]?.removed)
 }
 
-export { normalizeList, normalizeSyllabus, normalizeTeachers, TEXT_LIMITS, VALID_CATEGORIES }
+export { normalizeList, normalizeSyllabus, normalizeTeachers, normalizeAniosDivisiones, normalizeCampos, TEXT_LIMITS, VALID_CATEGORIES }
 
 export function resetCache() {
   cache = null

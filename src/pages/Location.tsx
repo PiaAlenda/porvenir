@@ -48,7 +48,7 @@ const Location = ({ onBack }: LocationProps) => {
         window.scrollTo(0, 0);
         document.title = "Sedes - Obreros del Porvenir";
         return () => {
-            document.title = "Obreros del Porvenir - Escuela Superior de Comercio N° 44";
+            document.title = "Obreros del Porvenir - Escuela Técnica de Capacitación Laboral N° 917";
         };
     }, []);
 

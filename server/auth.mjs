@@ -37,6 +37,15 @@ const ADMIN_EMAILS = new Set(
 
 const TOKEN_TTL_MS = 8 * 60 * 60 * 1000 // 8 horas
 
+/**
+ * Mensaje único para toda sesión que ya no sirve.
+ *
+ * El 401 del servidor se muestra tal cual en el panel, así que "No autorizado"
+ * le decía a la persona admin que algo había fallado sin decirle qué ni qué
+ * hacer. Con este texto en cambio la respuesta es accionable: volvé a entrar.
+ */
+export const SESSION_EXPIRED_MESSAGE = "Tu sesión expiró. Volvé a iniciar sesión para continuar."
+
 const tokens = new Map() // token -> expiración (ms), solo en modo local
 
 function safeEqual(a, b) {
@@ -109,6 +118,11 @@ export async function authenticate(email, password) {
     }
     return {
       token: data.session.access_token,
+      // El access token de Supabase vive una hora. Sin el refresh token el
+      // panel se quedaba sin sesión a la hora siguiente y respondía 401 en
+      // cada llamada, mientras el sitio público seguía normal.
+      refreshToken: data.session.refresh_token,
+      expiresIn: data.session.expires_in,
       user: { id: data.user.id, email: data.user.email },
     }
   }
@@ -139,6 +153,37 @@ export async function verifyToken(token) {
     return false
   }
   return true
+}
+
+/**
+ * Renueva la sesión de Supabase a partir del refresh token entregado en el
+ * login. Es lo que evita que el panel quede en "No autorizado" a la hora
+ * siguiente: el access token vence, este endpoint emite uno nuevo y el
+ * cliente reintenta la llamada que había fallado.
+ *
+ * En modo local no hay refresh token (el token propio vive 8 horas), así que
+ * el resultado es el mismo que "no se pudo renovar": hay que volver a entrar.
+ */
+export async function refreshAdminSession(refreshToken) {
+  const crudo = String(refreshToken ?? "").trim()
+  if (!crudo || !supabaseEnabled || !supabaseAnon) return { error: SESSION_EXPIRED_MESSAGE }
+
+  const { data, error } = await supabaseAnon.auth.refreshSession({ refresh_token: crudo })
+  const session = data?.session
+  if (error || !session) {
+    console.warn(`[supabase auth] refresh RECHAZADO: ${error?.message || "sin sesión"}`)
+    return { error: SESSION_EXPIRED_MESSAGE }
+  }
+
+  const email = data.user?.email || session.user?.email
+  if (!isAdminEmail(email)) {
+    console.warn(
+      `[supabase auth] refresh RECHAZADO: "${email}" renovó bien pero NO está en la allow-list. ADMIN_EMAIL/ADMIN_EMAILS = ${adminAllowListForLog()}`,
+    )
+    return { error: SESSION_EXPIRED_MESSAGE }
+  }
+
+  return { token: session.access_token, refreshToken: session.refresh_token, expiresIn: session.expires_in }
 }
 
 /** Datos del usuario dueño del token, para el cambio de contraseña. */

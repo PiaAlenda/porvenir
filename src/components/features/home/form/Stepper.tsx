@@ -33,26 +33,37 @@ export default function Stepper({ steps, current, completed }: StepperProps) {
                         aria-label={step.title}
                         className="flex min-w-0 flex-1 items-center last:flex-none"
                     >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             <span
                                 aria-hidden="true"
                                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black transition-colors duration-300 ${circleClass}`}
                             >
                                 {isDone ? <Check className="h-4 w-4" /> : index}
                             </span>
-                            <span className={`hidden text-left sm:block ${isCurrent || isDone ? "" : "opacity-60"}`}>
-                                <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400">
+                            {/*
+                                Solo el paso actual muestra su título; los demás
+                                dicen únicamente "Paso N" para que los textos no
+                                se pisen entre sí.
+                            */}
+                            {isCurrent ? (
+                                <span className="hidden min-w-0 text-left sm:block">
+                                    <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400">
+                                        Paso {index}
+                                    </span>
+                                    <span className="block text-xs font-black leading-tight text-[#4d0706]">
+                                        {step.title}
+                                    </span>
+                                </span>
+                            ) : (
+                                <span className={`hidden shrink-0 text-[9px] font-black uppercase tracking-widest sm:block ${isDone ? "text-[#4d0706]/60" : "text-gray-400"}`}>
                                     Paso {index}
                                 </span>
-                                <span className={`block text-xs font-black leading-tight ${isCurrent || isDone ? "text-[#4d0706]" : "text-gray-400"}`}>
-                                    {step.title}
-                                </span>
-                            </span>
+                            )}
                         </div>
                         {!isLast && (
                             <div
                                 aria-hidden="true"
-                                className={`mx-3 h-0.5 flex-1 rounded-full transition-colors duration-300 ${lineDone ? "bg-[#4d0706]/25" : "bg-gray-200"}`}
+                                className={`mx-2 h-0.5 min-w-2 flex-1 rounded-full transition-colors duration-300 sm:mx-3 ${lineDone ? "bg-[#4d0706]/25" : "bg-gray-200"}`}
                             />
                         )}
                     </li>

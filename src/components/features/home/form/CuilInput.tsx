@@ -3,6 +3,8 @@ import { TextInput } from "./fields"
 import { formatCuil } from "./validation"
 
 interface CuilInputProps {
+    label?: string
+    placeholder?: string
     value: string
     error?: string
     valid?: boolean
@@ -11,7 +13,7 @@ interface CuilInputProps {
     onBlur?: () => void
 }
 
-export default function CuilInput({ value, error, valid, required, onChange, onBlur }: CuilInputProps) {
+export default function CuilInput({ label = "CUIL", placeholder = "XX-XXXXXXXX-X", value, error, valid, required, onChange, onBlur }: CuilInputProps) {
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const digits = e.target.value.replace(/\D/g, "").slice(0, 11)
         onChange(digits)
@@ -19,7 +21,7 @@ export default function CuilInput({ value, error, valid, required, onChange, onB
 
     return (
         <TextInput
-            label="CUIL"
+            label={label}
             name="cuil"
             value={formatCuil(value)}
             error={error}
@@ -27,7 +29,7 @@ export default function CuilInput({ value, error, valid, required, onChange, onB
             required={required}
             inputMode="numeric"
             autoComplete="off"
-            placeholder="XX-XXXXXXXX-X"
+            placeholder={placeholder}
             onChange={handleChange}
             onBlur={onBlur}
         />

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-    Briefcase, ChevronDown, Clock, GraduationCap, History, Library,
-    MapPin, Search, User, X, type LucideIcon
+    Briefcase, ChevronDown, Clock, GraduationCap, History,
+    Search, User, X, type LucideIcon
 } from "lucide-react";
 import { type Career } from "@/config/careerData";
 import { getImageFor, getCareers, useSiteConfig } from "@/siteConfig";
@@ -30,7 +30,6 @@ const Navbar = ({
     onNavigateHome,
     onNavigateToProgram,
     onNavigateToAbout,
-    onNavigateToLocation,
     onNavigateToLogin,
     onScrollToSection,
     onNavigateToDetail,
@@ -142,24 +141,6 @@ const Navbar = ({
             action: () => {
                 closeMenus();
                 onNavigateToAbout?.();
-            },
-        },
-        {
-            label: "Sedes",
-            description: "Centros de atención y anexos",
-            icon: MapPin,
-            action: () => {
-                closeMenus();
-                onNavigateToLocation?.();
-            },
-        },
-        {
-            label: "Biblioteca",
-            description: "Información e inscripciones",
-            icon: Library,
-            action: () => {
-                closeMenus();
-                onScrollToSection?.("inscripciones");
             },
         },
     ];
@@ -316,11 +297,11 @@ const Navbar = ({
                         />
                         <div className="h-6 w-px bg-white/25 hidden sm:block" />
                         <div className="hidden sm:flex flex-col leading-tight">
-                            <span className="text-xs lg:text-sm font-bold text-white tracking-tight group-hover:text-gray-200 transition-colors">
-                                Obreros del Porvenir
+                            <span className="text-[11px] lg:text-xs font-bold text-white tracking-tight group-hover:text-gray-200 transition-colors whitespace-nowrap">
+                                Escuela Técnica de Capacitación Laboral N° 917
                             </span>
                             <span className="text-[10px] lg:text-xs text-gray-300 font-medium">
-                                Escuela N° 44
+                                Obreros del Porvenir
                             </span>
                         </div>
                     </button>

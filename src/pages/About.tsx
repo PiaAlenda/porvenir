@@ -17,7 +17,7 @@ const About = ({ onBack }: AboutProps) => {
         window.scrollTo(0, 0);
         document.title = "Nuestra Institución - Obreros del Porvenir";
         return () => {
-            document.title = "Obreros del Porvenir - Escuela Superior de Comercio N° 44";
+            document.title = "Obreros del Porvenir - Escuela Técnica de Capacitación Laboral N° 917";
         };
     }, []);
 

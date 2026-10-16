@@ -11,24 +11,24 @@ interface EducationalOfferProps {
 
 const cards = [
     {
-        id: "bach",
-        label: "Cursos",
-        title: "Secundario y Terciario",
-        description: "Modalidad a distancia para jóvenes y adultos. Estudiá a tu ritmo desde donde estés.",
-        points: ["Plataforma 24/7", "Títulos oficiales"],
-        animClass: "animate-slide-left",
-        defaultModality: "virtual" as const,
-        icon: Laptop,
-    },
-    {
         id: "tec",
         label: "Carrera",
         title: "Oferta Presencial",
         description: "Clases en nuestra sede con un entorno colaborativo y profesores especializados.",
         points: ["Atención personalizada", "Prácticas"],
-        animClass: "animate-slide-right",
+        animClass: "animate-slide-left",
         defaultModality: "presencial" as const,
         icon: MapPin,
+    },
+    {
+        id: "bach",
+        label: "Cursos",
+        title: "Secundario y Terciario",
+        description: "Modalidad a distancia para jóvenes y adultos. Estudiá a tu ritmo desde donde estés.",
+        points: ["Plataforma 24/7", "Títulos oficiales"],
+        animClass: "animate-slide-right",
+        defaultModality: "virtual" as const,
+        icon: Laptop,
     },
 ];
 
@@ -119,7 +119,7 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                     </div>
                 </header>
 
-                {/* 2 Columns Grid: Cursos on the Left, Carrera on the Right */}
+                {/* 2 Columns Grid: Carrera on the Left, Cursos on the Right */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-12">
                     {cards.map((card, idx) => {
                         const isExpanded = expandedCard === card.id;

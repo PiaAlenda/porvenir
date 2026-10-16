@@ -32,6 +32,7 @@ const CAMPOS = [
   "careerId",
   "courseTitle",
   "especialidad",
+  "anioDivision",
   "c_discapacidad",
   "cud",
   "c_pueblo_indigena",
@@ -137,6 +138,40 @@ async function getRawById(id) {
     .maybeSingle()
   if (error) fail("no se pudo leer la inscripción", error)
   return data ? toRawRecord(data) : null
+}
+
+/**
+ * Busca una inscripción previa por número de documento. Se usa para impedir
+ * que la misma persona se inscriba más de una vez.
+ */
+export async function findByDocumento(numeroDocumento) {
+  const doc = String(numeroDocumento || "").trim()
+  if (!doc) return null
+  if (!supabaseEnabled) {
+    return readFile().find((r) => String(r.numeroDocumento || "").trim() === doc) || null
+  }
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("id, data, created_at, updated_at")
+    .eq("data->>numeroDocumento", doc)
+    .limit(1)
+  if (error) fail("no se pudo buscar la inscripción", error)
+  return data && data.length ? toRawRecord(data[0]) : null
+}
+
+/** Cantidad de inscripciones registradas para una carrera/curso. */
+export async function countByCareer(careerId) {
+  const id = String(careerId || "").trim()
+  if (!id) return 0
+  if (!supabaseEnabled) {
+    return readFile().filter((r) => String(r.careerId || "") === id).length
+  }
+  const { count, error } = await supabase
+    .from(TABLE)
+    .select("id", { count: "exact", head: true })
+    .eq("data->>careerId", id)
+  if (error) fail("no se pudieron contar las inscripciones", error)
+  return count || 0
 }
 
 export async function getById(id) {

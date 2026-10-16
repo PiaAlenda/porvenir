@@ -37,7 +37,7 @@ const CareerMobileQuickInfo = ({ career }: Props) => {
                     <div>
                         <Calendar className="w-4 h-4 text-[#c85a17] mb-1" />
                         <h4 className="text-[9px] font-black text-stone-400 uppercase tracking-widest">
-                            Próxima Cohorte
+                            Próxima Cohorte – Ciclo Lectivo 2027
                         </h4>
                     </div>
                     <div className="mt-2">
@@ -45,7 +45,10 @@ const CareerMobileQuickInfo = ({ career }: Props) => {
                             {career.inscriptionDate || "Septiembre 2026"}
                         </p>
                         <p className="text-[9px] font-bold text-stone-500 mt-0.5">
-                            {career.inscriptionFee || "Consultar"} · {career.modality}
+                            {career.inscriptionFee ? `${career.inscriptionFee} · ` : ""}{career.modality}
+                        </p>
+                        <p className="text-[9px] font-bold text-stone-500 mt-0.5">
+                            Inscripción: {career.inscriptionFee ? career.inscriptionFee : "Consultar"}
                         </p>
                         {career.month && (
                             <p className="text-[9px] font-black text-[#c85a17] mt-0.5">Inicio: {career.month}</p>

@@ -71,11 +71,34 @@ await check("health dice que usa supabase", async () => {
 
 /* 2. login */
 let token = ""
+let refreshToken = ""
 await check("login con supabase auth", async () => {
   const { payload } = await api("/api/auth/login", { method: "POST", body: { email: EMAIL, password: PASSWORD } })
   if (!payload.token) throw new Error("no devolvio token")
   token = payload.token
+  refreshToken = payload.refreshToken || ""
   return `email=${payload.email}`
+})
+
+await check("refresh de sesión devuelve un token usable", async () => {
+  if (!refreshToken) throw new Error("el login no devolvio refreshToken")
+  const { payload } = await api("/api/auth/refresh", { method: "POST", body: { refreshToken } })
+  if (!payload.token || !payload.refreshToken) throw new Error("falta token o refreshToken")
+  token = payload.token
+  refreshToken = payload.refreshToken
+  const { payload: lista } = await api("/api/inscripciones", { token })
+  if (!Array.isArray(lista.inscripciones)) throw new Error("el token nuevo no sirve")
+  return `token nuevo usable (${lista.inscripciones.length} inscripciones)`
+})
+
+await check("refresh con token invalido se rechaza", async () => {
+  try {
+    await api("/api/auth/refresh", { method: "POST", body: { refreshToken: "refresh-invalido-123" } })
+    throw new Error("acepto un refresh invalido")
+  } catch (err) {
+    if (err.message.includes("acepto")) throw err
+    return err.message
+  }
 })
 
 await check("login con clave incorrecta falla", async () => {
@@ -168,15 +191,16 @@ await check("editar la inscripcion", async () => {
   const { payload } = await api(`/api/inscripciones/${inscripcionId}`, {
     method: "PUT",
     token,
-    body: { domicilio: "Calle PRUEBA 123", especialidad: "E2E" },
+    body: { domicilio: "Calle PRUEBA 123", anioDivision: "2 año" },
   })
   if (payload.inscripcion.domicilio !== "Calle PRUEBA 123") throw new Error("no guardo el domicilio")
+  if (payload.inscripcion.anioDivision !== "2 año") throw new Error("no guardo el año / división")
   return payload.inscripcion.domicilio
 })
 
 /* 7. ficha PDF */
 await check("descargar ficha PDF", async () => {
-  const { payload } = await api(`/api/inscripciones/${inscripcionId}/ficha?token=${encodeURIComponent(token)}`)
+  const { payload } = await api(`/api/inscripciones/${inscripcionId}/ficha`, { token })
   if (!(payload instanceof ArrayBuffer) || payload.byteLength < 1000) throw new Error("PDF vacio")
   return `${payload.byteLength} bytes`
 })

@@ -3,6 +3,8 @@ import { TextInput } from "./fields"
 import { formatDoc } from "./validation"
 
 interface DocInputProps {
+    label?: string
+    placeholder?: string
     value: string
     error?: string
     valid?: boolean
@@ -11,7 +13,7 @@ interface DocInputProps {
     onBlur?: () => void
 }
 
-export default function DocInput({ value, error, valid, required, onChange, onBlur }: DocInputProps) {
+export default function DocInput({ label = "N° de documento (DNI)", placeholder = "00.000.000", value, error, valid, required, onChange, onBlur }: DocInputProps) {
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const digits = e.target.value.replace(/\D/g, "").slice(0, 8)
         onChange(digits)
@@ -19,7 +21,7 @@ export default function DocInput({ value, error, valid, required, onChange, onBl
 
     return (
         <TextInput
-            label="N° de documento (DNI)"
+            label={label}
             name="numeroDocumento"
             value={formatDoc(value)}
             error={error}
@@ -27,7 +29,7 @@ export default function DocInput({ value, error, valid, required, onChange, onBl
             required={required}
             inputMode="numeric"
             autoComplete="off"
-            placeholder="00.000.000"
+            placeholder={placeholder}
             onChange={handleChange}
             onBlur={onBlur}
         />

@@ -92,18 +92,12 @@ export const CAREER_DATA: Record<string, Career> = {
                 name: "Olmedo, David",
                 title: "Técnico en Automotores",
                 legajo: "12463- L.07- F. 60/61"
-            },
-            {
-                name: "Rodriguez, Juan Ramon",
-                title: "PROF. TÉC. CARPINTERO – Cat. I y II",
-                legajo: "L: 05 Folio: 160/161",
-                image: "/img/profile/Profe Juan INDUSTRIA DE LA MADRA.webp"
             }
         ],
-        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
+        schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
+        inscriptionDate: "Inscripción 2027",
+        inscriptionFee: "",
+        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
         salidaLaboral: [
             "Agencias y Concesionarias Oficiales",
             "Flotas de Transporte y Logística",
@@ -151,10 +145,10 @@ export const CAREER_DATA: Record<string, Career> = {
                 image: "/img/profile/Profe renzo.webp"
             }
         ],
-        schedule: "Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
+        schedule: "Lunes a Jueves de 20:15hs a 23:00hs",
+        inscriptionDate: "Inscripción 2027",
+        inscriptionFee: "",
+        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
         salidaLaboral: [
             "Metalúrgica domiciliaria e industrial en general",
             "Industrias y desarrollo minero"
@@ -208,10 +202,10 @@ export const CAREER_DATA: Record<string, Career> = {
                 image: "/img/profile/ortiz.webp"
             }
         ],
-        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
+        schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
+        inscriptionDate: "Inscripción 2027",
+        inscriptionFee: "",
+        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
         salidaLaboral: [
             "Reparación de piezas y mantenimiento de máquinas mineras",
             "Auxiliar en asentamientos mineros",
@@ -267,10 +261,10 @@ export const CAREER_DATA: Record<string, Career> = {
                 image: "/img/profile/rojas.webp"
             }
         ],
-        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
+        schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
+        inscriptionDate: "Inscripción 2027",
+        inscriptionFee: "",
+        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
         salidaLaboral: [
             "Agencia Publicitaria",
             "Estudios de diseño",
@@ -285,7 +279,7 @@ export const CAREER_DATA: Record<string, Career> = {
         id: "tec-administracion-contable",
         title: "Administración Contable",
         icon: "Calculator",
-        description: "Habilidades y conocimiento en auxiliar administrativo, liquidación de sueldos e impuestos y operador de PC.",
+        description: "Habilidades y conocimiento en auxiliar administrativo, liquidación de sueldos e impuestos y ofimática.",
         longDescription: "Formación integral en administración contable con enfoque en tareas administrativas, liquidación de sueldos, liquidación de impuestos y manejo de herramientas informáticas. Preparación para el desempeño en estudios contables, empresas privadas, consultoras de recursos humanos y administración de comercios.",
         duration: "2 años",
         modality: "Presencial",
@@ -293,7 +287,7 @@ export const CAREER_DATA: Record<string, Career> = {
             "Gestión administrativa y documentación contable",
             "Liquidación de sueldos y cargas sociales",
             "Liquidación de impuestos nacionales y provinciales",
-            "Manejo de PC y software administrativo-contable",
+            "Manejo de ofimática y software administrativo-contable",
             "Administración de comercios y pequeñas empresas"
         ],
         syllabus: [
@@ -302,7 +296,7 @@ export const CAREER_DATA: Record<string, Career> = {
                 subjects: [
                     "Auxiliar Administrativo",
                     "Liquidación de Sueldos",
-                    "Operador de PC",
+                    "Ofimática",
                     "Introducción a la Contabilidad"
                 ]
             },
@@ -347,10 +341,10 @@ export const CAREER_DATA: Record<string, Career> = {
                 image: "/img/profile/Marcelo.webp"
             }
         ],
-        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
+        schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
+        inscriptionDate: "Inscripción 2027",
+        inscriptionFee: "",
+        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
         salidaLaboral: [
             "Auxiliar en estudio contable",
             "Auxiliar contable en empresas privadas",
@@ -391,10 +385,10 @@ export const CAREER_DATA: Record<string, Career> = {
                 legajo: "14057-L8-F44/45"
             }
         ],
-        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
+        schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
+        inscriptionDate: "Inscripción 2027",
+        inscriptionFee: "",
+        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
         salidaLaboral: [
             "Reparación de heladeras y aires acondicionados",
             "Instalación domiciliaria"
@@ -444,10 +438,10 @@ export const CAREER_DATA: Record<string, Career> = {
                 image: "/img/profile/Profe Juan INDUSTRIA DE LA MADRA.webp"
             }
         ],
-        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
+        schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
+        inscriptionDate: "Inscripción 2027",
+        inscriptionFee: "",
+        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
         salidaLaboral: [
             "Mueblería y confección de mobiliarios",
             "Empresas constructoras",
@@ -495,10 +489,10 @@ export const CAREER_DATA: Record<string, Career> = {
                 image: "/img/profile/Profe NELIDA GASTRONOMIA.webp"
             }
         ],
-        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
+        schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
+        inscriptionDate: "Inscripción 2027",
+        inscriptionFee: "",
+        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
         salidaLaboral: [
             "Panaderías",
             "Restaurantes",
@@ -510,10 +504,10 @@ export const CAREER_DATA: Record<string, Career> = {
     },
     "tec-electronica-general-industrial": {
         id: "tec-electronica-general-industrial",
-        title: "Electrónica General e Industrial",
+        title: "Electrónica Domiciliaria e Industrial",
         icon: "Cpu",
         description: "Especialización en audio y video, mantenimiento de PC, cálculos y dimensionamientos.",
-        longDescription: "Formación integral en electrónica general e industrial con especialización en audio y video, mantenimiento de PC y cálculos y dimensionamientos. Preparación para el desempeño en servicio y mantenimiento de PC, mantenimiento industrial, instalación y mantenimiento de sistemas de audio e imágenes y comercio de electrónica.",
+        longDescription: "Formación integral en electrónica domiciliaria e industrial con especialización en audio y video, mantenimiento de PC y cálculos y dimensionamientos. Preparación para el desempeño en servicio y mantenimiento de PC, mantenimiento industrial, instalación y mantenimiento de sistemas de audio e imágenes y comercio de electrónica.",
         duration: "2 años",
         modality: "Presencial",
         perfilEgresado: [
@@ -548,10 +542,10 @@ export const CAREER_DATA: Record<string, Career> = {
                 image: "/img/profile/Profe weber ELECTRONICA.webp"
             }
         ],
-        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
+        schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
+        inscriptionDate: "Inscripción 2027",
+        inscriptionFee: "",
+        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
         salidaLaboral: [
             "Servicio y mantenimiento de PC",
             "Mantenimiento industrial",
@@ -803,10 +797,10 @@ export const CAREER_DATA: Record<string, Career> = {
                 image: "/img/profile/Profe ALEJANDRO ELECTRICIDAD.webp"
             }
         ],
-        schedule: "Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
+        schedule: "Lunes a Jueves de 20:15hs a 23:00hs",
+        inscriptionDate: "Inscripción 2027",
+        inscriptionFee: "",
+        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
         salidaLaboral: [
             "Técnico en reparación de electrodomésticos",
             "Servicio técnico independiente",
@@ -847,10 +841,10 @@ export const CAREER_DATA: Record<string, Career> = {
                 image: "/img/profile/Profe Fernando REPARACION DE PC.webp"
             }
         ],
-        schedule: "De Lunes a Jueves de 20:30hs a 23:15hs",
-        inscriptionDate: "Septiembre 2026",
-        inscriptionFee: "$50.000",
-        inscriptionDocs: "Fotocopia de DNI",
+        schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
+        inscriptionDate: "Inscripción 2027",
+        inscriptionFee: "",
+        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
         salidaLaboral: [
             "Soporte técnico en empresas",
             "Local de reparación y venta de insumos de informática",

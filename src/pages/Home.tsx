@@ -13,11 +13,10 @@ interface HomeProps {
   onNavigateToLogin?: () => void;
   onBack?: () => void;
   initialSelection?: { id: string; modality: "virtual" | "presencial" } | null;
-  enrollCareerId?: string | null;
   onProgramSelectionChange?: (id: string | null) => void;
 }
 
-const Home = ({ onNavigateHome, onNavigateToDetail, onNavigateToAbout, onNavigateToLocation, onNavigateToLogin, initialSelection, enrollCareerId, onProgramSelectionChange }: HomeProps) => {
+const Home = ({ onNavigateHome, onNavigateToDetail, onNavigateToAbout, onNavigateToLocation, onNavigateToLogin, initialSelection, onProgramSelectionChange }: HomeProps) => {
   const [selectedProgram, setSelectedProgram] = useState<{
     id: string;
     modality: "virtual" | "presencial";
@@ -27,7 +26,7 @@ const Home = ({ onNavigateHome, onNavigateToDetail, onNavigateToAbout, onNavigat
     window.scrollTo(0, 0);
     document.title = "Home - Obreros del Porvenir";
     return () => {
-      document.title = "Obreros del Porvenir - Escuela Superior de Comercio N° 44";
+      document.title = "Obreros del Porvenir - Escuela Técnica de Capacitación Laboral N° 917";
     };
   }, []);
 
@@ -61,7 +60,7 @@ const Home = ({ onNavigateHome, onNavigateToDetail, onNavigateToAbout, onNavigat
         />
       </div>
 
-      <InfoForm careerId={enrollCareerId} />
+      <InfoForm />
       <Footer />
     </div>
   );

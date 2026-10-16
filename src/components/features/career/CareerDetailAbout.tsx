@@ -42,7 +42,7 @@ const SUBJECT_DESCRIPTIONS: Record<string, string> = {
     // Administración Contable
     "Auxiliar Administrativo": "Formación en tareas administrativas de oficina, archivo, atención al cliente, comunicación interna y manejo de documentación comercial y contable.",
     "Liquidación de Sueldos": "Cálculo y confección de recibos de sueldo, cargas sociales, aportes patronales, convenios colectivos y presentación de declaraciones juradas.",
-    "Operador de PC": "Manejo de herramientas informáticas aplicadas a la administración, incluyendo planillas de cálculo, procesadores de texto y software contable.",
+    "Ofimática": "Manejo de herramientas ofimáticas aplicadas a la administración, incluyendo planillas de cálculo, procesadores de texto y software contable.",
     "Introducción a la Contabilidad": "Principios contables básicos, registración de operaciones, libro diario, libro mayor y confección de balances.",
     "Liquidación de Impuestos": "Régimen impositivo nacional y provincial, cálculo y presentación de IVA, ganancias, ingresos brutos y demás tributos.",
     "Administración de Comercios": "Gestión integral de comercios y PYMES, control de stock, facturación, costos, presupuestos y atención al proveedor.",
@@ -308,6 +308,9 @@ export const ExpandableVideo = ({ src, center }: { src: string; center?: boolean
     );
 };
 
+/* Requisitos de inscripción fijos para todas las carreras */
+const REQUISITOS: string[] = ["DNI", "Copia de CUIL", "Analítico"];
+
 export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
     return (
         <div className="w-full">
@@ -350,13 +353,18 @@ export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
                     <h4 className="text-xs font-black text-stone-400 uppercase tracking-widest mb-5">
                         Requisitos
                     </h4>
-                    <div className="flex items-center gap-4 flex-1">
-                        <FileText className="w-6 h-6 text-[#4d0706] shrink-0" />
-                        <div>
-                            <p className="text-sm font-bold text-stone-800 leading-snug">
-                                {career.inscriptionDocs || "Fotocopia de DNI (Original y Copia)"}
-                            </p>
-                        </div>
+                    <div className="flex items-start gap-4 flex-1">
+                        <FileText className="w-6 h-6 text-[#4d0706] shrink-0 mt-0.5" />
+                        <ul className="space-y-3.5">
+                            {REQUISITOS.map((item: string, idx: number) => (
+                                <li key={idx} className="flex items-start gap-2.5">
+                                    <CheckCircle2 className="w-4 h-4 text-[#ffcc00] shrink-0 mt-0.5" />
+                                    <span className="text-xs font-bold text-stone-700 leading-normal">
+                                        {item}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -387,9 +395,16 @@ export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
                     </h4>
                     <div className="flex items-start gap-2">
                         <FileText className="w-4 h-4 text-[#c85a17] shrink-0 mt-0.5" />
-                        <p className="text-[11px] font-bold text-stone-700">
-                            {career.inscriptionDocs || "Fotocopia de DNI (Original y Copia)"}
-                        </p>
+                        <ul className="space-y-2">
+                            {REQUISITOS.map((item: string, idx: number) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#c85a17] shrink-0 mt-0.5" />
+                                    <span className="text-[11px] font-bold text-stone-700 leading-normal">
+                                        {item}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </div>
             </div>

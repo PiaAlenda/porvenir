@@ -1,20 +1,20 @@
 import { useState, useEffect } from "react"
-import { Briefcase, ChevronLeft, ChevronRight, GraduationCap, LogOut, Settings, UserRound, Users } from "lucide-react"
+import { Briefcase, ChevronLeft, ChevronRight, ClipboardList, GraduationCap, LogOut, Settings, UserRound, Users } from "lucide-react"
 import { api } from "@/api"
 import AlumnosPanel from "@/components/admin/AlumnosPanel"
 import AdminMobileNav from "@/components/admin/AdminMobileNav"
 import CursosPanel from "@/components/admin/CursosPanel"
 import AjustesPanel from "@/components/admin/AjustesPanel"
+import FormularioPanel from "@/components/admin/FormularioPanel"
 import { activeIds, useSiteConfig } from "@/siteConfig"
 import { getAdminProfileImage, subscribeAdminProfileImage } from "@/lib/adminProfileImage"
+import { clearAdminSession, getAdminToken, subscribeAdminSession } from "@/lib/adminSession"
 
 interface AdminProps {
     onExit: () => void
 }
 
-const TOKEN_KEY = "obreros_admin_token"
-
-type TabId = "alumnos" | "cursos" | "carreras" | "ajustes"
+type TabId = "alumnos" | "cursos" | "carreras" | "formulario" | "ajustes"
 
 const tabs = {
     alumnos: {
@@ -32,6 +32,11 @@ const tabs = {
         icon: Briefcase,
         description: "Gestioná cupos e información de las carreras.",
     },
+    formulario: {
+        label: "Formulario",
+        icon: ClipboardList,
+        description: "Opciones del formulario de inscripción (años y divisiones).",
+    },
     ajustes: {
         label: "Ajustes",
         icon: Settings,
@@ -39,10 +44,10 @@ const tabs = {
     },
 } as const
 
-const navOrder: TabId[] = ["alumnos", "cursos", "carreras"]
+const navOrder: TabId[] = ["alumnos", "cursos", "carreras", "formulario"]
 
 export default function Admin({ onExit }: AdminProps) {
-    const [token, setToken] = useState(() => sessionStorage.getItem(TOKEN_KEY) ?? "")
+    const [token, setToken] = useState(() => getAdminToken())
     const [tab, setTab] = useState<TabId>("alumnos")
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [profileOpen, setProfileOpen] = useState(false)
@@ -52,6 +57,13 @@ export default function Admin({ onExit }: AdminProps) {
     const { config } = useSiteConfig()
 
     useEffect(() => subscribeAdminProfileImage(() => setProfileImage(getAdminProfileImage())), [])
+
+    /*
+     * El token se renueva solo cuando vence (ver `api.ts`): este effect hace
+     * que el panel pase a usar el nuevo sin tener que recargar la página.
+     * Si la sesión se cae del todo, App se encarga de mandar al login.
+     */
+    useEffect(() => subscribeAdminSession(() => setToken(getAdminToken())), [])
 
     useEffect(() => {
         if (!token) return
@@ -74,11 +86,12 @@ export default function Admin({ onExit }: AdminProps) {
         alumnos: inscripcionesCount,
         cursos: cursosCount,
         carreras: carrerasCount,
+        formulario: 0,
         ajustes: 0,
     }
 
     const handleLogout = () => {
-        sessionStorage.removeItem(TOKEN_KEY)
+        clearAdminSession()
         setToken("")
         onExit()
     }
@@ -227,6 +240,8 @@ export default function Admin({ onExit }: AdminProps) {
                         <div className="mt-5">
                             {tab === "alumnos" ? (
                                 <AlumnosPanel token={token} />
+                            ) : tab === "formulario" ? (
+                                <FormularioPanel token={token} />
                             ) : tab === "ajustes" ? (
                                 <AjustesPanel token={token} />
                             ) : (

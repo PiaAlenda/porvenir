@@ -20,7 +20,7 @@ const carouselSlides = [
         id: "distancia",
         tag: "Ciclo Lectivo 2027",
         title: "Inscribite Ahora",
-        description: "Asegurá tu lugar en la Escuela Superior de Comercio N° 44. Inscripciones abiertas para todas las carreras y cursos.",
+        description: "Asegurá tu lugar en la Escuela Técnica de Capacitación Laboral N° 917 \"Obreros del Porvenir\". Inscripciones abiertas para todas las carreras y cursos.",
         buttonText: "Inscribite ahora",
         href: "#inscripciones",
         bgImage: "/img/seminario.webp",

@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2, Lock, LogIn, Mail, ShieldCheck } from "lucide-react"
 import { api } from "@/api"
+import { consumeExpiredNotice, saveAdminSession } from "@/lib/adminSession"
 
-const TOKEN_KEY = "obreros_admin_token"
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 interface LoginProps {
@@ -16,12 +16,15 @@ export default function Login({ onSuccess, onBack }: LoginProps) {
     const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState("")
     const [logging, setLogging] = useState(false)
+    // La sesión anterior venció y no se pudo renovar: el panel la mandó acá.
+    // Se consume al montar para que el aviso no quede para el próximo login.
+    const [sesionVencida] = useState(() => consumeExpiredNotice())
 
     useEffect(() => {
         window.scrollTo(0, 0)
         document.title = "Acceso docentes - Obreros del Porvenir"
         return () => {
-            document.title = "Obreros del Porvenir - Escuela Superior de Comercio N° 44"
+            document.title = "Obreros del Porvenir - Escuela Técnica de Capacitación Laboral N° 917"
         }
     }, [])
 
@@ -44,7 +47,7 @@ export default function Login({ onSuccess, onBack }: LoginProps) {
         setError("")
         try {
             const res = await api.login(email.trim(), password)
-            sessionStorage.setItem(TOKEN_KEY, res.token)
+            saveAdminSession(res.token, res.refreshToken)
             setShowPassword(false)
             onSuccess?.()
         } catch (err) {
@@ -69,7 +72,7 @@ export default function Login({ onSuccess, onBack }: LoginProps) {
                             </div>
                             <div className="min-w-0">
                                 <h1 className="text-xl sm:text-2xl font-black text-white leading-tight">Acceso docentes</h1>
-                                <p className="text-xs text-white/60 font-semibold mt-1">Escuela Superior de Comercio N° 44</p>
+                                <p className="text-xs text-white/60 font-semibold mt-1">Escuela Técnica de Capacitación Laboral N° 917</p>
                             </div>
                         </div>
                         <p className="mt-6 text-sm text-white/80 font-medium leading-relaxed">
@@ -78,6 +81,12 @@ export default function Login({ onSuccess, onBack }: LoginProps) {
                     </div>
 
                     <form onSubmit={handleSubmit} className="px-7 sm:px-10 py-8 space-y-5" noValidate>
+                        {sesionVencida && (
+                            <div className="flex items-start gap-2.5 text-sm font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+                                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                                <span>Tu sesión expiró. Ingresá de nuevo para seguir trabajando en el panel.</span>
+                            </div>
+                        )}
                         <div className="relative">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input

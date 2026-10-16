@@ -8,12 +8,13 @@ import {
 } from "libphonenumber-js"
 import { useId } from "react"
 import { FieldShell } from "./fields"
-import { COUNTRIES, detectCountry, flagEmoji, maxNationalDigits, type CountryEntry } from "./phone"
+import { COUNTRIES, flagEmoji, maxNationalDigits, type CountryEntry } from "./phone"
 
 interface PhoneInputProps {
     label: string
     name: string
     value: string
+    defaultCountry?: string
     autoComplete?: string
     hint?: string
     error?: string
@@ -27,6 +28,7 @@ export function PhoneInput({
     label,
     name,
     value,
+    defaultCountry = "AR",
     autoComplete,
     hint,
     error,
@@ -41,7 +43,7 @@ export function PhoneInput({
 
     const containerRef = useRef<HTMLDivElement | null>(null)
 
-    const [country, setCountry] = useState<string>(() => detectCountry())
+    const [country, setCountry] = useState<string>(() => defaultCountry)
     const [digits, setDigits] = useState("")
     const [open, setOpen] = useState(false)
     const [query, setQuery] = useState("")
@@ -68,7 +70,7 @@ export function PhoneInput({
         setLastValue(value)
         if (value === "") {
             setDigits("")
-            setCountry(detectCountry())
+            setCountry(defaultCountry)
         } else {
             try {
                 const parsed = parsePhoneNumber(value)
@@ -77,11 +79,11 @@ export function PhoneInput({
                     setCountry(countryIso)
                     setDigits(parsed.nationalNumber)
                 } else {
-                    setCountry(detectCountry())
+                    setCountry(defaultCountry)
                     setDigits(value.replace(/\D/g, ""))
                 }
             } catch {
-                setCountry(detectCountry())
+                setCountry(defaultCountry)
                 setDigits(value.replace(/\D/g, ""))
             }
         }

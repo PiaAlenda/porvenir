@@ -4,19 +4,11 @@ import { type Career, type Teacher } from "@/config/careerData";
 
 interface CohortCardProps {
     career: Career;
-    onBack: () => void;
+    onEnroll: () => void;
     available?: boolean;
 }
 
-export const CareerCohortCard = ({ career, onBack, available = true }: CohortCardProps) => {
-    const handleEnroll = () => {
-        onBack();
-        setTimeout(() => {
-            const el = document.getElementById("inscripciones");
-            if (el) el.scrollIntoView({ behavior: "smooth" });
-        }, 150);
-    };
-
+export const CareerCohortCard = ({ career, onEnroll, available = true }: CohortCardProps) => {
     return (
         <div className="bg-[#4d0706] text-white rounded-2xl p-6 lg:p-8 shadow-xl flex flex-col justify-between h-full border border-white/10 relative overflow-hidden group">
             {/* Subtle brand color accent background glow */}
@@ -24,17 +16,19 @@ export const CareerCohortCard = ({ career, onBack, available = true }: CohortCar
             
             <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-[#ffcc00]/90">
-                    Próxima Cohorte
+                    Próxima Cohorte – Ciclo Lectivo 2027
                 </span>
                 <h4 className="text-xl lg:text-2xl font-black mt-1 mb-6 text-white leading-tight">
                     {career.inscriptionDate || "Septiembre 2026"}
                 </h4>
 
                 <div className="space-y-4 border-t border-white/10 pt-5">
-                    <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-stone-300">Arancel Mensual</span>
-                        <span className="text-sm font-black text-[#ffcc00]">{career.inscriptionFee || "Consultar"}</span>
-                    </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-stone-300">Inscripción</span>
+                            <span className="text-sm font-black text-[#ffcc00]">
+                                {career.inscriptionFee ? career.inscriptionFee : "Consultar"}
+                            </span>
+                        </div>
                     <div className="flex justify-between items-center border-t border-white/5 pt-3">
                         <span className="text-xs font-bold text-stone-300">Modalidad</span>
                         <span className="text-sm font-black text-white">{career.modality}</span>
@@ -50,7 +44,7 @@ export const CareerCohortCard = ({ career, onBack, available = true }: CohortCar
 
             {available ? (
                 <button
-                    onClick={handleEnroll}
+                    onClick={onEnroll}
                     className="mt-8 w-full py-4 bg-[#ffcc00] text-[#4d0706] font-black uppercase tracking-wider text-xs rounded-xl hover:bg-white hover:text-[#4d0706] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border-none shadow-lg shadow-black/25"
                 >
                     Iniciar Inscripción

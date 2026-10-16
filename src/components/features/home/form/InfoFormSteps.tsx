@@ -1,19 +1,20 @@
-import { getCareers, useSiteConfig } from "@/siteConfig"
+import { Fragment, type ReactNode } from "react"
+import { Briefcase, GraduationCap } from "lucide-react"
+import type { SiteConfigMap } from "@/api"
+import { getCareers } from "@/siteConfig"
 import CuilInput from "./CuilInput"
 import DocInput from "./DocInput"
 import { PhoneInput } from "./PhoneInput"
 import { SearchableSelect, SelectInput, TextInput, TextAreaInput } from "./fields"
-import {
-    PAISES,
-    NACIONALIDADES,
-    PROVINCIAS_ARGENTINA,
-    DEPARTAMENTOS_SAN_JUAN,
-    DISCAPACIDAD,
-    PUEBLOS_INDIGENAS,
-    ESPECIALIDADES,
-} from "./options"
+import { campoPorId, type FormFieldConfig } from "./formSchema"
 import type { FormErrors, InscriptionFormValues } from "./validation"
 
+/**
+ * El formulario se dibuja a partir del esquema que el admin configura. Cada
+ * paso recorre los campos que le corresponden, en el orden guardado, y elige
+ * el componente según `kind`. Etiquetas, textos de ayuda, obligatoriedad,
+ * visibilidad y opciones salen todos de la configuración.
+ */
 export interface StepsProps {
     values: InscriptionFormValues
     errors: FormErrors
@@ -21,13 +22,10 @@ export interface StepsProps {
     onFieldChange: (name: keyof InscriptionFormValues, value: string) => void
     onFileChange: (name: "fotoDni" | "fotoCertificado", file: File | null) => void
     onBlur: (name: keyof InscriptionFormValues) => void
+    campos: FormFieldConfig[]
+    config: SiteConfigMap
+    tipo: "curso" | "carrera" | ""
 }
-
-const SEXO_OPTIONS = [
-    { value: "M", label: "Masculino" },
-    { value: "F", label: "Femenino" },
-    { value: "X", label: "Otro (X)" },
-]
 
 function isValid(value: string | File | null, error: string | undefined, touched: boolean): boolean {
     if (typeof value === "string") {
@@ -36,462 +34,395 @@ function isValid(value: string | File | null, error: string | undefined, touched
     return touched && value !== null && !error
 }
 
-export function StepDatosPersonales({ values, errors, isTouched, onFieldChange, onBlur }: StepsProps) {
-    const paisOptions = PAISES.map((p) => ({ value: p, label: p }))
-    const provOptions = PROVINCIAS_ARGENTINA.map((p) => ({ value: p, label: p }))
-    const nacOptions = NACIONALIDADES.map((n) => ({ value: n, label: n }))
+const spanClass = (span?: 1 | 2) => (span === 2 ? "sm:col-span-2" : "")
+
+function FileField({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps }) {
+    const file = ctx.values[campo.id] as File | null
+
+    return (
+        <div className={spanClass(campo.span)}>
+            <label className="mb-1.5 block text-xs font-black uppercase tracking-widest text-gray-500">
+                {campo.label}
+                {campo.required && <span className="text-red-700" aria-hidden="true"> *</span>}
+            </label>
+            <input
+                type="file"
+                accept="image/*,.pdf"
+                onChange={(e) => {
+                    ctx.onFileChange(campo.id as "fotoDni" | "fotoCertificado", e.target.files?.[0] || null)
+                }}
+                className="block w-full text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#4d0706]/10 file:text-[#4d0706] hover:file:bg-[#4d0706]/20 cursor-pointer border border-gray-200 rounded-2xl p-2 bg-white"
+            />
+            {file && (
+                <div className="mt-2 space-y-1">
+                    <p className="text-xs font-semibold text-emerald-600 truncate">Seleccionado: {file.name}</p>
+                    {file.type.startsWith("image/") && (
+                        <div className="p-1.5 border border-gray-200 bg-gray-50 rounded-xl inline-block">
+                            <img
+                                src={URL.createObjectURL(file)}
+                                alt={`Vista previa ${campo.label}`}
+                                className="max-w-[200px] max-h-[130px] object-contain rounded-lg bg-white"
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
+
+function CampoGenerico({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps }) {
+    const { values, errors, isTouched, onFieldChange, onBlur } = ctx
+    const value = values[campo.id]
+    const error = errors[campo.id]
+    const touched = isTouched(campo.id)
+    const valid = isValid(value, error, touched)
+    const str = typeof value === "string" ? value : ""
+
+    const wrap = (node: ReactNode) => <div className={spanClass(campo.span)}>{node}</div>
+
+    switch (campo.kind) {
+        case "text":
+            return wrap(
+                <TextInput
+                    label={campo.label}
+                    name={campo.id}
+                    value={str}
+                    placeholder={campo.placeholder}
+                    hint={campo.hint}
+                    error={error}
+                    valid={valid}
+                    required={campo.required}
+                    onChange={(e) => onFieldChange(campo.id, e.target.value)}
+                    onBlur={() => onBlur(campo.id)}
+                />,
+            )
+        case "email":
+            return wrap(
+                <TextInput
+                    label={campo.label}
+                    name={campo.id}
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    value={str}
+                    placeholder={campo.placeholder}
+                    hint={campo.hint}
+                    error={error}
+                    valid={valid}
+                    required={campo.required}
+                    onChange={(e) => onFieldChange(campo.id, e.target.value)}
+                    onBlur={() => onBlur(campo.id)}
+                />,
+            )
+        case "textarea":
+            return wrap(
+                <TextAreaInput
+                    label={campo.label}
+                    name={campo.id}
+                    value={str}
+                    placeholder={campo.placeholder}
+                    hint={campo.hint}
+                    error={error}
+                    required={campo.required}
+                    onChange={(e) => onFieldChange(campo.id, e.target.value)}
+                    onBlur={() => onBlur(campo.id)}
+                />,
+            )
+        case "date":
+            return wrap(
+                <TextInput
+                    label={campo.label}
+                    name={campo.id}
+                    type="date"
+                    value={str}
+                    hint={campo.hint}
+                    error={error}
+                    valid={valid}
+                    required={campo.required}
+                    autoComplete="bday"
+                    max={new Date().toISOString().split("T")[0]}
+                    onChange={(e) => onFieldChange(campo.id, e.target.value)}
+                    onBlur={() => onBlur(campo.id)}
+                />,
+            )
+        case "doc":
+            return wrap(
+                <DocInput
+                    label={campo.label}
+                    placeholder={campo.placeholder}
+                    value={str}
+                    error={error}
+                    valid={valid}
+                    required={campo.required}
+                    onChange={(d) => onFieldChange(campo.id, d)}
+                    onBlur={() => onBlur(campo.id)}
+                />,
+            )
+        case "cuil":
+            return wrap(
+                <CuilInput
+                    label={campo.label}
+                    placeholder={campo.placeholder}
+                    value={str}
+                    error={error}
+                    valid={valid}
+                    required={campo.required}
+                    onChange={(d) => onFieldChange(campo.id, d)}
+                    onBlur={() => onBlur(campo.id)}
+                />,
+            )
+        case "phone":
+            return wrap(
+                <PhoneInput
+                    label={campo.label}
+                    name={campo.id}
+                    value={str}
+                    defaultCountry="AR"
+                    autoComplete="tel-national"
+                    hint={campo.hint}
+                    error={error}
+                    valid={valid}
+                    required={campo.required}
+                    onChange={(e164) => onFieldChange(campo.id, e164)}
+                    onBlur={() => onBlur(campo.id)}
+                />,
+            )
+        case "select":
+            return wrap(
+                <SelectInput
+                    label={campo.label}
+                    name={campo.id}
+                    value={str}
+                    options={campo.options ?? []}
+                    placeholderOption={campo.placeholderOption}
+                    hint={campo.hint}
+                    error={error}
+                    valid={valid}
+                    required={campo.required}
+                    onChange={(e) => {
+                        onFieldChange(campo.id, e.target.value)
+                        if (campo.id === "c_discapacidad" && e.target.value !== "Sí") onFieldChange("cud", "")
+                        if (campo.id === "c_pais_nacimiento" && e.target.value !== "Argentina") onFieldChange("c_provincia_nacimiento", "")
+                    }}
+                    onBlur={() => onBlur(campo.id)}
+                />,
+            )
+        case "career": {
+            const allCareers = getCareers(ctx.config)
+            const careerOptions = allCareers
+                .filter((c) => (ctx.tipo ? (ctx.tipo === "carrera" ? c.id.startsWith("tec-") : !c.id.startsWith("tec-")) : true))
+                .map((c) => ({
+                    value: c.id,
+                    label: c.title,
+                    group: c.id.startsWith("tec-") ? "Carreras" : "Cursos",
+                }))
+            const label =
+                campo.label !== "Carrera / Curso"
+                    ? campo.label
+                    : ctx.tipo === "curso"
+                      ? "Curso"
+                      : ctx.tipo === "carrera"
+                        ? "Carrera"
+                        : campo.label
+            return wrap(
+                <SearchableSelect
+                    label={label}
+                    name={campo.id}
+                    value={str}
+                    options={careerOptions}
+                    placeholderOption={campo.placeholderOption}
+                    hint={campo.hint}
+                    error={error}
+                    valid={valid}
+                    required={campo.required}
+                    onChange={(v) => onFieldChange(campo.id, v)}
+                    onBlur={() => onBlur(campo.id)}
+                />,
+            )
+        }
+        case "file":
+            return <FileField campo={campo} ctx={ctx} />
+        default:
+            return null
+    }
+}
+
+/** Campos de un paso, en el orden guardado, visibles. */
+function camposDelPaso(campos: FormFieldConfig[], step: 1 | 2 | 3 | 4): FormFieldConfig[] {
+    return campos.filter((c) => c.step === step && c.visible)
+}
+
+export function StepTipoPropuesta({ values, errors, isTouched, onFieldChange, onBlur }: StepsProps) {
+    const opciones = [
+        {
+            id: "curso" as const,
+            label: "Curso",
+            desc: "Capacitación corta para aprender un oficio. Cualquier edad.",
+            icon: GraduationCap,
+        },
+        {
+            id: "carrera" as const,
+            label: "Carrera",
+            desc: "Formación técnica completa. Requiere mínimo 17 años.",
+            icon: Briefcase,
+        },
+    ]
 
     return (
         <fieldset className="space-y-3 sm:space-y-4">
-            <legend className="sr-only">Datos personales</legend>
+            <legend className="sr-only">Tipo de propuesta</legend>
 
-            <div className="grid grid-cols-12 gap-3 sm:gap-4">
-                <div className="col-span-6 min-w-0">
-                    <TextInput
-                        label="Nombre"
-                        name="nombre"
-                        value={values.nombre}
-                        error={errors.nombre}
-                        valid={isValid(values.nombre, errors.nombre, isTouched("nombre"))}
-                        required
-                        autoComplete="given-name"
-                        placeholder="Ej.: María"
-                        onChange={(e) => onFieldChange("nombre", e.target.value)}
-                        onBlur={() => onBlur("nombre")}
-                    />
-                </div>
-                <div className="col-span-6 min-w-0">
-                    <TextInput
-                        label="Apellido"
-                        name="apellido"
-                        value={values.apellido}
-                        error={errors.apellido}
-                        valid={isValid(values.apellido, errors.apellido, isTouched("apellido"))}
-                        required
-                        autoComplete="family-name"
-                        placeholder="Ej.: González"
-                        onChange={(e) => onFieldChange("apellido", e.target.value)}
-                        onBlur={() => onBlur("apellido")}
-                    />
-                </div>
+            <p className="text-sm font-medium text-gray-500">
+                Seleccioná la categoría
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {opciones.map((opt) => {
+                    const selected = values.tipoPropuesta === opt.id
+                    const Icon = opt.icon
+                    return (
+                        <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => {
+                                onFieldChange("tipoPropuesta", opt.id)
+                                onBlur("tipoPropuesta")
+                            }}
+                            aria-pressed={selected}
+                            className={`text-left rounded-2xl border-2 p-4 sm:p-5 cursor-pointer transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#ffcc00]/40 ${
+                                selected
+                                    ? "border-[#4d0706] bg-[#4d0706]/5 shadow-lg shadow-[#4d0706]/10"
+                                    : "border-gray-200 bg-white hover:border-[#4d0706]/40 hover:bg-[#4d0706]/[0.03]"
+                            }`}
+                        >
+                            <span
+                                className={`flex h-10 w-10 items-center justify-center rounded-xl mb-3 ${
+                                    selected ? "bg-[#4d0706] text-[#ffcc00]" : "bg-[#4d0706]/10 text-[#4d0706]"
+                                }`}
+                            >
+                                <Icon className="w-5 h-5" />
+                            </span>
+                            <span className="block text-sm font-black uppercase tracking-widest text-[#4d0706]">
+                                {opt.label}
+                            </span>
+                            <span className="block mt-1 text-xs font-medium leading-relaxed text-gray-500">
+                                {opt.desc}
+                            </span>
+                        </button>
+                    )
+                })}
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                <DocInput
-                    value={values.numeroDocumento}
-                    error={errors.numeroDocumento}
-                    valid={isValid(values.numeroDocumento, errors.numeroDocumento, isTouched("numeroDocumento"))}
-                    required
-                    onChange={(digits) => onFieldChange("numeroDocumento", digits)}
-                    onBlur={() => onBlur("numeroDocumento")}
-                />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:gap-4">
-                <div className="sm:col-span-6 min-w-0">
-                    <CuilInput
-                        value={values.cuil}
-                        error={errors.cuil}
-                        valid={isValid(values.cuil, errors.cuil, isTouched("cuil"))}
-                        required
-                        onChange={(digits) => onFieldChange("cuil", digits)}
-                        onBlur={() => onBlur("cuil")}
-                    />
-                </div>
-                <div className="sm:col-span-6 min-w-0">
-                    <SelectInput
-                        label="Sexo"
-                        name="c_sexo"
-                        value={values.c_sexo}
-                        options={SEXO_OPTIONS}
-                        error={errors.c_sexo}
-                        valid={isValid(values.c_sexo, errors.c_sexo, isTouched("c_sexo"))}
-                        required
-                        onChange={(e) => onFieldChange("c_sexo", e.target.value)}
-                        onBlur={() => onBlur("c_sexo")}
-                    />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:gap-4">
-                <div className="sm:col-span-6 min-w-0">
-                    <TextInput
-                        label="Fecha de nacimiento"
-                        name="fechaNacimiento"
-                        type="date"
-                        value={values.fechaNacimiento}
-                        error={errors.fechaNacimiento}
-                        valid={isValid(values.fechaNacimiento, errors.fechaNacimiento, isTouched("fechaNacimiento"))}
-                        required
-                        autoComplete="bday"
-                        max={new Date().toISOString().split("T")[0]}
-                        hint="Mínimo 17 años"
-                        onChange={(e) => onFieldChange("fechaNacimiento", e.target.value)}
-                        onBlur={() => onBlur("fechaNacimiento")}
-                    />
-                </div>
-                <div className="sm:col-span-6 min-w-0">
-                    <SelectInput
-                        label="Nacionalidad"
-                        name="c_nacionalidad"
-                        value={values.c_nacionalidad}
-                        options={nacOptions}
-                        placeholderOption="Seleccioná nacionalidad"
-                        error={errors.c_nacionalidad}
-                        valid={isValid(values.c_nacionalidad, errors.c_nacionalidad, isTouched("c_nacionalidad"))}
-                        required
-                        onChange={(e) => onFieldChange("c_nacionalidad", e.target.value)}
-                        onBlur={() => onBlur("c_nacionalidad")}
-                    />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:gap-4">
-                <div className="sm:col-span-6 min-w-0">
-                    <SelectInput
-                        label="País de nacimiento"
-                        name="c_pais_nacimiento"
-                        value={values.c_pais_nacimiento}
-                        options={paisOptions}
-                        placeholderOption="Seleccioná país"
-                        error={errors.c_pais_nacimiento}
-                        valid={isValid(values.c_pais_nacimiento, errors.c_pais_nacimiento, isTouched("c_pais_nacimiento"))}
-                        required
-                        onChange={(e) => {
-                            onFieldChange("c_pais_nacimiento", e.target.value)
-                            if (e.target.value !== "Argentina") {
-                                onFieldChange("c_provincia_nacimiento", "")
-                            }
-                        }}
-                        onBlur={() => onBlur("c_pais_nacimiento")}
-                    />
-                </div>
-                {values.c_pais_nacimiento === "Argentina" ? (
-                    <div className="sm:col-span-6 min-w-0">
-                        <SelectInput
-                            label="Provincia de nacimiento"
-                            name="c_provincia_nacimiento"
-                            value={values.c_provincia_nacimiento}
-                            options={provOptions}
-                            placeholderOption="Seleccioná provincia"
-                            error={errors.c_provincia_nacimiento}
-                            valid={isValid(values.c_provincia_nacimiento, errors.c_provincia_nacimiento, isTouched("c_provincia_nacimiento"))}
-                            required
-                            onChange={(e) => onFieldChange("c_provincia_nacimiento", e.target.value)}
-                            onBlur={() => onBlur("c_provincia_nacimiento")}
-                        />
-                    </div>
-                ) : (
-                    <div className="sm:col-span-6 min-w-0">
-                        <TextInput
-                            label="Lugar de nacimiento (Ciudad/Localidad)"
-                            name="lugar_nacimiento"
-                            value={values.lugar_nacimiento}
-                            error={errors.lugar_nacimiento}
-                            valid={isValid(values.lugar_nacimiento, errors.lugar_nacimiento, isTouched("lugar_nacimiento"))}
-                            required
-                            placeholder="Ej.: Santiago, Montevideo..."
-                            onChange={(e) => onFieldChange("lugar_nacimiento", e.target.value)}
-                            onBlur={() => onBlur("lugar_nacimiento")}
-                        />
-                    </div>
-                )}
-            </div>
-
-            {values.c_pais_nacimiento === "Argentina" && (
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                    <TextInput
-                        label="Lugar de nacimiento (Ciudad/Localidad)"
-                        name="lugar_nacimiento"
-                        value={values.lugar_nacimiento}
-                        error={errors.lugar_nacimiento}
-                        valid={isValid(values.lugar_nacimiento, errors.lugar_nacimiento, isTouched("lugar_nacimiento"))}
-                        required
-                        placeholder="Ej.: Capital, Caucete, Jáchal..."
-                        onChange={(e) => onFieldChange("lugar_nacimiento", e.target.value)}
-                        onBlur={() => onBlur("lugar_nacimiento")}
-                    />
-                </div>
+            {isTouched("tipoPropuesta") && errors.tipoPropuesta && (
+                <p role="alert" className="text-xs font-bold text-red-700">
+                    {errors.tipoPropuesta}
+                </p>
             )}
         </fieldset>
     )
 }
 
-export function StepContacto({ values, errors, isTouched, onFieldChange, onBlur }: StepsProps) {
-    const deptoOptions = DEPARTAMENTOS_SAN_JUAN.map((d) => ({ value: d, label: d }))
+export function StepDatosPersonales(ctx: StepsProps) {
+    const { campos, values } = ctx
+    const render = (c: FormFieldConfig) => <CampoGenerico key={c.id} campo={c} ctx={ctx} />
+    const paisVisible = campoPorId(campos, "c_pais_nacimiento")?.visible === true
+
+    return (
+        <fieldset className="space-y-3 sm:space-y-4">
+            <legend className="sr-only">Datos personales</legend>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {camposDelPaso(campos, 1).map((c) => {
+                    if (c.id === "c_pais_nacimiento") {
+                        const prov = campoPorId(campos, "c_provincia_nacimiento")
+                        const lugar = campoPorId(campos, "lugar_nacimiento")
+                        const esArgentina = values.c_pais_nacimiento === "Argentina"
+                        return (
+                            <Fragment key={c.id}>
+                                {render(c)}
+                                {esArgentina ? (
+                                    <>
+                                        {prov?.visible && render(prov)}
+                                        {lugar?.visible && render(lugar)}
+                                    </>
+                                ) : (
+                                    lugar?.visible && render(lugar)
+                                )}
+                            </Fragment>
+                        )
+                    }
+                    // La provincia y el lugar dependen del país: se dibujan junto
+                    // a él para mantener la lógica, salvo que el país esté oculto.
+                    if (c.id === "c_provincia_nacimiento" || c.id === "lugar_nacimiento") {
+                        return paisVisible ? null : render(c)
+                    }
+                    return render(c)
+                })}
+            </div>
+        </fieldset>
+    )
+}
+
+export function StepContacto(ctx: StepsProps) {
+    const { campos } = ctx
+    const render = (c: FormFieldConfig) => <CampoGenerico key={c.id} campo={c} ctx={ctx} />
 
     return (
         <fieldset className="space-y-3 sm:space-y-4">
             <legend className="sr-only">Contacto</legend>
 
-            <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                <TextInput
-                    label="Correo electrónico (Gmail)"
-                    name="email"
-                    type="email"
-                    value={values.email}
-                    error={errors.email}
-                    valid={isValid(values.email, errors.email, isTouched("email"))}
-                    required
-                    autoComplete="email"
-                    inputMode="email"
-                    placeholder="nombre@gmail.com"
-                    hint="Usá tu cuenta de Gmail: nombre@gmail.com"
-                    onChange={(e) => onFieldChange("email", e.target.value)}
-                    onBlur={() => onBlur("email")}
-                />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:gap-4">
-                <div className="sm:col-span-6 min-w-0">
-                    <PhoneInput
-                        label="Celular particular"
-                        name="celular"
-                        value={values.celular}
-                        error={errors.celular}
-                        valid={isValid(values.celular, errors.celular, isTouched("celular"))}
-                        required
-                        autoComplete="tel-national"
-                        hint="Mínimo 8 dígitos"
-                        onChange={(e164) => onFieldChange("celular", e164)}
-                        onBlur={() => onBlur("celular")}
-                    />
-                </div>
-                <div className="sm:col-span-6 min-w-0">
-                    <PhoneInput
-                        label="Celular de urgencia"
-                        name="celularUrgencia"
-                        value={values.celularUrgencia}
-                        error={errors.celularUrgencia}
-                        valid={isValid(values.celularUrgencia, errors.celularUrgencia, isTouched("celularUrgencia"))}
-                        required
-                        autoComplete="tel-national"
-                        hint="Contacto ante emergencias"
-                        onChange={(e164) => onFieldChange("celularUrgencia", e164)}
-                        onBlur={() => onBlur("celularUrgencia")}
-                    />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                <TextInput
-                    label="Domicilio (calle y número)"
-                    name="domicilio"
-                    value={values.domicilio}
-                    error={errors.domicilio}
-                    valid={isValid(values.domicilio, errors.domicilio, isTouched("domicilio"))}
-                    required
-                    autoComplete="street-address"
-                    placeholder="Ej.: Av. Libertador 250, Piso 2"
-                    onChange={(e) => onFieldChange("domicilio", e.target.value)}
-                    onBlur={() => onBlur("domicilio")}
-                />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                <SelectInput
-                    label="Departamento de residencia (San Juan)"
-                    name="departamento"
-                    value={values.departamento}
-                    options={deptoOptions}
-                    placeholderOption="Seleccioná un departamento"
-                    error={errors.departamento}
-                    valid={isValid(values.departamento, errors.departamento, isTouched("departamento"))}
-                    required
-                    onChange={(e) => onFieldChange("departamento", e.target.value)}
-                    onBlur={() => onBlur("departamento")}
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {camposDelPaso(campos, 2).map((c) => render(c))}
             </div>
         </fieldset>
     )
 }
 
-export function StepInscripcion({ values, errors, isTouched, onFieldChange, onBlur }: StepsProps) {
-    const { config } = useSiteConfig()
-    const allCareers = getCareers(config)
-    const careerOptions = [
-        ...allCareers.filter((c) => c.id.startsWith("tec-")).map((c) => ({ value: c.id, label: c.title, group: "Carreras" })),
-        ...allCareers.filter((c) => !c.id.startsWith("tec-")).map((c) => ({ value: c.id, label: c.title, group: "Cursos" })),
-    ]
-    const espOptions = ESPECIALIDADES.map((e) => ({ value: e, label: e }))
+export function StepInscripcion({ campos, config, tipo, ...rest }: StepsProps & { careerLocked?: boolean }) {
+    const ctx: StepsProps = { campos, config, tipo, ...rest }
+    const render = (c: FormFieldConfig) => <CampoGenerico key={c.id} campo={c} ctx={ctx} />
 
     return (
         <fieldset className="space-y-3 sm:space-y-4">
             <legend className="sr-only">Inscripción y formación</legend>
 
-            <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                <SearchableSelect
-                    label="Carrera / Curso"
-                    name="careerId"
-                    value={values.careerId}
-                    options={careerOptions}
-                    placeholderOption="Buscá y seleccioná una opción"
-                    error={errors.careerId}
-                    valid={isValid(values.careerId, errors.careerId, isTouched("careerId"))}
-                    required
-                    hint="Elegí la propuesta a la que querés inscribirte"
-                    onChange={(v) => onFieldChange("careerId", v)}
-                    onBlur={() => onBlur("careerId")}
-                />
-
-                <SelectInput
-                    label="Especialidad"
-                    name="especialidad"
-                    value={values.especialidad}
-                    options={espOptions}
-                    placeholderOption="Seleccioná una especialidad"
-                    error={errors.especialidad}
-                    valid={isValid(values.especialidad, errors.especialidad, isTouched("especialidad"))}
-                    required
-                    onChange={(e) => onFieldChange("especialidad", e.target.value)}
-                    onBlur={() => onBlur("especialidad")}
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {camposDelPaso(campos, 3).map((c) => {
+                    // En el detalle de una carrera la elección ya viene fijada.
+                    if (c.id === "careerId" && rest.careerLocked) return null
+                    return render(c)
+                })}
             </div>
         </fieldset>
     )
 }
 
-export function StepDocumentacion({
-    values,
-    errors,
-    isTouched,
-    onFieldChange,
-    onFileChange,
-    onBlur,
-}: StepsProps) {
-    const discOptions = DISCAPACIDAD.map((d) => ({ value: d, label: d }))
-    const pueblosOptions = PUEBLOS_INDIGENAS.map((p) => ({ value: p, label: p }))
+export function StepDocumentacion(ctx: StepsProps) {
+    const { campos, values } = ctx
+    const render = (c: FormFieldConfig) => <CampoGenerico key={c.id} campo={c} ctx={ctx} />
+    const discVisible = campoPorId(campos, "c_discapacidad")?.visible === true
 
     return (
         <fieldset className="space-y-3 sm:space-y-4">
             <legend className="sr-only">Documentación y datos complementarios</legend>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:gap-4">
-                <div className="sm:col-span-6 min-w-0">
-                    <SelectInput
-                        label="¿Posee discapacidad?"
-                        name="c_discapacidad"
-                        value={values.c_discapacidad}
-                        options={discOptions}
-                        placeholderOption="Seleccioná opción"
-                        error={errors.c_discapacidad}
-                        valid={isValid(values.c_discapacidad, errors.c_discapacidad, isTouched("c_discapacidad"))}
-                        required
-                        onChange={(e) => {
-                            onFieldChange("c_discapacidad", e.target.value)
-                            if (e.target.value !== "Sí") {
-                                onFieldChange("cud", "")
-                            }
-                        }}
-                        onBlur={() => onBlur("c_discapacidad")}
-                    />
-                </div>
-                {values.c_discapacidad === "Sí" && (
-                    <div className="sm:col-span-6 min-w-0">
-                        <TextInput
-                            label="Número de CUD (Certificado)"
-                            name="cud"
-                            value={values.cud}
-                            error={errors.cud}
-                            valid={isValid(values.cud, errors.cud, isTouched("cud"))}
-                            required
-                            placeholder="Ej.: 12345678"
-                            onChange={(e) => onFieldChange("cud", e.target.value)}
-                            onBlur={() => onBlur("cud")}
-                        />
-                    </div>
-                )}
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                <SelectInput
-                    label="Pueblo Indígena u originario"
-                    name="c_pueblo_indigena"
-                    value={values.c_pueblo_indigena}
-                    options={pueblosOptions}
-                    placeholderOption="Seleccioná un pueblo u originario"
-                    error={errors.c_pueblo_indigena}
-                    valid={isValid(values.c_pueblo_indigena, errors.c_pueblo_indigena, isTouched("c_pueblo_indigena"))}
-                    required
-                    onChange={(e) => onFieldChange("c_pueblo_indigena", e.target.value)}
-                    onBlur={() => onBlur("c_pueblo_indigena")}
-                />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                <TextAreaInput
-                    label="Problemática integrado / Observaciones (opcional)"
-                    name="problematicaIntegrado"
-                    value={values.problematicaIntegrado}
-                    placeholder="Detallá cualquier observación o necesidad específica..."
-                    error={errors.problematicaIntegrado}
-                    onChange={(e) => onFieldChange("problematicaIntegrado", e.target.value)}
-                    onBlur={() => onBlur("problematicaIntegrado")}
-                />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:gap-4 pt-2">
-                <div className="sm:col-span-6 min-w-0">
-                    <label className="mb-1.5 block text-xs font-black uppercase tracking-widest text-gray-500">
-                        Foto de DNI (opcional)
-                    </label>
-                    <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0] || null
-                            onFileChange("fotoDni", file)
-                        }}
-                        className="block w-full text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#4d0706]/10 file:text-[#4d0706] hover:file:bg-[#4d0706]/20 cursor-pointer border border-gray-200 rounded-2xl p-2 bg-white"
-                    />
-                    {values.fotoDni && (
-                        <div className="mt-2 space-y-1">
-                            <p className="text-xs font-semibold text-emerald-600 truncate">
-                                Seleccionado: {values.fotoDni.name}
-                            </p>
-                            {values.fotoDni.type.startsWith("image/") && (
-                                <div className="p-1.5 border border-gray-200 bg-gray-50 rounded-xl inline-block">
-                                    <img
-                                        src={URL.createObjectURL(values.fotoDni)}
-                                        alt="Vista previa DNI"
-                                        className="max-w-[200px] max-h-[130px] object-contain rounded-lg bg-white"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                <div className="sm:col-span-6 min-w-0">
-                    <label className="mb-1.5 block text-xs font-black uppercase tracking-widest text-gray-500">
-                        Foto Certificado Estudios (opcional)
-                    </label>
-                    <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0] || null
-                            onFileChange("fotoCertificado", file)
-                        }}
-                        className="block w-full text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#4d0706]/10 file:text-[#4d0706] hover:file:bg-[#4d0706]/20 cursor-pointer border border-gray-200 rounded-2xl p-2 bg-white"
-                    />
-                    {values.fotoCertificado && (
-                        <div className="mt-2 space-y-1">
-                            <p className="text-xs font-semibold text-emerald-600 truncate">
-                                Seleccionado: {values.fotoCertificado.name}
-                            </p>
-                            {values.fotoCertificado.type.startsWith("image/") && (
-                                <div className="p-1.5 border border-gray-200 bg-gray-50 rounded-xl inline-block">
-                                    <img
-                                        src={URL.createObjectURL(values.fotoCertificado)}
-                                        alt="Vista previa Certificado"
-                                        className="max-w-[200px] max-h-[130px] object-contain rounded-lg bg-white"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {camposDelPaso(campos, 4).map((c) => {
+                    if (c.id === "c_discapacidad") {
+                        const cud = campoPorId(campos, "cud")
+                        return (
+                            <Fragment key={c.id}>
+                                {render(c)}
+                                {values.c_discapacidad === "Sí" && cud?.visible && render(cud)}
+                            </Fragment>
+                        )
+                    }
+                    if (c.id === "cud") {
+                        return discVisible ? null : render(c)
+                    }
+                    return render(c)
+                })}
             </div>
         </fieldset>
     )

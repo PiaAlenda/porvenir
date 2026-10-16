@@ -12,9 +12,9 @@ interface FloatingNavProps {
 
 const navItems = [
     { id: "about", label: "Nosotros", icon: Users, type: "view" as const },
-    { id: "inscripciones", label: "Biblioteca", icon: Library, type: "scroll" as const },
-    { id: "cursos", label: "Cursos", icon: GraduationCap, type: "program" as const, category: "bach", modality: "virtual" as const },
     { id: "carrera", label: "Carrera", icon: Briefcase, type: "program" as const, category: "tec", modality: "presencial" as const },
+    { id: "cursos", label: "Cursos", icon: GraduationCap, type: "program" as const, category: "bach", modality: "virtual" as const },
+    { id: "inscripciones", label: "Biblioteca", icon: Library, type: "scroll" as const },
     { id: "location", label: "Sedes", icon: MapPin, type: "view" as const },
 ];
 

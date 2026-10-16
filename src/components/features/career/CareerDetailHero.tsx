@@ -9,13 +9,6 @@ interface CareerDetailHeroProps {
     onBack: () => void;
 }
 
-function getCareerBadge(id: string) {
-    if (id.startsWith("tec-")) return "CARRERA TÉCNICA SUPERIOR";
-    if (id.startsWith("bachiller-")) return "EDUCACIÓN SECUNDARIA / BACHILLERATO";
-    if (id === "adultos-2000") return "BACHILLERATO ACELERADO";
-    return "FORMACIÓN PROFESIONAL";
-}
-
 const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
     const [imgError, setImgError] = useState(false);
     const { config } = useSiteConfig();
@@ -75,9 +68,6 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                         </p>
 
                         <div className="flex flex-wrap gap-3 mt-6">
-                            <div className="hidden lg:inline-flex items-center gap-2 bg-[#ffcc00] text-[#4d0706] text-[10px] lg:text-xs font-black tracking-widest px-4 py-2 rounded-xl uppercase whitespace-nowrap">
-                                {getCareerBadge(career.id)}
-                            </div>
                             <div className="hidden lg:flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/15">
                                 <Clock className="w-4 h-4 text-[#ffcc00]" />
                                 <span className="text-white font-bold text-xs">{career.duration}</span>

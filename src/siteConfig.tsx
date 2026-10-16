@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { api, type CursoConfig, type SiteConfigMap } from "./api"
 import { CAREER_DATA, type Career, type CareerSubject, type Teacher } from "./config/careerData"
 import { CAREER_VIDEOS } from "./config/careerVideos"
+import { DEFAULT_FORM_OPTIONS, mergeFormOptions, type FormOptions } from "@/components/features/home/form/formSchema"
 
 export const DEFAULT_COURSE_IMAGES: Record<string, string> = {
     "curso-danza": "/img/cursos/CURSO DE DANZA.webp",
@@ -19,19 +20,28 @@ export const DEFAULT_COURSE_IMAGES: Record<string, string> = {
 
 interface SiteConfigValue {
     config: SiteConfigMap
+    formOptions: FormOptions
     refresh: () => Promise<void>
 }
 
-const Ctx = createContext<SiteConfigValue>({ config: {}, refresh: () => Promise.resolve() })
+const Ctx = createContext<SiteConfigValue>({
+    config: {},
+    formOptions: DEFAULT_FORM_OPTIONS,
+    refresh: () => Promise.resolve(),
+})
 
 export function SiteConfigProvider({ children }: { children: ReactNode }) {
     const [config, setConfig] = useState<SiteConfigMap>({})
+    const [formOptions, setFormOptions] = useState<FormOptions>(DEFAULT_FORM_OPTIONS)
 
     const refresh = useCallback(
         () =>
             api
                 .getConfig()
-                .then((r) => setConfig(r.cursos))
+                .then((r) => {
+                    setConfig(r.cursos)
+                    setFormOptions(mergeFormOptions(r.formOptions))
+                })
                 .catch(() => {}),
         [],
     )
@@ -40,7 +50,7 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
         refresh()
     }, [refresh])
 
-    return <Ctx.Provider value={{ config, refresh }}>{children}</Ctx.Provider>
+    return <Ctx.Provider value={{ config, formOptions, refresh }}>{children}</Ctx.Provider>
 }
 
 export function useSiteConfig(): SiteConfigValue {

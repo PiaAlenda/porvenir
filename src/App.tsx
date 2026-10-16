@@ -7,6 +7,7 @@ import Admin from "@/pages/Admin"
 import Login from "@/pages/Login"
 import FloatingNav from "@/components/layout/FloatingNav"
 import { SiteConfigProvider } from "@/siteConfig"
+import { hasAdminSession, subscribeAdminSession } from "@/lib/adminSession"
 
 type ViewName = "home" | "detail" | "about" | "location" | "admin" | "login"
 
@@ -15,13 +16,9 @@ interface ViewState {
     params?: { id: string }
 }
 
-const TOKEN_KEY = "obreros_admin_token"
-
-const hasSession = () => Boolean(sessionStorage.getItem(TOKEN_KEY))
-
 const resolveHashView = (): ViewState => {
     if (window.location.hash === "#login") return { name: "login" }
-    if (window.location.hash === "#admin") return hasSession() ? { name: "admin" } : { name: "login" }
+    if (window.location.hash === "#admin") return hasAdminSession() ? { name: "admin" } : { name: "login" }
     return { name: "home" }
 }
 
@@ -29,7 +26,6 @@ function App() {
   const [view, setView] = useState<ViewState>(resolveHashView);
   const [programSelection, setProgramSelection] = useState<{ id: string; modality: "virtual" | "presencial" } | null>(null);
   const [activeNavId, setActiveNavId] = useState<string | null>(null);
-  const [enrollCareerId, setEnrollCareerId] = useState<string | null>(null);
   const savedScrollY = useRef<number>(0);
 
   useEffect(() => {
@@ -39,6 +35,23 @@ function App() {
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
+
+  /*
+   * Si la sesión se cae desde el panel (venció y no se pudo renovar), la
+   * pantalla de login es la que tiene que salir, con su aviso. Sin esto el
+   * panel quedaba en blanco mostrando "No autorizado" mientras el resto del
+   * sitio seguía funcionando normal.
+   */
+  useEffect(
+    () =>
+      subscribeAdminSession(() => {
+        if (!hasAdminSession()) {
+          history.replaceState(null, "", "#login");
+          setView({ name: "login" });
+        }
+      }),
+    [],
+  );
 
   const navigateToDetail = (id: string) => {
     savedScrollY.current = window.scrollY;
@@ -118,12 +131,6 @@ function App() {
     }
   };
 
-  const handleBackToForm = (careerId?: string) => {
-    setEnrollCareerId(careerId ?? null);
-    navigateHome();
-    setTimeout(() => document.getElementById("inscripciones")?.scrollIntoView({ behavior: "smooth" }), 200);
-  };
-
   const showNav = view.name !== "detail" && view.name !== "admin" && view.name !== "login";
 
   return (
@@ -148,7 +155,6 @@ function App() {
             onNavigateToLocation={navigateToLocation}
             onNavigateToLogin={navigateToLogin}
             initialSelection={programSelection}
-            enrollCareerId={enrollCareerId}
             onProgramSelectionChange={(id) => setActiveNavId(id ? programNavId(id) : null)}
           />
         )}
@@ -156,7 +162,6 @@ function App() {
           <CareerDetail 
             careerId={view.params!.id} 
             onBack={() => navigateToPrograms(view.params!.id)}
-            onBackToForm={handleBackToForm}
           />
         )}
         {view.name === "about" && (

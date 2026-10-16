@@ -11,9 +11,13 @@ import {
   createAlumno,
   updateAlumno,
   deleteAlumno,
+  findByDocumento,
+  countByCareer,
 } from "./db.mjs"
 import {
   getConfig,
+  getFormOptions,
+  updateFormOptions,
   updateItem,
   deleteItem,
   parseCantidadTitulares,
@@ -28,8 +32,10 @@ import {
   authenticate,
   changePassword,
   verifyToken,
+  refreshAdminSession,
   isDefaultPassword,
   hasUsableAdminConfig,
+  SESSION_EXPIRED_MESSAGE,
 } from "./auth.mjs"
 import { upload, careerUpload, saveUpload, deleteUpload, UPLOADS_URL_PREFIX } from "./storage.mjs"
 import { ensureBuckets, supabaseEnabled } from "./supabase.mjs"
@@ -103,6 +109,21 @@ const inscriptionLimiter = rateLimit({
   standardHeaders: "draft-7",
   legacyHeaders: false,
   message: { error: "Demasiadas inscripciones desde esta conexión. Probá más tarde." },
+})
+
+/**
+ * Renovación de sesión: cuenta solo los intentos fallidos, igual que el login.
+ * Una pestaña con varias llamadas vencidas pueden renovar una sola vez y
+ * reutilizar ese token para el resto, así que el tope alto no abre una
+ * ventana para adivinar refresh tokens.
+ */
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: { error: RATE_LIMIT_MESSAGE },
 })
 
 /** API en general: holgado, solo para frenar scripts automatizados. */
@@ -200,7 +221,8 @@ async function requireAdmin(req, res, next) {
   // ahí quedaría en los logs de acceso, en el Referer y en el historial.
   const token = header.startsWith("Bearer ") ? header.slice(7) : ""
   if (!(await verifyToken(token))) {
-    return res.status(401).json({ error: "No autorizado" })
+    // Con token vencido la causa es la sesión; sin token, solo el 401 crudo.
+    return res.status(401).json({ error: token ? SESSION_EXPIRED_MESSAGE : "No autorizado" })
   }
   req.adminToken = token
   next()
@@ -214,7 +236,28 @@ app.post("/api/auth/login", loginLimiter, async (req, res) => {
     return res.status(401).json({ error: result.error })
   }
 
-  res.json({ token: result.token, email: result.user?.email || String(email).trim().toLowerCase() })
+  res.json({
+    token: result.token,
+    refreshToken: result.refreshToken || "",
+    expiresIn: result.expiresIn,
+    email: result.user?.email || String(email).trim().toLowerCase(),
+  })
+})
+
+/**
+ * Emite un access token nuevo a partir del refresh token del login.
+ *
+ * El access token de Supabase dura una hora. Antes el panel lo guardaba en la
+ * pestaña y a la hora siguiente todas sus llamadas respondían 401, mientras el
+ * sitio público (que no pide token) seguía funcionando: era el "me sale no
+ * autorizado pero puedo ver el resto" que reportaba la administración.
+ */
+app.post("/api/auth/refresh", refreshLimiter, async (req, res) => {
+  const result = await refreshAdminSession(req.body?.refreshToken)
+  if (result.error) {
+    return res.status(401).json({ error: result.error })
+  }
+  res.json({ token: result.token, refreshToken: result.refreshToken, expiresIn: result.expiresIn })
 })
 
 app.post("/api/auth/password", requireAdmin, async (req, res) => {
@@ -242,6 +285,7 @@ const INTERNAL_FIELDS = [
   "lugar_nacimiento",
   "c_nacionalidad",
   "especialidad",
+  "anioDivision",
   "c_discapacidad",
   "c_pueblo_indigena",
   "cud",
@@ -282,6 +326,29 @@ const inscripcionUpload = (req, res, next) => {
   })
 }
 
+/**
+ * Determina si la carrera/curso todavía tiene lugar para una nueva inscripción
+ * (titular) o si la persona queda como suplente.
+ *
+ * Se considera "sin cupos" cuando:
+ *  - la carrera/curso está marcada como no disponible ("Sin cupo") en la config, o
+ *  - tiene cupo de titulares cargado y ya se cubrió con las inscripciones existentes.
+ * Sin cupo cargado (0) no se limita el registro: todos entran como titulares.
+ */
+async function resolverHayCupo(careerId) {
+  const id = String(careerId || "").trim()
+  if (!id) return true
+  const config = await getConfig()
+  const item = config[id]
+  // Sin config para ese id no hay límite conocido: se registra con normalidad.
+  if (!item) return true
+  if (item.available === false) return false
+  const cupo = parseCantidadTitulares(item.cantidadTitulares) ?? 0
+  if (cupo <= 0) return true
+  const inscriptos = await countByCareer(id)
+  return inscriptos < cupo
+}
+
 app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req, res) => {
   const body = req.body || {}
   const err = validateRequeridos(body)
@@ -291,6 +358,26 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: "Correo electrónico inválido" })
   }
+
+  /*
+   * Una persona no puede inscribirse dos veces: el documento es la clave
+   * natural del alumno. El chequeo vive en el servidor (no en el cliente) para
+   * que también cubra reintentos, otra pestaña o cualquier llamada directa a
+   * la API.
+   */
+  const duplicada = await findByDocumento(body.numeroDocumento)
+  if (duplicada) {
+    return res.status(409).json({
+      error:
+        "Ya existe una inscripción registrada con este número de documento. " +
+        "No se puede realizar otra inscripción. Si necesitás modificar tus datos, " +
+        "comunicate con la administración de la escuela.",
+    })
+  }
+
+  // Se calcula antes de crear el registro, para que el conteo no incluya a la
+  // persona que se está inscribiendo en este momento.
+  const hayCupo = await resolverHayCupo(body.careerId)
 
   let fotoDni = ""
   let fotoCertificado = ""
@@ -317,6 +404,7 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
     careerId: body.careerId ? String(body.careerId) : "",
     courseTitle: body.courseTitle ? String(body.courseTitle) : "",
     especialidad: body.especialidad ? String(body.especialidad).trim() : "",
+    anioDivision: body.anioDivision ? String(body.anioDivision).trim() : "",
     c_discapacidad: body.c_discapacidad ? String(body.c_discapacidad).trim() : "",
     cud: body.cud ? String(body.cud).trim() : "",
     c_pueblo_indigena: body.c_pueblo_indigena ? String(body.c_pueblo_indigena).trim() : "",
@@ -328,7 +416,10 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
   res.status(201).json({
     id: record.id,
     nombre: `${record.apellido} ${record.nombre}`,
-    message: "Inscripción registrada correctamente",
+    hayCupo,
+    message: hayCupo
+      ? "Preinscripción registrada. Imprimí el contrato y acercate a la administración para confirmarla."
+      : "Cupo completo: quedaste preinscripto como suplente.",
   })
 })
 
@@ -410,7 +501,25 @@ app.get("/api/inscripciones/:id/ficha", requireAdmin, async (req, res) => {
 /* ---------- config de cursos ---------- */
 
 app.get("/api/config", async (_req, res) => {
-  res.json({ cursos: await getConfig() })
+  const [cursos, formOptions] = await Promise.all([getConfig(), getFormOptions()])
+  res.json({ cursos, formOptions })
+})
+
+/**
+ * Opciones del formulario de inscripción (los años y divisiones que ofrece el
+ * select). El form las lee sin autenticar porque llegan dentro de
+ * `GET /api/config`; guardarlas es exclusivo del admin.
+ */
+app.put("/api/form-options", requireAdmin, async (req, res) => {
+  try {
+    const options = await updateFormOptions(req.body || {})
+    res.json({ options })
+  } catch (err) {
+    if (err instanceof PublicError) {
+      return res.status(err.status || 400).json({ error: err.message })
+    }
+    throw err
+  }
 })
 
 const careerUploadMiddleware = (req, res, next) => {
