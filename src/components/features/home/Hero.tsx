@@ -14,7 +14,6 @@ const carouselSlides = [
         description: "Con más de 150 años de excelencia educativa, formamos profesionales que transforman la sociedad.",
         buttonText: "Nuestra Historia",
         href: "#nosotros",
-        bgImage: "/img/baner 1 medida nueva nueva 4.webp",
     },
     {
         id: "distancia",
@@ -23,7 +22,6 @@ const carouselSlides = [
         description: "Asegurá tu lugar en la Escuela Técnica de Capacitación Laboral N° 917 \"Obreros del Porvenir\". Inscripciones abiertas para todas las carreras y cursos.",
         buttonText: "Inscribite ahora",
         href: "#inscripciones",
-        bgImage: "/img/seminario.webp",
     },
     {
         id: "carreras",
@@ -32,9 +30,10 @@ const carouselSlides = [
         description: "Explorá nuestra oferta académica con carreras de grado y cursos de formación profesional.",
         buttonText: "Ver oferta académica",
         href: "#academic-offer-section",
-        bgImage: "/img/baner 3 jpg.webp",
     }
 ];
+
+const bgImage = "/img/fondo final 1 .jpg.jpeg";
 
 const Hero = ({ onNavigateAbout }: HeroProps) => {
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -76,20 +75,8 @@ const Hero = ({ onNavigateAbout }: HeroProps) => {
     return (
         <div className="relative w-full bg-[#050505] overflow-hidden">
             <div className="absolute inset-0 z-0">
-                {carouselSlides.map((slide, index) => (
-                    index === currentSlide && (
-                        <motion.div
-                            key={slide.id}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 1 }}
-                            className="absolute inset-0"
-                        >
-                            <img src={slide.bgImage} alt="" className="w-full h-full object-[74%_center] object-cover brightness-[0.4]" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/20 to-black/60" />
-                        </motion.div>
-                    )
-                ))}
+                <img src={bgImage} alt="" className="w-full h-full object-[74%_center] object-cover brightness-[0.8]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/10 to-black/40" />
             </div>
 
             <section className="relative z-10 min-h-[50vh] sm:min-h-[60vh] flex flex-col items-center justify-center px-4 py-8 sm:py-12">
