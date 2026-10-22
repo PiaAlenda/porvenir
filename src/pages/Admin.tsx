@@ -35,7 +35,7 @@ const tabs = {
     formulario: {
         label: "Formulario",
         icon: ClipboardList,
-        description: "Opciones del formulario de inscripción (años y divisiones).",
+        description: "Configure las propiedades, visibilidad y orden de los campos del formulario principal. Seleccione un elemento para editarlo o use las flechas para cambiar su posición.",
     },
     ajustes: {
         label: "Ajustes",
@@ -173,7 +173,7 @@ export default function Admin({ onExit }: AdminProps) {
 
                 <main className="flex-1 min-w-0">
                     <header className="sticky top-0 z-50 bg-[#4d0706] text-white shadow-lg shadow-[#4d0706]/25">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+                        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6">
                             <div className="flex items-center justify-between gap-3 py-3">
                                 <div className="min-w-0">
                                     <h1 className="text-sm sm:text-lg font-black leading-none truncate">Panel de Gestión</h1>
@@ -226,7 +226,7 @@ export default function Admin({ onExit }: AdminProps) {
                         </div>
                     </header>
 
-                    <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-8 pb-28 lg:pb-8">
+                    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 py-5 sm:py-6 pb-28 lg:pb-6">
                         <div className="flex items-start gap-3">
                             <div className="w-10 h-10 rounded-xl bg-[#4d0706]/5 text-[#4d0706] flex items-center justify-center shrink-0">
                                 <ActiveIcon className="w-5 h-5" />

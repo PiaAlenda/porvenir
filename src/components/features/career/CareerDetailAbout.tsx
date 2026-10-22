@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { Clock, FileText, CheckCircle2, BookOpen, Play, X } from "lucide-react";
 import { type Career } from "@/config/careerData";
+import { parseRequisitos } from "@/lib/requisitos";
 
 // Detailed mapping of subject descriptions to make the syllabus look complete and professional
 const SUBJECT_DESCRIPTIONS: Record<string, string> = {
@@ -144,8 +145,8 @@ export const CareerSyllabus = ({ career }: CareerSyllabusProps) => {
             <div className="hidden lg:grid grid-cols-3 gap-6">
                 {syllabusList.map(({ subject, year }: { subject: string; year: string }, idx: number) => {
                     const moduleNum = String(idx + 1).padStart(2, "0");
-                    const description = SUBJECT_DESCRIPTIONS[subject] ||
-                        `Formación integral y práctica en ${subject.toLowerCase()}, orientada a las necesidades del mercado laboral actual.`;
+                    /* Solo se muestra texto propio del eje; nada generado automáticamente. */
+                    const description = SUBJECT_DESCRIPTIONS[subject.trim()];
 
                     return (
                         <div key={idx} className="border-l-4 border-[#4d0706] pl-4 py-2 space-y-2">
@@ -155,9 +156,11 @@ export const CareerSyllabus = ({ career }: CareerSyllabusProps) => {
                             <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-tight">
                                 {subject}
                             </h4>
-                            <p className="text-xs font-semibold text-stone-500 leading-relaxed">
-                                {description}
-                            </p>
+                            {description && (
+                                <p className="text-xs font-semibold text-stone-500 leading-relaxed">
+                                    {description}
+                                </p>
+                            )}
                         </div>
                     );
                 })}
@@ -168,8 +171,7 @@ export const CareerSyllabus = ({ career }: CareerSyllabusProps) => {
             <div ref={sliderRef} className="lg:hidden flex overflow-x-auto snap-x snap-mandatory gap-6 ejes-slider" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {syllabusList.map(({ subject, year }: { subject: string; year: string }, idx: number) => {
                     const moduleNum = String(idx + 1).padStart(2, "0");
-                    const description = SUBJECT_DESCRIPTIONS[subject] ||
-                        `Formación integral y práctica en ${subject.toLowerCase()}, orientada a las necesidades del mercado laboral actual.`;
+                    const description = SUBJECT_DESCRIPTIONS[subject.trim()];
 
                     return (
                         <div key={idx} className="border-l-4 border-[#4d0706] pl-4 py-3 space-y-1.5 w-full shrink-0 snap-start">
@@ -179,9 +181,11 @@ export const CareerSyllabus = ({ career }: CareerSyllabusProps) => {
                             <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-tight">
                                 {subject}
                             </h4>
-                            <p className="text-xs font-semibold text-stone-500 leading-relaxed">
-                                {description}
-                            </p>
+                            {description && (
+                                <p className="text-xs font-semibold text-stone-500 leading-relaxed">
+                                    {description}
+                                </p>
+                            )}
                         </div>
                     );
                 })}
@@ -308,10 +312,9 @@ export const ExpandableVideo = ({ src, center }: { src: string; center?: boolean
     );
 };
 
-/* Requisitos de inscripción fijos para todas las carreras */
-const REQUISITOS: string[] = ["DNI", "Copia de CUIL", "Analítico"];
-
 export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
+    /* Los requisitos salen de lo que se cargó en el panel (uno por línea). */
+    const requisitos = useMemo(() => parseRequisitos(career.inscriptionDocs), [career.inscriptionDocs])
     return (
         <div className="w-full">
             {/* DESKTOP LAYOUT (Matches the desktop screenshot exactly) */}
@@ -356,7 +359,7 @@ export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
                     <div className="flex items-start gap-4 flex-1">
                         <FileText className="w-6 h-6 text-[#4d0706] shrink-0 mt-0.5" />
                         <ul className="space-y-3.5">
-                            {REQUISITOS.map((item: string, idx: number) => (
+                            {requisitos.map((item: string, idx: number) => (
                                 <li key={idx} className="flex items-start gap-2.5">
                                     <CheckCircle2 className="w-4 h-4 text-[#ffcc00] shrink-0 mt-0.5" />
                                     <span className="text-xs font-bold text-stone-700 leading-normal">
@@ -396,7 +399,7 @@ export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
                     <div className="flex items-start gap-2">
                         <FileText className="w-4 h-4 text-[#c85a17] shrink-0 mt-0.5" />
                         <ul className="space-y-2">
-                            {REQUISITOS.map((item: string, idx: number) => (
+                            {requisitos.map((item: string, idx: number) => (
                                 <li key={idx} className="flex items-start gap-2">
                                     <CheckCircle2 className="w-3.5 h-3.5 text-[#c85a17] shrink-0 mt-0.5" />
                                     <span className="text-[11px] font-bold text-stone-700 leading-normal">

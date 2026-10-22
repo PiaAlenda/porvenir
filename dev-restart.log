@@ -1,0 +1,263 @@
+
+> obreros-por-venir@0.0.0 dev
+> concurrently -k -n web,api -c blue,yellow "vite" "npm run dev:api"
+
+[api] 
+[api] > obreros-por-venir@0.0.0 dev:api
+[api] > node --env-file-if-exists=.env server/index.mjs
+[api] 
+[web] [2m07:36:31[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
+[web] 
+[web]   [32m[1mVITE[22m v8.0.10[39m  [2mready in [0m[1m1309[22m[2m[0m ms[22m
+[web] 
+[web]   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+[web] [2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[api] Servidor corriendo en http://localhost:3001
+[api] Datos: Supabase
+[web] [2m07:36:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [optimizer] bundling dependencies...
+[web] [2m07:41:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m07:41:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/InfoForm.tsx, /src/components/features/home/form/DocInput.tsx, /src/components/features/home/form/CuilInput.tsx[22m
+[web] [2m07:41:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m07:47:04[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m07:47:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m07:47:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m07:52:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Admin.tsx, /src/styles/index.css[22m
+[web] [2m07:52:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Admin.tsx, /src/styles/index.css[22m
+[web] [2m07:55:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Admin.tsx, /src/styles/index.css[22m
+[web] [2m07:55:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Admin.tsx, /src/styles/index.css[22m
+[web] [2m07:58:15[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursosPanel.tsx[22m
+[web] [2m07:58:23[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m08:00:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m08:00:31[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m08:01:01[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m08:01:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m08:01:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m08:02:03[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m08:02:07[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m08:02:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m08:02:15[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m08:14:16[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/FormularioPanel.tsx[22m
+[web] [2m08:58:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/FormularioPanel.tsx[22m
+[web] [2m09:00:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/FormularioPanel.tsx[22m
+[web] [2m09:01:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Admin.tsx, /src/styles/index.css[22m
+[web] [2m09:02:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/FormularioPanel.tsx[22m
+[web] [2m09:03:25[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/FormularioPanel.tsx[22m
+[web] [2m09:03:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/FormularioPanel.tsx[22m
+[web] [2m09:05:20[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/FormularioPanel.tsx[22m
+[web] [2m09:05:21[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mReferenceError[22m: ArrowUp is not defined
+[web] [39m > CampoEditor src/components/admin/FormularioPanel.tsx:87:25
+[web]     85 |                          className="w-7 h-7 grid place-items-center rounded-lg text-gray-500 bg-gray-100 hover:bg-gray...
+[web]     86 |                      >
+[web]     87 |                          <ArrowUp aria-hidden="true" className="w-3.5 h-3.5 lg:hidden" />
+[web]        |                           ^
+[web]     88 |                          <ArrowLeft aria-hidden="true" className="hidden lg:block w-3.5 h-3.5" />
+[web]     89 |                      </button>
+[web]  > Object.react_stack_bottom_frame node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:25904:19
+[web]  > renderWithHooks node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:7662:21
+[web]  > updateFunctionComponent node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:10166:18
+[web]  > beginWork node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:11778:17
+[web]  > runWithFiberInDEV node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+[web]  > performUnitOfWork node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:17641:21
+[web]  > workLoopSync node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:17469:40
+[web]  > renderRootSync node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:17450:10
+[web]  > performWorkOnRoot node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:16583:34
+[web] 
+[web] [2m09:05:21[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mAn error occurred in the <CampoEditor> component.
+[web] 
+[web] Consider adding an error boundary to your tree to customize error handling behavior.
+[web] Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+[web] 
+[web] [2m09:05:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/FormularioPanel.tsx[22m
+[web] [2m09:09:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:10:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:10:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:10:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 1 more[22m
+[web] [2m09:11:24[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mAn empty string ("") was passed to the src attribute. This may cause the browser to download the whole page again over the network. To fix this, either do not render the element at all or pass null to src instead of an empty string.
+[web] [2m09:12:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/career/CareerDetailAbout.tsx[22m
+[web] [2m09:12:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/career/CareerDetailAbout.tsx[22m
+[web] [2m09:17:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:17:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:17:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 1 more[22m
+[web] [2m09:18:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:18:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:18:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 1 more[22m
+[web] [2m09:18:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:18:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:18:54[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:19:04[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:19:20[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/career/CareerDetailAbout.tsx[22m
+[web] [2m09:19:20[22m [31m[1m[vite][22m[39m [31mInternal server error: [BabelError] C:\Users\Pia\Desktop\create apps\ss\src\components\features\career\CareerDetailAbout.tsx: Unexpected token, expected "jsxTagEnd" (412:19)
+[web] 
+[web] [0m [90m 410 |[31m                         [33m<[31m[33m/[31m[33mul[31m[33m>[31m
+[web]  [90m 411 |[31m                     [33m<[31m[33m/[31m[33mdiv[31m[33m>[31m
+[web] [31m[1m>[22m[31m[90m 412 |[31m                 [33m<[31m[33m/[31m[33md[31m
+[web]  [90m     |[31m                    [31m[1m^[22m[31m[0m[39m
+[web] [2m09:19:20[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/career/CareerDetailAbout.tsx[22m
+[web] [2m09:19:20[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/features/career/CareerDetailAbout.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[web] [2m09:19:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/career/CareerDetailAbout.tsx[22m
+[web] [2m09:19:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/features/career/CareerDetailSidebar.tsx, /src/components/features/career/CareerDetailAbout.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/career/CareerMobileQuickInfo.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx[22m
+[web] [2m09:19:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:19:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 1 more[22m
+[web] [2m09:19:53[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css[22m
+[web] [2m09:20:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:20:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:30:52[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:33:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:33:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:33:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:33:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:33:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:33:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:33:35[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css[22m
+[web] [2m09:33:49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:34:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:34:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:35:20[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:35:20[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:35:20[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 1 more[22m
+[web] [2m09:35:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:35:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:35:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 1 more[22m
+[web] [2m09:35:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:35:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:35:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:35:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:35:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:35:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 1 more[22m
+[web] [2m09:37:28[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursosPanel.tsx[22m
+[web] [2m09:37:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursosPanel.tsx[22m
+[web] [2m09:37:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursosPanel.tsx[22m
+[web] [2m09:38:06[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursosPanel.tsx[22m
+[web] [2m09:38:18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursosPanel.tsx[22m
+[web] [2m09:38:23[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CarreraDetalle.tsx[22m
+[web] [2m09:38:23[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CarreraDetalle.tsx[22m
+[web] [2m09:38:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:38:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:39:16[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:39:16[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:39:16[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 2 more[22m
+[web] [2m09:39:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:39:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:39:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 2 more[22m
+[web] [2m09:39:25[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/AdminEntityCard.tsx[22m
+[web] [2m09:39:25[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/AdminEntityCard.tsx[22m
+[web] [2m09:39:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:39:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:39:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 2 more[22m
+[web] [2m09:39:46[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:39:54[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:40:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:40:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:40:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursosPanel.tsx[22m
+[web] [2m09:40:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/AdminEntityCard.tsx[22m
+[web] [2m09:40:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/AdminEntityCard.tsx[22m
+[web] [2m09:40:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursosPanel.tsx[22m
+[web] [2m09:40:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:40:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:40:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/InfoForm.tsx[22m
+[web] [2m09:40:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/FormularioPanel.tsx[22m
+[web] [2m09:40:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css[22m
+[web] [2m09:41:01[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/FormularioPanel.tsx[22m
+[web] [2m09:42:18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:42:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:43:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:44:17[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:44:28[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:46:11[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:46:31[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:46:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:46:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:46:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:46:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:48:49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:48:49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:48:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:48:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:48:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:48:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 2 more[22m
+[web] [2m09:48:58[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:03[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:49:03[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:06[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:49:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:49:22[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:25[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:49:25[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:49:25[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 2 more[22m
+[web] [2m09:49:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:49:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:49:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 2 more[22m
+[web] [2m09:49:31[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:49:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m09:49:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 2 more[22m
+[web] [2m09:49:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:49:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:49:46[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:49:57[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:50:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:50:57[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:50:58[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:51:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:51:39[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mReferenceError[22m: SelectInput is not defined
+[web] [39m > CampoGenerico src/components/features/home/form/InfoFormSteps.tsx:188:17
+[web]     186 |          case "select":
+[web]     187 |              return wrap(
+[web]     188 |                  <SelectInput
+[web]         |                   ^
+[web]     189 |                      label={campo.label}
+[web]     190 |                      name={campo.id}
+[web]  > Object.react_stack_bottom_frame node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:25904:19
+[web]  > renderWithHooks node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:7662:21
+[web]  > updateFunctionComponent node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:10166:18
+[web]  > beginWork node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:11778:17
+[web]  > runWithFiberInDEV node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+[web]  > performUnitOfWork node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:17641:21
+[web]  > workLoopSync node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:17469:40
+[web]  > renderRootSync node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:17450:10
+[web]  > performWorkOnRoot node_modules/.pnpm/react-dom@19.2.5_react@19.2.5/node_modules/react-dom/cjs/react-dom-client.development.js:16583:34
+[web] 
+[web] [2m09:51:39[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mAn error occurred in the <CampoGenerico> component.
+[web] 
+[web] Consider adding an error boundary to your tree to customize error handling behavior.
+[web] Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+[web] 
+[web] [2m09:51:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m09:51:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:51:52[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:51:56[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:52:01[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/fields.tsx[22m
+[web] [2m09:52:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/AlumnoEditModal.tsx[22m
+[web] [2m09:57:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:57:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:57:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:58:22[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:58:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m09:58:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m10:19:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m10:20:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m10:20:57[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m10:22:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/InfoForm.tsx, /src/components/features/home/form/DocInput.tsx, /src/components/features/home/form/CuilInput.tsx[22m
+[web] [2m10:22:51[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m10:31:20[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m10:38:54[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m10:39:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m10:39:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/admin/CursoModal.tsx[22m
+[web] [2m10:39:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m10:39:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m10:39:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 2 more[22m
+[web] [2m10:39:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/InfoForm.tsx, /src/components/features/home/form/DocInput.tsx, /src/components/features/home/form/CuilInput.tsx[22m
+[web] [2m10:48:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m10:48:25[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/features/home/InfoForm.tsx, /src/components/features/home/form/DocInput.tsx, /src/components/features/home/form/CuilInput.tsx[22m
+[web] [2m10:48:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/siteConfig.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/features/home/form/InfoFormSteps.tsx[22m
+[web] [2m10:48:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/siteConfig.tsx[22m Could not Fast Refresh ("DEFAULT_COURSE_IMAGES" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[web] [2m10:48:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/pages/Admin.tsx, /src/pages/CareerDetail.tsx, /src/components/admin/CursosPanel.tsx, /src/components/layout/Navbar.tsx, /src/components/admin/AlumnosPanel.tsx, /src/components/features/home/InfoForm.tsx, /src/components/features/career/CareerDetailHero.tsx, /src/components/features/home/EducationalOffer.tsx, /src/components/admin/FormularioPanel.tsx, /src/components/admin/CursoModal.tsx, /src/components/admin/CarreraDetalle.tsx, /src/components/admin/AlumnoEditModal.tsx and 2 more[22m

@@ -209,9 +209,6 @@ export function validateField(
             const birth = new Date(`${v}T00:00:00`)
             if (birth > today) return "La fecha no puede ser futura"
             const age = getAge(birth, today)
-            // En cursos puede inscribirse cualquier edad; en carreras rige la
-            // edad mínima. Sin tipo definido se aplica el requisito estricto.
-            if (tipoEfectivoDe(values) !== "curso" && age < 17) return "La edad mínima es de 17 años"
             if (age > 110) return "Revisá la fecha ingresada"
             return undefined
         }
@@ -224,7 +221,7 @@ export function validateField(
             }
             return undefined
         case "lugar_nacimiento":
-            if (!v) return req ? requiredMsg("el lugar de nacimiento") : undefined
+            if (!v) return req ? requiredMsg("la ciudad de nacimiento") : undefined
             return undefined
         case "c_nacionalidad":
             if (!v) return req ? requiredMsg("la nacionalidad") : undefined

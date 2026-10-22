@@ -9,10 +9,12 @@ import CupoTitularesField from "./CupoTitularesField"
 interface Props {
     token: string
     careerId: string
+    /** Misma pantalla para cursos y carreras; solo cambia la etiqueta de vuelta. */
+    section?: "cursos" | "carreras"
     onBack: () => void
 }
 
-export default function CarreraDetalle({ token, careerId, onBack }: Props) {
+export default function CarreraDetalle({ token, careerId, section = "carreras", onBack }: Props) {
     const { config } = useSiteConfig()
     const [participantes, setParticipantes] = useState<Alumno[]>([])
     const [loading, setLoading] = useState(true)
@@ -80,7 +82,7 @@ export default function CarreraDetalle({ token, careerId, onBack }: Props) {
                     className="inline-flex items-center gap-1 shrink-0 text-gray-500 hover:text-[#4d0706] cursor-pointer transition-colors"
                 >
                     <ArrowLeft className="w-3.5 h-3.5" />
-                    Carreras
+                    {section === "cursos" ? "Cursos" : "Carreras"}
                 </button>
                 <ChevronRight className="w-3 h-3 shrink-0 text-gray-300" />
                 <span className="truncate text-gray-400">{title}</span>

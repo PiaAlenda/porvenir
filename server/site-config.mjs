@@ -392,11 +392,31 @@ async function readStored() {
   return cache
 }
 
-export async function getConfig() {
-  const merged = await mergeWithDefaults(await readStored())
+function buildConfig(stored) {
+  const merged = mergeWithDefaults(stored)
   // Las opciones del formulario no son un curso: se devuelven aparte para que
   // no se filtren como si fueran una carrera en el cliente.
   delete merged[FORM_OPTIONS_KEY]
+  return merged
+}
+
+export async function getConfig() {
+  return buildConfig(await readStored())
+}
+
+/**
+ * Config publicada al cliente. Es `getConfig` más las lápidas de los ítems
+ * eliminados: el cliente las necesita para no volver a mostrar los cursos que
+ * también existen hardcodeados en `CAREER_DATA` (`getCareers` los filtra con
+ * `removed`). `getConfig` las sigue escondiendo para uso interno, así el panel
+ * y los PUT no tratan un curso borrado como si todavía existiera.
+ */
+export async function getPublicConfig() {
+  const stored = await readStored()
+  const merged = buildConfig(stored)
+  for (const [id, data] of Object.entries(stored)) {
+    if (data?.removed === true) merged[id] = { removed: true, available: false }
+  }
   return merged
 }
 

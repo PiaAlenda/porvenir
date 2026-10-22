@@ -16,6 +16,7 @@ import {
 } from "./db.mjs"
 import {
   getConfig,
+  getPublicConfig,
   getFormOptions,
   updateFormOptions,
   updateItem,
@@ -501,7 +502,7 @@ app.get("/api/inscripciones/:id/ficha", requireAdmin, async (req, res) => {
 /* ---------- config de cursos ---------- */
 
 app.get("/api/config", async (_req, res) => {
-  const [cursos, formOptions] = await Promise.all([getConfig(), getFormOptions()])
+  const [cursos, formOptions] = await Promise.all([getPublicConfig(), getFormOptions()])
   res.json({ cursos, formOptions })
 })
 

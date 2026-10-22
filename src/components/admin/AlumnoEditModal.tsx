@@ -123,15 +123,15 @@ export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Pro
                             <p className="text-xs font-black text-[#4d0706] uppercase tracking-widest mb-3">1. Datos personales</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Apellido *</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Apellido <span className="text-red-500">*</span></label>
                                     <input className={inputClass} value={form.apellido} onChange={set("apellido")} required />
                                 </div>
                                 <div>
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Nombre *</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Nombre <span className="text-red-500">*</span></label>
                                     <input className={inputClass} value={form.nombre} onChange={set("nombre")} required />
                                 </div>
                                 <div>
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Tipo de documento *</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Tipo de documento <span className="text-red-500">*</span></label>
                                     <select className={selectClass} value={form.c_documento} onChange={set("c_documento")} required>
                                         <option value="DNI">DNI</option>
                                         <option value="LE">LE</option>
@@ -140,15 +140,15 @@ export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Pro
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Número de documento *</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Número de documento <span className="text-red-500">*</span></label>
                                     <input className={inputClass} value={form.numeroDocumento} onChange={set("numeroDocumento")} required inputMode="numeric" />
                                 </div>
                                 <div>
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">CUIL *</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">CUIL <span className="text-red-500">*</span></label>
                                     <input className={inputClass} value={form.cuil} onChange={set("cuil")} maxLength={11} required />
                                 </div>
                                 <div>
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Sexo *</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Sexo <span className="text-red-500">*</span></label>
                                     <select className={selectClass} value={form.c_sexo} onChange={set("c_sexo")} required>
                                         <option value="M">Masculino</option>
                                         <option value="F">Femenino</option>
@@ -156,7 +156,7 @@ export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Pro
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Fecha de nacimiento *</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5">Fecha de nacimiento <span className="text-red-500">*</span></label>
                                     <input type="date" className={inputClass} value={form.fechaNacimiento} onChange={set("fechaNacimiento")} required />
                                 </div>
                             </div>

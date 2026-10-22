@@ -5,16 +5,11 @@ import { getCareers } from "@/siteConfig"
 import CuilInput from "./CuilInput"
 import DocInput from "./DocInput"
 import { PhoneInput } from "./PhoneInput"
-import { SearchableSelect, SelectInput, TextInput, TextAreaInput } from "./fields"
+import { SearchableSelect, TextInput, TextAreaInput } from "./fields"
 import { campoPorId, type FormFieldConfig } from "./formSchema"
+import { localidadesDeProvincia } from "./localidades"
 import type { FormErrors, InscriptionFormValues } from "./validation"
 
-/**
- * El formulario se dibuja a partir del esquema que el admin configura. Cada
- * paso recorre los campos que le corresponden, en el orden guardado, y elige
- * el componente según `kind`. Etiquetas, textos de ayuda, obligatoriedad,
- * visibilidad y opciones salen todos de la configuración.
- */
 export interface StepsProps {
     values: InscriptionFormValues
     errors: FormErrors
@@ -190,7 +185,7 @@ function CampoGenerico({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps
             )
         case "select":
             return wrap(
-                <SelectInput
+                <SearchableSelect
                     label={campo.label}
                     name={campo.id}
                     value={str}
@@ -200,10 +195,9 @@ function CampoGenerico({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps
                     error={error}
                     valid={valid}
                     required={campo.required}
-                    onChange={(e) => {
-                        onFieldChange(campo.id, e.target.value)
-                        if (campo.id === "c_discapacidad" && e.target.value !== "Sí") onFieldChange("cud", "")
-                        if (campo.id === "c_pais_nacimiento" && e.target.value !== "Argentina") onFieldChange("c_provincia_nacimiento", "")
+                    onChange={(v) => {
+                        onFieldChange(campo.id, v)
+                        if (campo.id === "c_discapacidad" && v !== "Sí") onFieldChange("cud", "")
                     }}
                     onBlur={() => onBlur(campo.id)}
                 />,
@@ -221,10 +215,10 @@ function CampoGenerico({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps
                 campo.label !== "Carrera / Curso"
                     ? campo.label
                     : ctx.tipo === "curso"
-                      ? "Curso"
-                      : ctx.tipo === "carrera"
-                        ? "Carrera"
-                        : campo.label
+                        ? "Curso"
+                        : ctx.tipo === "carrera"
+                            ? "Carrera"
+                            : campo.label
             return wrap(
                 <SearchableSelect
                     label={label}
@@ -236,6 +230,49 @@ function CampoGenerico({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps
                     error={error}
                     valid={valid}
                     required={campo.required}
+                    onChange={(v) => onFieldChange(campo.id, v)}
+                    onBlur={() => onBlur(campo.id)}
+                />,
+            )
+        }
+        case "city": {
+            const esArgentina = values.c_pais_nacimiento === "Argentina"
+            if (!esArgentina) {
+                return wrap(
+                    <TextInput
+                        label={campo.label}
+                        name={campo.id}
+                        value={str}
+                        placeholder={campo.placeholder}
+                        hint={campo.hint}
+                        error={error}
+                        valid={valid}
+                        required={campo.required}
+                        onChange={(e) => onFieldChange(campo.id, e.target.value)}
+                        onBlur={() => onBlur(campo.id)}
+                    />,
+                )
+            }
+
+            const provincia = values.c_provincia_nacimiento
+            const localidades = localidadesDeProvincia(provincia)
+            const options = localidades.map((localidad) => ({ value: localidad, label: localidad }))
+
+            return wrap(
+                <SearchableSelect
+                    key={provincia || "sin-provincia"}
+                    label={campo.label}
+                    name={campo.id}
+                    value={str}
+                    options={options}
+                    placeholderOption={provincia ? "Buscá tu ciudad o localidad" : "Elegí primero la provincia"}
+                    placeholder={campo.placeholder}
+                    hint={campo.hint}
+                    error={error}
+                    valid={valid}
+                    required={campo.required}
+                    disabled={!provincia}
+                    dropUp
                     onChange={(v) => onFieldChange(campo.id, v)}
                     onBlur={() => onBlur(campo.id)}
                 />,
@@ -253,18 +290,18 @@ function camposDelPaso(campos: FormFieldConfig[], step: 1 | 2 | 3 | 4): FormFiel
     return campos.filter((c) => c.step === step && c.visible)
 }
 
-export function StepTipoPropuesta({ values, errors, isTouched, onFieldChange, onBlur }: StepsProps) {
+export function StepTipoPropuesta({ values, errors, isTouched, onFieldChange }: StepsProps) {
     const opciones = [
         {
             id: "curso" as const,
             label: "Curso",
-            desc: "Capacitación corta para aprender un oficio. Cualquier edad.",
+            desc: "Capacitación corta para aprender un oficio.",
             icon: GraduationCap,
         },
         {
             id: "carrera" as const,
             label: "Carrera",
-            desc: "Formación técnica completa. Requiere mínimo 17 años.",
+            desc: "Formación técnica completa.",
             icon: Briefcase,
         },
     ]
@@ -287,19 +324,16 @@ export function StepTipoPropuesta({ values, errors, isTouched, onFieldChange, on
                             type="button"
                             onClick={() => {
                                 onFieldChange("tipoPropuesta", opt.id)
-                                onBlur("tipoPropuesta")
                             }}
                             aria-pressed={selected}
-                            className={`text-left rounded-2xl border-2 p-4 sm:p-5 cursor-pointer transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#ffcc00]/40 ${
-                                selected
-                                    ? "border-[#4d0706] bg-[#4d0706]/5 shadow-lg shadow-[#4d0706]/10"
-                                    : "border-gray-200 bg-white hover:border-[#4d0706]/40 hover:bg-[#4d0706]/[0.03]"
-                            }`}
+                            className={`text-left rounded-2xl border-2 p-4 sm:p-5 cursor-pointer transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#ffcc00]/40 ${selected
+                                ? "border-[#4d0706] bg-[#4d0706]/5 shadow-lg shadow-[#4d0706]/10"
+                                : "border-gray-200 bg-white hover:border-[#4d0706]/40 hover:bg-[#4d0706]/[0.03]"
+                                }`}
                         >
                             <span
-                                className={`flex h-10 w-10 items-center justify-center rounded-xl mb-3 ${
-                                    selected ? "bg-[#4d0706] text-[#ffcc00]" : "bg-[#4d0706]/10 text-[#4d0706]"
-                                }`}
+                                className={`flex h-10 w-10 items-center justify-center rounded-xl mb-3 ${selected ? "bg-[#4d0706] text-[#ffcc00]" : "bg-[#4d0706]/10 text-[#4d0706]"
+                                    }`}
                             >
                                 <Icon className="w-5 h-5" />
                             </span>
@@ -352,8 +386,6 @@ export function StepDatosPersonales(ctx: StepsProps) {
                             </Fragment>
                         )
                     }
-                    // La provincia y el lugar dependen del país: se dibujan junto
-                    // a él para mantener la lógica, salvo que el país esté oculto.
                     if (c.id === "c_provincia_nacimiento" || c.id === "lugar_nacimiento") {
                         return paisVisible ? null : render(c)
                     }

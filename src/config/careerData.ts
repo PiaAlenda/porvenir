@@ -1,3 +1,5 @@
+import { REQUISITOS_GENERALES_TEXTO } from "@/lib/requisitos";
+
 export interface CareerSubject {
     year: string;
     subjects: string[];
@@ -97,7 +99,7 @@ export const CAREER_DATA: Record<string, Career> = {
         schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
         inscriptionDate: "Inscripción 2027",
         inscriptionFee: "",
-        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
+        inscriptionDocs: REQUISITOS_GENERALES_TEXTO,
         salidaLaboral: [
             "Agencias y Concesionarias Oficiales",
             "Flotas de Transporte y Logística",
@@ -148,7 +150,7 @@ export const CAREER_DATA: Record<string, Career> = {
         schedule: "Lunes a Jueves de 20:15hs a 23:00hs",
         inscriptionDate: "Inscripción 2027",
         inscriptionFee: "",
-        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
+        inscriptionDocs: REQUISITOS_GENERALES_TEXTO,
         salidaLaboral: [
             "Metalúrgica domiciliaria e industrial en general",
             "Industrias y desarrollo minero"
@@ -205,7 +207,7 @@ export const CAREER_DATA: Record<string, Career> = {
         schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
         inscriptionDate: "Inscripción 2027",
         inscriptionFee: "",
-        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
+        inscriptionDocs: REQUISITOS_GENERALES_TEXTO,
         salidaLaboral: [
             "Reparación de piezas y mantenimiento de máquinas mineras",
             "Auxiliar en asentamientos mineros",
@@ -264,7 +266,7 @@ export const CAREER_DATA: Record<string, Career> = {
         schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
         inscriptionDate: "Inscripción 2027",
         inscriptionFee: "",
-        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
+        inscriptionDocs: REQUISITOS_GENERALES_TEXTO,
         salidaLaboral: [
             "Agencia Publicitaria",
             "Estudios de diseño",
@@ -344,7 +346,7 @@ export const CAREER_DATA: Record<string, Career> = {
         schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
         inscriptionDate: "Inscripción 2027",
         inscriptionFee: "",
-        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
+        inscriptionDocs: REQUISITOS_GENERALES_TEXTO,
         salidaLaboral: [
             "Auxiliar en estudio contable",
             "Auxiliar contable en empresas privadas",
@@ -388,7 +390,7 @@ export const CAREER_DATA: Record<string, Career> = {
         schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
         inscriptionDate: "Inscripción 2027",
         inscriptionFee: "",
-        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
+        inscriptionDocs: REQUISITOS_GENERALES_TEXTO,
         salidaLaboral: [
             "Reparación de heladeras y aires acondicionados",
             "Instalación domiciliaria"
@@ -441,7 +443,7 @@ export const CAREER_DATA: Record<string, Career> = {
         schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
         inscriptionDate: "Inscripción 2027",
         inscriptionFee: "",
-        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
+        inscriptionDocs: REQUISITOS_GENERALES_TEXTO,
         salidaLaboral: [
             "Mueblería y confección de mobiliarios",
             "Empresas constructoras",
@@ -492,7 +494,7 @@ export const CAREER_DATA: Record<string, Career> = {
         schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
         inscriptionDate: "Inscripción 2027",
         inscriptionFee: "",
-        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
+        inscriptionDocs: REQUISITOS_GENERALES_TEXTO,
         salidaLaboral: [
             "Panaderías",
             "Restaurantes",
@@ -545,7 +547,7 @@ export const CAREER_DATA: Record<string, Career> = {
         schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
         inscriptionDate: "Inscripción 2027",
         inscriptionFee: "",
-        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
+        inscriptionDocs: REQUISITOS_GENERALES_TEXTO,
         salidaLaboral: [
             "Servicio y mantenimiento de PC",
             "Mantenimiento industrial",
@@ -800,7 +802,7 @@ export const CAREER_DATA: Record<string, Career> = {
         schedule: "Lunes a Jueves de 20:15hs a 23:00hs",
         inscriptionDate: "Inscripción 2027",
         inscriptionFee: "",
-        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
+        inscriptionDocs: REQUISITOS_GENERALES_TEXTO,
         salidaLaboral: [
             "Técnico en reparación de electrodomésticos",
             "Servicio técnico independiente",
@@ -844,7 +846,7 @@ export const CAREER_DATA: Record<string, Career> = {
         schedule: "De Lunes a Jueves de 20:15hs a 23:00hs",
         inscriptionDate: "Inscripción 2027",
         inscriptionFee: "",
-        inscriptionDocs: "Fotocopia de DNI y certificado de estudios completos",
+        inscriptionDocs: REQUISITOS_GENERALES_TEXTO,
         salidaLaboral: [
             "Soporte técnico en empresas",
             "Local de reparación y venta de insumos de informática",

@@ -1,10 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Download, Printer } from "lucide-react"
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Printer } from "lucide-react"
 import { api, type InscripcionResult } from "@/api"
 import { getCareerById, useSiteConfig } from "@/siteConfig"
-import { downloadInscripcionXlsx } from "@/lib/excelExport"
 import { downloadContractFromFormData } from "@/pdf/downloadContract"
 import Stepper, { type StepperStep } from "./form/Stepper"
 import {
@@ -102,7 +101,6 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
     const [errorMsg, setErrorMsg] = useState("")
     const [registeredName, setRegisteredName] = useState("")
     const [submittedData, setSubmittedData] = useState<InscriptionFormValues | null>(null)
-    const [descargando, setDescargando] = useState(false)
     const [errorDescarga, setErrorDescarga] = useState("")
     /** false = la carrera/curso estaba completa y la persona quedó suplente. */
     const [hayCupo, setHayCupo] = useState(true)
@@ -146,6 +144,18 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
              */
             if (name === "tipoPropuesta" && value !== prev.tipoPropuesta) {
                 next.careerId = ""
+            }
+            /*
+             * La ciudad de nacimiento depende de la provincia (y el catálogo
+             * solo existe para Argentina). Si cambia cualquiera de las dos, se
+             * limpia la ciudad para no dejar una localidad de otra provincia.
+             */
+            if (name === "c_provincia_nacimiento" && value !== prev.c_provincia_nacimiento) {
+                next.lugar_nacimiento = ""
+            }
+            if (name === "c_pais_nacimiento" && value !== prev.c_pais_nacimiento) {
+                next.lugar_nacimiento = ""
+                if (value !== "Argentina") next.c_provincia_nacimiento = ""
             }
             return next
         })
@@ -339,42 +349,6 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
         }
     }
 
-    /**
-     * Arma el .xlsx con la inscripción recién registrada.
-     *
-     * `submittedData` es el estado del form en el momento del envío, no el
-     * actual: si la persona toca algo después de confirmar, el archivo tiene
-     * que reflejar lo que realmente llegó al servidor.
-     */
-    const downloadFormData = async () => {
-        const dataToDownload = submittedData || formData
-        const careerInfo = dataToDownload.careerId
-            ? getCareerById(dataToDownload.careerId, config)?.title ?? "Sin carrera seleccionada"
-            : "Sin carrera seleccionada"
-
-        setDescargando(true)
-        setErrorDescarga("")
-        try {
-            await downloadInscripcionXlsx({
-                careerTitle: careerInfo,
-                registros: [
-                    {
-                        ...dataToDownload,
-                        // El form manda "DNI" fijo en `c_documento`; se replica
-                        // acá para que el archivo diga lo mismo que la base.
-                        c_documento: "DNI",
-                        careerTitle: careerInfo,
-                        fechaInscripcion: new Date(),
-                    },
-                ],
-            })
-        } catch (err) {
-            setErrorDescarga(err instanceof Error ? err.message : "No se pudo generar el archivo de Excel")
-        } finally {
-            setDescargando(false)
-        }
-    }
-
     const containerRef = useRef<HTMLDivElement | null>(null)
     const cardRef = useRef<HTMLDivElement | null>(null)
     const scrollAnchorRef = useRef<{ y: number; bottom: number } | null>(null)
@@ -488,19 +462,6 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
                                             {generandoContrato ? "Generando contrato..." : "Imprimir contrato"}
                                         </button>
                                     )}
-                                    <button
-                                        type="button"
-                                        onClick={downloadFormData}
-                                        disabled={descargando}
-                                        className={hayCupo ? btnGhost : `${btnPrimary} sm:w-auto`}
-                                    >
-                                        {descargando ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            <Download className="w-4 h-4" />
-                                        )}
-                                        {descargando ? "Generando archivo" : "Descargar comprobante"}
-                                    </button>
                                 </div>
                                 {errorDescarga && (
                                     <p role="alert" className="text-sm font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 max-w-md">

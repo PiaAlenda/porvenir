@@ -203,10 +203,15 @@ export interface SearchableSelectProps {
     value: string
     options: SelectOption[]
     placeholderOption?: string
+    /** Texto de ayuda dentro del input; si falta se usa `placeholderOption`. */
+    placeholder?: string
     hint?: string
     error?: string
     valid?: boolean
     required?: boolean
+    disabled?: boolean
+    /** Abre la lista hacia arriba en lugar de hacia abajo. */
+    dropUp?: boolean
     onChange?: (value: string) => void
     onBlur?: () => void
 }
@@ -217,10 +222,13 @@ export function SearchableSelect({
     value,
     options,
     placeholderOption,
+    placeholder,
     hint,
     error,
     valid,
     required,
+    disabled,
+    dropUp,
     onChange,
     onBlur,
 }: SearchableSelectProps) {
@@ -230,9 +238,25 @@ export function SearchableSelect({
     const [open, setOpen] = useState(false)
     const [query, setQuery] = useState("")
     const [dirty, setDirty] = useState(false)
+    const [openUp, setOpenUp] = useState(false)
     const containerRef = useRef<HTMLDivElement | null>(null)
     const hasError = Boolean(error)
-    const showCheck = Boolean(valid) && !hasError
+    const showCheck = Boolean(valid) && !hasError && !disabled
+
+    /*
+     * Decide si la lista conviene abrirla hacia arriba. El campo de ciudad
+     * fuerza esa dirección con `dropUp`; el resto la elige según el espacio
+     * disponible en pantalla, para que la lista nunca quede cortada.
+     */
+    const calcularApertura = () => {
+        if (dropUp) return true
+        const el = containerRef.current
+        if (!el || typeof window === "undefined") return false
+        const rect = el.getBoundingClientRect()
+        const espacioAbajo = window.innerHeight - rect.bottom
+        const espacioArriba = rect.top
+        return espacioAbajo < 300 && espacioArriba > espacioAbajo
+    }
 
     useEffect(() => {
         const onDocMouseDown = (e: MouseEvent) => {
@@ -257,7 +281,7 @@ export function SearchableSelect({
         setOpen(false)
     }
 
-    const cls = `${inputShell} pl-11 ${showCheck ? "pr-12" : "pr-10"} cursor-text ${inputState(hasError ? "error" : valid ? "valid" : "normal")}`
+    const cls = `${inputShell} pl-11 ${showCheck ? "pr-12" : "pr-10"} cursor-text ${inputState(hasError ? "error" : valid ? "valid" : "normal")} disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`
 
     const groups: { name?: string; items: SelectOption[] }[] = []
     filtered.forEach((opt) => {
@@ -280,17 +304,21 @@ export function SearchableSelect({
                     aria-autocomplete="list"
                     value={display}
                     autoComplete="off"
-                    placeholder={placeholderOption}
+                    placeholder={placeholder ?? placeholderOption}
+                    disabled={disabled}
                     required={required}
                     aria-required={required || undefined}
                     aria-invalid={hasError || undefined}
                     aria-describedby={hasError ? `${fieldId}-error` : undefined}
                     onChange={(e) => {
+                        if (disabled) return
                         setQuery(e.target.value)
                         setDirty(true)
+                        setOpenUp(calcularApertura())
                         setOpen(true)
                     }}
                     onKeyDown={(e) => {
+                        if (disabled) return
                         if (e.key === "Enter") {
                             e.preventDefault()
                             // Select first filtered option on Enter
@@ -303,6 +331,8 @@ export function SearchableSelect({
                         }
                     }}
                     onFocus={() => {
+                        if (disabled) return
+                        setOpenUp(calcularApertura())
                         setOpen(true)
                         setQuery("")
                         setDirty(true)
@@ -325,7 +355,9 @@ export function SearchableSelect({
                     <div
                         id={listId}
                         role="listbox"
-                        className="absolute z-20 mt-2 w-full max-h-60 overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-xl"
+                        className={`absolute z-20 w-full max-h-60 overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-xl ${
+                            openUp ? "bottom-full mb-2" : "mt-2"
+                        }`}
                     >
                         {placeholderOption && searchText === "" && (
                             <div className="px-4 pt-3 text-xs font-bold uppercase tracking-widest text-gray-400">

@@ -1,37 +1,10 @@
-import { useEffect, useState, type ReactNode } from "react"
-import {
-    Briefcase,
-    Building2,
-    Calculator,
-    Check,
-    ChefHat,
-    ChevronLeft,
-    ChevronRight,
-    Cog,
-    Cpu,
-    Eye,
-    Flame,
-    GraduationCap,
-    Hammer,
-    Image,
-    Loader2,
-    Music,
-    Palette,
-    Pencil,
-    Plus,
-    Scissors,
-    ShieldCheck,
-    Sparkles,
-    Sun,
-    Trash2,
-    Wrench,
-    X,
-    type LucideIcon,
-} from "lucide-react"
-import { api, type Alumno, type SiteConfigMap } from "@/api"
+import { useEffect, useState } from "react"
+import { Check, ChevronLeft, ChevronRight, Plus, X } from "lucide-react"
+import { api, type Alumno } from "@/api"
 import { CAREER_DATA } from "@/config/careerData"
-import { activeIds, getCantidadTitularesFor, getImageFor, isAvailableFor, useSiteConfig } from "@/siteConfig"
+import { activeIds, getCantidadTitularesFor, isAvailableFor, useSiteConfig } from "@/siteConfig"
 import { clasificarParticipantes, resumenCupo } from "@/lib/titulares"
+import AdminEntityCard, { type AdminEntitySummary } from "./AdminEntityCard"
 import CarreraDetalle from "./CarreraDetalle"
 import ConfirmDialog from "./ConfirmDialog"
 import CursoModal from "./CursoModal"
@@ -41,196 +14,11 @@ interface Props {
     section: "cursos" | "carreras"
 }
 
-const CAREER_ICONS: Record<string, LucideIcon> = {
-    Briefcase,
-    Building2,
-    Calculator,
-    ChefHat,
-    Cog,
-    Cpu,
-    Flame,
-    Hammer,
-    Image,
-    Music,
-    Palette,
-    Scissors,
-    ShieldCheck,
-    Sparkles,
-    Sun,
-    Wrench,
-}
-
-const iconFor = (id: string): LucideIcon => {
-    const name = CAREER_DATA[id]?.icon
-    return (name && CAREER_ICONS[name]) || GraduationCap
-}
-
-interface CareerSummary {
-    total: number
-    titulares: number
-    suplentes: number
-    cupo: number
-}
-
-function CardIconButton({
-    label,
-    tone,
-    onClick,
-    disabled,
-    children,
-}: {
-    label: string
-    tone: string
-    onClick: () => void
-    disabled: boolean
-    children: ReactNode
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            disabled={disabled}
-            aria-label={label}
-            className={`group relative flex-1 h-11 grid place-items-center rounded-xl transition-colors cursor-pointer disabled:opacity-50 ${tone}`}
-        >
-            <span
-                role="tooltip"
-                className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-1 text-[11px] font-bold text-white opacity-0 shadow-md transition-opacity duration-100 delay-100 group-hover:opacity-100 group-focus-visible:opacity-100 z-30"
-            >
-                {label}
-            </span>
-            {children}
-        </button>
-    )
-}
-
-function AdminCareerCard({
-    careerId,
-    config,
-    summary,
-    loading,
-    onView,
-    onEdit,
-    onDelete,
-}: {
-    careerId: string
-    config: SiteConfigMap
-    summary: CareerSummary
-    loading: boolean
-    onView: () => void
-    onEdit: () => void
-    onDelete: () => void
-}) {
-    const title = config[careerId]?.title || CAREER_DATA[careerId]?.title || careerId
-    const available = isAvailableFor(careerId, config)
-    const src = getImageFor(careerId, config)
-    const [imgError, setImgError] = useState(false)
-    const fallbackIconName = CAREER_DATA[careerId]?.icon
-    const FallbackIcon = (fallbackIconName && CAREER_ICONS[fallbackIconName]) || GraduationCap
-
-    if (loading) {
-        return (
-            <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 animate-pulse space-y-4">
-                <div className="flex items-start gap-3">
-                    <div className="w-[52px] h-[52px] rounded-xl bg-gray-100 shrink-0" />
-                    <div className="flex-1 space-y-2 pt-1">
-                        <div className="h-3 bg-gray-100 rounded w-1/3" />
-                        <div className="h-5 bg-gray-100 rounded w-2/3" />
-                    </div>
-                </div>
-                <div className="h-6 bg-gray-100 rounded w-1/2" />
-                <div className="h-14 bg-gray-100 rounded w-full" />
-                <div className="flex items-center gap-2">
-                    <div className="flex-1 h-11 bg-gray-100 rounded-xl" />
-                    <div className="flex-1 h-11 bg-gray-100 rounded-xl" />
-                    <div className="flex-1 h-11 bg-gray-100 rounded-xl" />
-                </div>
-            </div>
-        )
-    }
-
-    const { total, titulares, suplentes } = summary
-
-    return (
-        <div className="relative bg-white border border-gray-200 rounded-2xl transition-all duration-200 hover:border-gray-300 hover:shadow-sm p-4 sm:p-5 flex flex-col gap-4 sm:gap-5">
-            <div className="flex items-start gap-3">
-                <div className="w-[52px] h-[52px] shrink-0 rounded-xl overflow-hidden bg-gray-100 ring-1 ring-gray-200/80 flex items-center justify-center">
-                    {!src || imgError ? (
-                        <div className="w-full h-full bg-[#800000]/5 flex items-center justify-center">
-                            <FallbackIcon className="w-5 h-5 text-[#800000]/55" />
-                        </div>
-                    ) : (
-                        <img
-                            src={src}
-                            alt=""
-                            loading="lazy"
-                            onError={() => setImgError(true)}
-                            className="w-full h-full object-cover"
-                        />
-                    )}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Carrera</p>
-                    <h3 className="mt-0.5 text-base sm:text-lg font-black text-gray-900 leading-tight truncate">
-                        {title}
-                    </h3>
-                    {!available && <p className="mt-1 text-xs font-medium text-gray-500">Sin cupo</p>}
-                </div>
-            </div>
-
-            <p className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
-                {total} {total === 1 ? "participante" : "participantes"}
-            </p>
-
-            <div className="flex items-center gap-4">
-                <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black uppercase tracking-widest text-gray-400">Titulares</p>
-                    <p className="mt-0.5 text-2xl font-black text-[#4d0706] tracking-tight">{titulares}</p>
-                </div>
-                <div className="w-px h-8 bg-gray-200 shrink-0" aria-hidden="true" />
-                <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black uppercase tracking-widest text-gray-400">Suplentes</p>
-                    <p className="mt-0.5 text-2xl font-black text-amber-600 tracking-tight">{suplentes}</p>
-                </div>
-            </div>
-
-            <div className="mt-auto flex items-center gap-2">
-                <CardIconButton
-                    label="Editar información"
-                    tone="text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10"
-                    onClick={onEdit}
-                    disabled={loading}
-                >
-                    <Pencil className="w-4 h-4" />
-                </CardIconButton>
-                <CardIconButton
-                    label="Ver titulares"
-                    tone="text-gray-600 bg-gray-100 hover:bg-gray-200"
-                    onClick={onView}
-                    disabled={loading}
-                >
-                    <Eye className="w-4 h-4" />
-                </CardIconButton>
-                <CardIconButton
-                    label="Eliminar carrera"
-                    tone="text-red-600 bg-red-50 hover:bg-red-100"
-                    onClick={onDelete}
-                    disabled={loading}
-                >
-                    <Trash2 className="w-4 h-4" />
-                </CardIconButton>
-            </div>
-        </div>
-    )
-}
-
 export default function CursosPanel({ token, section }: Props) {
     const { config, refresh } = useSiteConfig()
     const [savingId, setSavingId] = useState<string | null>(null)
     const [creating, setCreating] = useState(false)
     const [editingId, setEditingId] = useState<string | null>(null)
-    const [imgError, setImgError] = useState<Record<string, boolean>>({})
     const [selected, setSelected] = useState<{ id: string; section: Props["section"] } | null>(null)
     const [deleting, setDeleting] = useState<{ id: string; label: string; section: Props["section"] } | null>(null)
     const [deletingBusy, setDeletingBusy] = useState(false)
@@ -244,8 +32,8 @@ export default function CursosPanel({ token, section }: Props) {
     })
     const [alumnos, setAlumnos] = useState<Alumno[] | null>(null)
 
+    // Los cupos se muestran igual en carreras y cursos: se cargan todos los inscriptos.
     useEffect(() => {
-        if (section !== "carreras") return
         let active = true
         api.listInscripciones(token)
             .then((res) => {
@@ -257,7 +45,7 @@ export default function CursosPanel({ token, section }: Props) {
         return () => {
             active = false
         }
-    }, [token, section, config])
+    }, [token, config])
 
     useEffect(() => {
         const compute = () => {
@@ -286,26 +74,20 @@ export default function CursosPanel({ token, section }: Props) {
         }
     }
 
-const toggleAvailable = (id: string, current: boolean) => {
+    const toggleAvailable = (id: string, current: boolean) => {
         const form = new FormData()
         form.append("available", String(!current))
         save(id, form)
     }
 
-    const handleEditCareer = (careerId: string) => {
-        setEditingId(careerId)
-    }
+    const openDetail = (id: string) => setSelected({ id, section })
 
-    const summaryFor = (careerId: string): CareerSummary => {
+    const summaryFor = (careerId: string): AdminEntitySummary => {
         const cupo = getCantidadTitularesFor(careerId, config)
         if (alumnos === null) return { total: 0, titulares: 0, suplentes: 0, cupo }
         const participantes = alumnos.filter((a) => a.careerId === careerId)
         const resumen = resumenCupo(clasificarParticipantes(participantes, cupo))
         return { ...resumen, cupo }
-    }
-
-    const handleConfigureCareer = (careerId: string) => {
-        setSelected({ id: careerId, section: "carreras" })
     }
 
     /**
@@ -321,8 +103,8 @@ const toggleAvailable = (id: string, current: boolean) => {
         setDeleteError("")
         try {
             await api.deleteCurso(token, id)
-            // Si se estaba viendo el detalle de esa carrera, el panel queda
-            // en la lista: el detalle ya no tiene nada que mostrar.
+            // Si se estaba viendo el detalle de ese ítem, el panel queda en la
+            // lista: el detalle ya no tiene nada que mostrar.
             setSelected((prev) => (prev?.id === id ? null : prev))
             setEditingId((prev) => (prev === id ? null : prev))
             setDeleting(null)
@@ -339,100 +121,15 @@ const toggleAvailable = (id: string, current: boolean) => {
         setDeleting({ id, label: titleOf(id), section })
     }
 
-    const handleDeleteCareer = (careerId: string) => askDelete(careerId, "carreras")
-    const handleDeleteCourse = (courseId: string) => askDelete(courseId, "cursos")
-
     if (selected && selected.section === section) {
-        return <CarreraDetalle key={selected.id} token={token} careerId={selected.id} onBack={() => setSelected(null)} />
-    }
-
-    const renderCourseCard = (id: string) => {
-        const title = titleOf(id)
-        const available = isAvailableFor(id, config)
-        const saving = savingId === id
-        const src = getImageFor(id, config)
-        const showFallback = !src || imgError[id]
-        const FallbackIcon = iconFor(id)
-
         return (
-            <div
-                className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all flex flex-col ${available ? "border-gray-200 hover:border-gray-300" : "border-gray-300 opacity-85"
-                    }`}
-                key={id}
-            >
-                <div className="p-3">
-                    <div
-                        className={`relative aspect-[4/3] rounded-xl overflow-hidden ${section === "carreras" ? "bg-[#800000]/5 flex items-center justify-center" : "bg-gray-50"
-                            } ${available
-                                ? "ring-1 ring-gray-100"
-                                : "ring-1 ring-gray-100 grayscale opacity-80"
-                            }`}
-                    >
-                        {showFallback ? (
-                            <div className="w-full h-full flex items-center justify-center">
-                                <div className="w-14 h-14 rounded-full bg-[#800000]/5 ring-1 ring-[#800000]/10 flex items-center justify-center">
-                                    <FallbackIcon className="w-6 h-6 text-[#800000]/60" />
-                                </div>
-                            </div>
-                        ) : (
-                            <img
-                                src={src}
-                                alt={title}
-                                className={`w-full h-full ${section === "carreras" ? "object-contain p-3" : "object-cover"
-                                    }`}
-                                onError={() => setImgError((prev) => ({ ...prev, [id]: true }))}
-                            />
-                        )}
-                        {saving && (
-                            <div className="absolute inset-0 z-10 bg-black/40 flex items-center justify-center">
-                                <Loader2 className="w-6 h-6 text-white animate-spin" />
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="px-3 pb-3 flex flex-col gap-2.5">
-                    <h4 className="text-sm font-bold text-[#1F2937] leading-tight line-clamp-2">{title}</h4>
-
-                    <button
-                        type="button"
-                        role="switch"
-                        aria-checked={available}
-                        onClick={() => toggleAvailable(id, available)}
-                        disabled={saving}
-                        title={available ? "Marcar sin cupo" : "Marcar disponible"}
-                        className={`inline-flex w-full items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ring-1 transition-colors cursor-pointer disabled:opacity-50 ${available
-                            ? "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-100"
-                            : "bg-red-50 text-red-600 ring-red-200 hover:bg-red-100"
-                            }`}
-                    >
-                        {available ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
-                        {available ? "Disponible" : "Sin Cupo"}
-                    </button>
-                </div>
-
-                <div className="mt-auto flex items-center gap-1.5 sm:gap-2 border-t border-gray-100 p-2.5 sm:p-3">
-                    <button
-                        type="button"
-                        onClick={() => setEditingId(id)}
-                        title="Editar curso o carrera"
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 transition-colors cursor-pointer"
-                    >
-                        <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                        Editar
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => handleDeleteCourse(id)}
-                        title={`Eliminar ${section === "cursos" ? "curso" : "carrera"}`}
-                        disabled={saving}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                        <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                        Eliminar
-                    </button>
-                </div>
-            </div>
+            <CarreraDetalle
+                key={selected.id}
+                token={token}
+                careerId={selected.id}
+                section={selected.section}
+                onBack={() => setSelected(null)}
+            />
         )
     }
 
@@ -471,27 +168,26 @@ const toggleAvailable = (id: string, current: boolean) => {
             </div>
 
             {showIds.length === 0 ? (
-                <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-14 text-center">
-                    <p className="text-sm font-bold text-gray-500">No hay {section} cargadas.</p>
-                </div>
+                <p className="py-10 text-center text-base sm:text-lg font-bold text-gray-500">
+                    {section === "cursos" ? "No hay cursos cargados." : "No hay carreras cargadas."}
+                </p>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {pageIds.map((id) =>
-                        section === "carreras" ? (
-                            <AdminCareerCard
-                                key={id}
-                                careerId={id}
-                                config={config}
-                                summary={summaryFor(id)}
-                                loading={alumnos === null}
-                                onView={() => handleConfigureCareer(id)}
-                                onEdit={() => handleEditCareer(id)}
-                                onDelete={() => handleDeleteCareer(id)}
-                            />
-                        ) : (
-                            renderCourseCard(id)
-                        )
-                    )}
+                    {pageIds.map((id) => (
+                        <AdminEntityCard
+                            key={id}
+                            id={id}
+                            kind={section === "carreras" ? "carrera" : "curso"}
+                            config={config}
+                            summary={summaryFor(id)}
+                            loading={alumnos === null}
+                            saving={savingId === id}
+                            onEdit={() => setEditingId(id)}
+                            onView={() => openDetail(id)}
+                            onDelete={() => askDelete(id, section)}
+                            onToggleAvailable={() => toggleAvailable(id, isAvailableFor(id, config))}
+                        />
+                    ))}
                 </div>
             )}
             {totalPages > 1 && (

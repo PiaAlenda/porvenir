@@ -12,16 +12,6 @@ import {
 } from "./options"
 
 export type { FormFieldOption }
-
-/**
- * Esquema del formulario de inscripción.
- *
- * El panel de administración no toca este archivo: edita una copia del esquema
- * que se guarda en la config del sitio. Acá viven los valores por defecto y la
- * forma de reconstruir un esquema válido a partir de lo que haya guardado, así
- * un campo nuevo que se agregue al código nunca queda sin configuración.
- */
-
 export type FieldKind =
     | "text"
     | "email"
@@ -32,6 +22,7 @@ export type FieldKind =
     | "phone"
     | "select"
     | "career"
+    | "city"
     | "file"
 
 export type FieldId = keyof InscriptionFormValues
@@ -49,25 +40,19 @@ export interface FormOptions {
 const opciones = (valores: string[]): FormFieldOption[] => valores.map((v) => ({ value: v, label: v }))
 
 const SEXO_OPTIONS: FormFieldOption[] = Object.entries(SEXO_LABELS).map(([value, label]) => ({ value, label }))
-
-/**
- * Un campo de tipo desplegable guarda sus opciones; el resto ignora `options`.
- * `careerId` es especial: sus opciones son las carreras y cursos del sitio, no
- * una lista fija, así que el esquema no las trae.
- */
 export const DEFAULT_FORM_OPTIONS: FormOptions = {
     campos: [
         // ── Paso 1 · Datos personales ──
         { id: "apellido", kind: "text", step: 1, label: "Apellido", placeholder: "Ej.: González", hint: "Tal cual está en el DNI", required: true, visible: true, span: 1 },
         { id: "nombre", kind: "text", step: 1, label: "Nombre", placeholder: "Ej.: María", hint: "Tal cual está en el DNI", required: true, visible: true, span: 1 },
-        { id: "numeroDocumento", kind: "doc", step: 1, label: "N° de documento (DNI)", placeholder: "00.000.000", required: true, visible: true, span: 2 },
+        { id: "numeroDocumento", kind: "doc", step: 1, label: "N° de documento (DNI)", placeholder: "00.000.000", required: true, visible: true, span: 1 },
         { id: "cuil", kind: "cuil", step: 1, label: "CUIL", placeholder: "XX-XXXXXXXX-X", required: true, visible: true, span: 1 },
         { id: "c_sexo", kind: "select", step: 1, label: "Sexo", required: true, visible: true, span: 1, options: SEXO_OPTIONS },
-        { id: "fechaNacimiento", kind: "date", step: 1, label: "Fecha de nacimiento", hint: "Mínimo 17 años", required: true, visible: true, span: 1 },
+        { id: "fechaNacimiento", kind: "date", step: 1, label: "Fecha de nacimiento", required: true, visible: true, span: 1 },
         { id: "c_nacionalidad", kind: "select", step: 1, label: "Nacionalidad", placeholderOption: "Seleccioná nacionalidad", required: true, visible: true, span: 1, options: opciones(NACIONALIDADES) },
         { id: "c_pais_nacimiento", kind: "select", step: 1, label: "País de nacimiento", placeholderOption: "Seleccioná país", required: true, visible: true, span: 1, options: opciones(PAISES) },
         { id: "c_provincia_nacimiento", kind: "select", step: 1, label: "Provincia de nacimiento", placeholderOption: "Seleccioná provincia", required: true, visible: true, span: 1, options: opciones(PROVINCIAS_ARGENTINA) },
-        { id: "lugar_nacimiento", kind: "text", step: 1, label: "Lugar de nacimiento (Ciudad/Localidad)", placeholder: "Ej.: Capital, Caucete, Jáchal...", required: true, visible: true, span: 2 },
+        { id: "lugar_nacimiento", kind: "city", step: 1, label: "Ciudad de nacimiento", placeholder: "Ej.: Capital, Caucete, Jáchal...", required: true, visible: true, span: 1 },
 
         // ── Paso 2 · Contacto ──
         { id: "email", kind: "email", step: 2, label: "Correo electrónico (Gmail)", placeholder: "nombre@gmail.com", hint: "Usá tu cuenta de Gmail: nombre@gmail.com", required: true, visible: true, span: 2 },
@@ -94,16 +79,6 @@ export function campoPorId(campos: FormFieldConfig[] | undefined, id: FieldId): 
     return campos?.find((c) => c.id === id)
 }
 
-/**
- * Arma el esquema a mostrar a partir de lo que devolvió la API.
- *
- * - Si no hay nada guardado, se usan los defaults.
- * - Si hay un esquema guardado, se fusiona por id con los defaults: un campo
- *   que el admin borró de la config vuelve a aparecer y un campo nuevo del
- *   código entra con su configuración de fábrica.
- * - Si lo guardado es de la versión anterior (opciones sueltas de años), se
- *   aplican a la casilla "Año / División".
- */
 export function mergeFormOptions(saved?: ApiFormOptions | null): FormOptions {
     const base = structuredClone(DEFAULT_FORM_OPTIONS)
     if (!saved?.campos?.length) {
@@ -114,23 +89,45 @@ export function mergeFormOptions(saved?: ApiFormOptions | null): FormOptions {
         return base
     }
 
-    const byId = new Map(saved.campos.map((c) => [c.id, c]))
-    const campos = base.campos.map((def) => {
-        const s = byId.get(def.id)
-        if (!s) return def
-        return {
+    const byId = new Map<FieldId, FormFieldConfig>(base.campos.map((c) => [c.id, c]))
+    const vistos = new Set<FieldId>()
+    const campos: FormFieldConfig[] = []
+
+    for (const s of saved.campos) {
+        const def = byId.get(s.id as FieldId)
+
+        if (!def || vistos.has(def.id)) continue
+        vistos.add(def.id)
+
+        // Limpieza de compatibilidad para datos previamente guardados en base de datos
+        let label = s.label || def.label
+        if (def.id === "lugar_nacimiento" && (label.includes("Lugar de nacimiento") || label.includes("Ciudad/Localidad"))) {
+            label = "Ciudad de nacimiento"
+        }
+        let hint = s.hint ?? def.hint
+        if (def.id === "fechaNacimiento" && hint && hint.toLowerCase().includes("17")) {
+            hint = ""
+        }
+
+        campos.push({
             ...def,
             ...s,
             id: def.id,
             kind: def.kind,
             step: def.step,
+            label,
+            hint,
             options: s.options ?? def.options,
-        }
-    })
+        })
+    }
+
+    for (const def of base.campos) {
+        if (!vistos.has(def.id)) campos.push(def)
+    }
+
     return { campos }
 }
 
-/** Opciones de un desplegable ya en el formato que espera `SelectInput`. */
 export function opcionesDe(campos: FormFieldConfig[] | undefined, id: FieldId): FormFieldOption[] {
     return campoPorId(campos, id)?.options ?? []
 }
