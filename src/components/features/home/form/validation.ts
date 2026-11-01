@@ -167,7 +167,9 @@ export function validateField(
 
     if (name === "fotoDni" || name === "fotoCertificado") {
         if (req && !value) {
-            return requiredMsg(name === "fotoDni" ? "la foto del DNI" : "la foto del certificado")
+            return name === "fotoDni"
+                ? "Falta adjuntar la foto del DNI"
+                : "Falta adjuntar la foto del certificado de estudios"
         }
         return undefined
     }

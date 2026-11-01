@@ -189,6 +189,148 @@ export function publicUrlFor(key) {
     return supabase.storage.from(parsed.bucket).getPublicUrl(parsed.path).data.publicUrl
 }
 
+/* ---------- subida directa desde el navegador ---------- */
+/*
+ * Las fotos del formulario ya no pasan por la API: el navegador pide un
+ * permiso de subida firmado y las sube directo a Storage. Así la memoria de
+ * la instancia de Render no depende de cuánta gente se inscribe a la vez.
+ *
+ * Lo que sube el navegador cae en `uploads/pending/`. Al confirmar la
+ * inscripción la API verifica el contenido y lo mueve a la raíz del bucket;
+ * lo que quede en `pending/` sin reclamar lo borra `cleanupPendingUploads`.
+ */
+export const PENDING_PREFIX = "pending/"
+
+/** Permiso de subida a `uploads/pending/<filename>`. Vale 2 horas (fijo de Supabase). */
+export async function createPendingUploadUrl(filename) {
+    if (!supabase) throw new Error("Supabase no está configurado")
+    const path = `${PENDING_PREFIX}${filename}`
+    const { data, error } = await supabase.storage.from(UPLOADS_BUCKET).createSignedUploadUrl(path)
+    if (error || !data?.signedUrl) {
+        console.error("[supabase] no se pudo firmar la subida:", error?.message || "sin URL")
+        throw new PublicError("No se pudo preparar la subida de archivos. Intentá de nuevo.", 503)
+    }
+    return { key: `${UPLOADS_BUCKET}/${path}`, signedUrl: data.signedUrl }
+}
+
+/**
+ * Primeros bytes de un archivo privado, para validar su firma sin bajarlo
+ * entero a la memoria de la API. Pide un rango y, por si Storage lo ignorara,
+ * corta la lectura apenas tiene lo necesario.
+ *
+ * Devuelve `null` si el archivo no existe.
+ */
+export async function readHeadBytes(path, bytes = 16) {
+    if (!supabase) throw new Error("Supabase no está configurado")
+    const { data, error } = await supabase.storage.from(UPLOADS_BUCKET).createSignedUrl(path, 60)
+    if (error || !data?.signedUrl) {
+        if (/not found/i.test(error?.message || "")) return null
+        console.error("[supabase] no se pudo leer el archivo subido:", error?.message || "sin URL")
+        throw new PublicError("No se pudo verificar el archivo adjunto. Intentá de nuevo.", 503)
+    }
+
+    let res
+    try {
+        res = await fetch(data.signedUrl, { headers: { Range: `bytes=0-${bytes - 1}` } })
+    } catch (err) {
+        console.error("[supabase] no se pudo leer el archivo subido:", err?.message || err)
+        throw new PublicError("No se pudo verificar el archivo adjunto. Intentá de nuevo.", 503)
+    }
+    if (res.status === 404 || res.status === 400) return null
+    if (!res.ok) {
+        console.error("[supabase] lectura del archivo subido respondió", res.status)
+        throw new PublicError("No se pudo verificar el archivo adjunto. Intentá de nuevo.", 503)
+    }
+
+    const reader = res.body.getReader()
+    const chunks = []
+    let total = 0
+    while (total < bytes) {
+        const { done, value } = await reader.read()
+        if (done) break
+        chunks.push(value)
+        total += value.length
+    }
+    await reader.cancel().catch(() => {})
+    return Buffer.concat(chunks).subarray(0, bytes)
+}
+
+/** Mueve un archivo dentro del bucket privado. */
+export async function moveUpload(fromPath, toPath) {
+    if (!supabase) throw new Error("Supabase no está configurado")
+    const { error } = await supabase.storage.from(UPLOADS_BUCKET).move(fromPath, toPath)
+    if (error) {
+        console.error("[supabase] no se pudo mover el archivo subido:", error.message)
+        throw new PublicError("No se pudo guardar el archivo adjunto. Intentá de nuevo.", 503)
+    }
+}
+
+/** Subidas que nadie reclamó después de este tiempo se dan por abandonadas. */
+const PENDING_MAX_AGE_MS = 6 * 60 * 60 * 1000
+
+/**
+ * Borra de `pending/` lo que quedó de formularios que no se terminaron de
+ * enviar. El permiso de subida dura 2 horas, así que 6 horas de margen no
+ * pisan a nadie que todavía esté inscribiéndose.
+ */
+export async function cleanupPendingUploads() {
+    if (!supabase) return
+    const limite = Date.now() - PENDING_MAX_AGE_MS
+    const folder = PENDING_PREFIX.replace(/\/$/, "")
+    for (let vuelta = 0; vuelta < 20; vuelta++) {
+        const { data, error } = await supabase.storage
+            .from(UPLOADS_BUCKET)
+            .list(folder, { limit: 500, sortBy: { column: "created_at", order: "asc" } })
+        if (error) {
+            console.warn("[supabase] no se pudo listar pending/:", error.message)
+            return
+        }
+        const viejos = (data || [])
+            .filter((f) => f.id && f.created_at && new Date(f.created_at).getTime() < limite)
+            .map((f) => `${PENDING_PREFIX}${f.name}`)
+        if (!viejos.length) return
+        const { error: rmError } = await supabase.storage.from(UPLOADS_BUCKET).remove(viejos)
+        if (rmError) {
+            console.warn("[supabase] no se pudo limpiar pending/:", rmError.message)
+            return
+        }
+        console.log(`[supabase] limpieza: ${viejos.length} subidas abandonadas borradas`)
+        if (viejos.length < 500) return
+    }
+}
+
+/**
+ * Firma muchas claves de una vez: una llamada por bucket en vez de una por
+ * archivo. Devuelve un Map clave → URL firmada (o "" si no se pudo).
+ */
+export async function signedUrlsFor(keys) {
+    const out = new Map()
+    if (!supabase) return out
+    const porBucket = new Map()
+    for (const key of new Set(keys.filter(Boolean))) {
+        const parsed = parseStorageKey(key)
+        if (!parsed) continue
+        if (!porBucket.has(parsed.bucket)) porBucket.set(parsed.bucket, [])
+        porBucket.get(parsed.bucket).push({ key, path: parsed.path })
+    }
+    for (const [bucket, items] of porBucket) {
+        for (let i = 0; i < items.length; i += 500) {
+            const lote = items.slice(i, i + 500)
+            const { data, error } = await supabase.storage
+                .from(bucket)
+                .createSignedUrls(lote.map((it) => it.path), SIGNED_URL_TTL_S)
+            if (error) {
+                console.error("[supabase] no se pudieron firmar las URLs:", error.message)
+                for (const it of lote) out.set(it.key, "")
+                continue
+            }
+            // La respuesta viene en el mismo orden que los paths pedidos.
+            lote.forEach((it, idx) => out.set(it.key, data?.[idx]?.signedUrl || ""))
+        }
+    }
+    return out
+}
+
 /**
  * URL firmada para los adjuntos privados. Expira en SIGNED_URL_TTL_S: el
  * listado del panel la regenera en cada carga, así que alcanza para ver y

@@ -70,8 +70,8 @@ export const DEFAULT_FORM_OPTIONS: FormOptions = {
         { id: "cud", kind: "text", step: 4, label: "Número de CUD (Certificado)", placeholder: "Ej.: 12345678", required: false, visible: true, span: 1 },
         { id: "c_pueblo_indigena", kind: "select", step: 4, label: "Pueblo Indígena u originario", placeholderOption: "Seleccioná un pueblo u originario", required: true, visible: true, span: 2, options: opciones(PUEBLOS_INDIGENAS) },
         { id: "problematicaIntegrado", kind: "textarea", step: 4, label: "Problemática integrado / Observaciones (opcional)", placeholder: "Detallá cualquier observación o necesidad específica...", required: false, visible: true, span: 2 },
-        { id: "fotoDni", kind: "file", step: 4, label: "Foto de DNI (opcional)", required: false, visible: true, span: 1 },
-        { id: "fotoCertificado", kind: "file", step: 4, label: "Foto Certificado Estudios (opcional)", required: false, visible: true, span: 1 },
+        { id: "fotoDni", kind: "file", step: 4, label: "Foto de DNI", required: true, visible: true, span: 1 },
+        { id: "fotoCertificado", kind: "file", step: 4, label: "Foto Certificado Estudios", required: true, visible: true, span: 1 },
     ],
 }
 
@@ -108,6 +108,10 @@ export function mergeFormOptions(saved?: ApiFormOptions | null): FormOptions {
         if (def.id === "fechaNacimiento" && hint && hint.toLowerCase().includes("17")) {
             hint = ""
         }
+        // Las fotos (DNI y certificado) son siempre obligatorias, aunque la
+        // config guardada las tenga como opcionales.
+        const esFoto = def.id === "fotoDni" || def.id === "fotoCertificado"
+        if (esFoto) label = label.replace(/\s*\(opcional\)\s*/i, "").trim() || def.label
 
         campos.push({
             ...def,
@@ -118,6 +122,7 @@ export function mergeFormOptions(saved?: ApiFormOptions | null): FormOptions {
             label,
             hint,
             options: s.options ?? def.options,
+            ...(esFoto ? { required: true, visible: true } : {}),
         })
     }
 

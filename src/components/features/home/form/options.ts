@@ -112,4 +112,4 @@ export const PUEBLOS_INDIGENAS = [
  * esto solo es el respaldo para el primer render, antes de que llegue la API,
  * y para cuando no hay nada guardado.
  */
-export const DEFAULT_ANIOS_DIVISIONES = ["1 año", "2 año", "3 año"]
+export const DEFAULT_ANIOS_DIVISIONES = ["1 año"]

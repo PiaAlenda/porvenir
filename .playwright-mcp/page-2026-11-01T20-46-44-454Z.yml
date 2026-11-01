@@ -1,0 +1,155 @@
+- generic [ref=e3]:
+  - navigation:
+    - generic [ref=e4]:
+      - button [ref=e5] [cursor=pointer]
+      - button [ref=e12] [cursor=pointer]
+      - button [ref=e17] [cursor=pointer]
+      - button [ref=e22] [cursor=pointer]
+      - button [ref=e26] [cursor=pointer]
+      - button "Minimizar menú" [ref=e31] [cursor=pointer]
+  - generic [ref=e35]:
+    - banner [ref=e36]:
+      - generic [ref=e37]:
+        - button "Ir al inicio" [ref=e38] [cursor=pointer]:
+          - img "Obreros del Porvenir" [ref=e39]
+          - generic [ref=e41]:
+            - generic [ref=e42]: Escuela Técnica de Capacitación Laboral N° 917
+            - generic [ref=e43]: Obreros del Porvenir
+        - button "Buscar por tema o palabra clave" [ref=e45] [cursor=pointer]
+        - button "Ingresar" [ref=e50] [cursor=pointer]
+    - generic [ref=e58]:
+      - heading "Tu Futuro está Porvenir" [level=1] [ref=e59]
+      - paragraph [ref=e61]: Con más de 150 años de excelencia educativa, formamos profesionales que transforman la sociedad.
+      - link "Nuestra Historia" [ref=e63] [cursor=pointer]:
+        - /url: "#nosotros"
+      - generic [ref=e66]:
+        - button [ref=e67] [cursor=pointer]
+        - button [ref=e68] [cursor=pointer]
+        - button [ref=e69] [cursor=pointer]
+        - button [ref=e70] [cursor=pointer]
+    - generic [ref=e73]:
+      - generic [ref=e74]:
+        - generic [ref=e75]: Oferta Académica
+        - generic [ref=e76]:
+          - heading "Elegí tu Modalidad" [level=2] [ref=e77]
+          - paragraph [ref=e79]: Seleccioná una categoría para ver los cursos.
+      - generic [ref=e80]:
+        - button [ref=e82] [cursor=pointer]:
+          - generic [ref=e89]:
+            - text: Modalidad
+            - heading "Carrera" [level=3] [ref=e90]
+          - paragraph [ref=e94]: Clases en nuestra sede con un entorno colaborativo y profesores especializados.
+          - generic [ref=e95]:
+            - generic [ref=e96]: Atención personalizada
+            - generic [ref=e100]: Prácticas
+        - button [ref=e105] [cursor=pointer]:
+          - generic [ref=e111]:
+            - text: Modalidad
+            - heading "Cursos" [level=3] [ref=e112]
+          - paragraph [ref=e116]: Modalidad a distancia para jóvenes y adultos. Estudiá a tu ritmo desde donde estés.
+          - generic [ref=e117]:
+            - generic [ref=e118]: Plataforma 24/7
+            - generic [ref=e122]: Títulos oficiales
+    - generic [ref=e127]:
+      - generic [ref=e128]:
+        - generic [ref=e129]: Inscripciones
+        - heading "Iniciá tu futuro hoy" [level=2] [ref=e130]
+      - generic [ref=e132]:
+        - generic [ref=e133]:
+          - img "Escuela" [ref=e135]
+          - generic [ref=e136]:
+            - heading "¿Listo para empezar?" [level=3] [ref=e137]
+            - paragraph [ref=e138]: Completá tus datos de inscripción paso a paso.
+        - generic [ref=e139]:
+          - list "Progreso de la inscripción" [ref=e140]:
+            - listitem "Categoría" [ref=e141]:
+              - generic [ref=e142]:
+                - generic [aria-hidden] [ref=e143]: "1"
+                - generic [ref=e144]:
+                  - generic [ref=e145]: Paso 1
+                  - generic [ref=e146]: Categoría
+            - listitem "Datos personales" [ref=e148]:
+              - generic [ref=e149]:
+                - generic [aria-hidden] [ref=e150]: "2"
+                - generic [ref=e151]: Paso 2
+            - listitem "Contacto" [ref=e153]:
+              - generic [ref=e154]:
+                - generic [aria-hidden] [ref=e155]: "3"
+                - generic [ref=e156]: Paso 3
+            - listitem "Inscripción" [ref=e158]:
+              - generic [ref=e159]:
+                - generic [aria-hidden] [ref=e160]: "4"
+                - generic [ref=e161]: Paso 4
+            - listitem "Documentación y datos complementarios" [ref=e163]:
+              - generic [ref=e164]:
+                - generic [aria-hidden] [ref=e165]: "5"
+                - generic [ref=e166]: Paso 5
+          - group "Tipo de propuesta" [ref=e168]:
+            - paragraph [ref=e170]: Seleccioná la categoría
+            - generic [ref=e171]:
+              - button "Curso Capacitación corta para aprender un oficio." [ref=e172] [cursor=pointer]:
+                - generic [ref=e177]: Curso
+                - generic [ref=e178]: Capacitación corta para aprender un oficio.
+              - button "Carrera Formación técnica completa." [ref=e179] [cursor=pointer]:
+                - generic [ref=e184]: Carrera
+                - generic [ref=e185]: Formación técnica completa.
+          - button "Continuar" [disabled] [ref=e187]
+          - paragraph [ref=e190]: Los campos marcados con * son obligatorios
+    - contentinfo [ref=e191]:
+      - generic [ref=e193]:
+        - generic [ref=e194]:
+          - img "Obreros del Porvenir" [ref=e196]
+          - paragraph [ref=e197]: Más de 100 años formando profesionales comprometidos con la excelencia académica y el desarrollo social.
+          - generic [ref=e198]:
+            - link "Facebook" [ref=e199] [cursor=pointer]:
+              - /url: https://www.facebook.com/EscuelaObrerosdelProvenir
+            - link "Instagram" [ref=e202] [cursor=pointer]:
+              - /url: https://www.instagram.com/obrerosdelporvenir
+            - link "LinkedIn" [ref=e207] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=e212]:
+          - heading "Contacto" [level=4] [ref=e213]
+          - list [ref=e214]:
+            - listitem [ref=e215]:
+              - generic [ref=e218]: "Ingresantes: +54 264 581-5111"
+            - listitem [ref=e219]:
+              - generic [ref=e222]: "Alumnos: +54 264 581-5111"
+            - listitem [ref=e223]:
+              - generic [ref=e227]: info@porvenir.edu.ar
+            - listitem [ref=e228]:
+              - generic [ref=e232]: Avenida Alem, San Juan
+        - generic [ref=e233]:
+          - heading "Enlaces Rápidos" [level=4] [ref=e234]
+          - list [ref=e235]:
+            - listitem [ref=e236]:
+              - link "Institucional" [ref=e237] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e238]:
+              - link "Carreras" [ref=e239] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e240]:
+              - link "Contacto" [ref=e241] [cursor=pointer]:
+                - /url: "#"
+      - generic [ref=e243]:
+        - paragraph [ref=e244]: © 2026 Obreros del Porvenir. Todos los derechos reservados.
+        - generic [ref=e245]:
+          - link "Privacidad" [ref=e246] [cursor=pointer]:
+            - /url: "#privacidad"
+          - link "Términos" [ref=e247] [cursor=pointer]:
+            - /url: "#terminos"
+          - link "Accesibilidad" [ref=e248] [cursor=pointer]:
+            - /url: "#accesibilidad"
+  - dialog "Aviso de cookies" [ref=e249]:
+    - generic [ref=e254]:
+      - paragraph [ref=e255]: Usamos cookies
+      - paragraph [ref=e256]:
+        - text: Guardamos información en tu navegador para recordar tus preferencias y mantener el sitio funcionando. Al aceptar, confirmás que leíste nuestros
+        - link "Términos y Condiciones" [ref=e257] [cursor=pointer]:
+          - /url: "#terminos"
+        - text: y la
+        - link "Política de Privacidad" [ref=e258] [cursor=pointer]:
+          - /url: "#privacidad"
+        - text: .
+    - generic [ref=e259]:
+      - button "Solo necesarias" [ref=e260] [cursor=pointer]
+      - button "Aceptar" [ref=e261] [cursor=pointer]

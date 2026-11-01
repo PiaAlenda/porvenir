@@ -150,6 +150,7 @@ await check("alta de inscripcion con foto", async () => {
   fd.append("courseTitle", "PRUEBA E2E")
   fd.append("email", "prueba@example.com")
   fd.append("fotoDni", new Blob([fs.readFileSync(IMG)], { type: "image/png" }), "prueba-dni.png")
+  fd.append("fotoCertificado", new Blob([fs.readFileSync(IMG)], { type: "image/png" }), "prueba-certificado.png")
 
   const { payload } = await api("/api/inscripciones", { method: "POST", body: fd, raw: true })
   inscripcionId = payload.id

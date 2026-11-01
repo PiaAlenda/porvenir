@@ -5,7 +5,6 @@ export interface LocationItem {
     address: string;
     city: string;
     phone: string;
-    email: string;
     hours: string;
     isMain: boolean;
     features: string[];

@@ -16,7 +16,6 @@ export const locations = [
         address: "Avenida Alem",
         city: "San Juan, San Juan",
         phone: "+54 264 581-5111",
-        email: "info@porvenir.edu.ar",
         hours: "Lunes a Viernes de 18:00 a 22:30 hs",
         isMain: true,
         features: ["Biblioteca Central", "Laboratorio de Informática", "Salón de Actos"]
@@ -26,7 +25,6 @@ export const locations = [
         address: "España 1200",
         city: "Concepción, Tucumán",
         phone: "+54 3865 42-5678",
-        email: "concepcion@obreros.edu.ar",
         hours: "Lunes a Viernes de 18:30 a 22:30 hs",
         isMain: false,
         features: ["Centro de Tutoría Virtual", "Secretaría de Alumnos"]
@@ -36,7 +34,6 @@ export const locations = [
         address: "Av. Aconquija 2100",
         city: "Yerba Buena, Tucumán",
         phone: "+54 381 431-9000",
-        email: "yerbabuena@obreros.edu.ar",
         hours: "Lunes a Viernes de 18:00 a 22:00 hs",
         isMain: false,
         features: ["Sede de Exámenes", "Aula Híbrida"]

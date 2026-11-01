@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react"
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Printer } from "lucide-react"
-import { api, type InscripcionResult } from "@/api"
+import { api, type InscripcionPayload, type InscripcionResult } from "@/api"
 import { getCareerById, useSiteConfig } from "@/siteConfig"
 import { downloadContractFromFormData } from "@/pdf/downloadContract"
+import { compressImage } from "@/lib/compressImage"
 import Stepper, { type StepperStep } from "./form/Stepper"
 import {
     StepContacto,
@@ -178,6 +179,7 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
             next.add(name)
             return next
         })
+        setErrors((prev) => ({ ...prev, [name]: validateField(name, file, formData, formOptions.campos) }))
     }
 
     const handleBlur = (name: keyof InscriptionFormValues) => {
@@ -229,70 +231,55 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
     const handleFinalSubmit = async () => {
         // Safety: this function must only run on the last step
         if (step !== totalSteps) return
+        // El `disabled` del botón depende de un re-render: dos clics muy
+        // seguidos entran los dos antes de que llegue. El ref corta en seco.
+        if (enviandoRef.current) return
         if (!runStepValidation(4)) return
 
+        enviandoRef.current = true
         setStatus("loading")
         setErrorMsg("")
         try {
             const courseTitle = formData.careerId ? getCareerById(formData.careerId, config)?.title ?? "" : ""
+            const campos: InscripcionPayload = {
+                apellido: formData.apellido,
+                nombre: formData.nombre,
+                c_documento: "DNI",
+                numeroDocumento: formData.numeroDocumento,
+                cuil: formData.cuil,
+                fechaNacimiento: formData.fechaNacimiento,
+                c_sexo: formData.c_sexo,
+                c_pais_nacimiento: formData.c_pais_nacimiento,
+                c_provincia_nacimiento: formData.c_provincia_nacimiento,
+                lugar_nacimiento: formData.lugar_nacimiento,
+                c_nacionalidad: formData.c_nacionalidad,
+                email: formData.email,
+                celular: formData.celular,
+                celularUrgencia: formData.celularUrgencia,
+                domicilio: formData.domicilio,
+                departamento: formData.departamento,
+                careerId: formData.careerId,
+                courseTitle,
+                anioDivision: formData.anioDivision,
+                c_discapacidad: formData.c_discapacidad,
+                cud: formData.cud,
+                c_pueblo_indigena: formData.c_pueblo_indigena,
+                problematicaIntegrado: formData.problematicaIntegrado,
+            }
+
             let result: InscripcionResult
-
-            if (formData.fotoDni || formData.fotoCertificado) {
-                const data = new FormData()
-                data.append("apellido", formData.apellido)
-                data.append("nombre", formData.nombre)
-                data.append("c_documento", "DNI")
-                data.append("numeroDocumento", formData.numeroDocumento)
-                data.append("cuil", formData.cuil)
-                data.append("fechaNacimiento", formData.fechaNacimiento)
-                data.append("c_sexo", formData.c_sexo)
-                data.append("c_pais_nacimiento", formData.c_pais_nacimiento)
-                data.append("c_provincia_nacimiento", formData.c_provincia_nacimiento)
-                data.append("lugar_nacimiento", formData.lugar_nacimiento)
-                data.append("c_nacionalidad", formData.c_nacionalidad)
-                data.append("email", formData.email)
-                data.append("celular", formData.celular)
-                data.append("celularUrgencia", formData.celularUrgencia)
-                data.append("domicilio", formData.domicilio)
-                data.append("departamento", formData.departamento)
-                data.append("careerId", formData.careerId)
-                data.append("courseTitle", courseTitle)
-                data.append("anioDivision", formData.anioDivision)
-                data.append("c_discapacidad", formData.c_discapacidad)
-                data.append("cud", formData.cud)
-                data.append("c_pueblo_indigena", formData.c_pueblo_indigena)
-                data.append("problematicaIntegrado", formData.problematicaIntegrado)
-
-                if (formData.fotoDni) data.append("fotoDni", formData.fotoDni)
-                if (formData.fotoCertificado) data.append("fotoCertificado", formData.fotoCertificado)
-
-                result = await api.postInscripcion(data)
+            if (formData.fotoDni && formData.fotoCertificado) {
+                // Las fotos de celular se achican antes de salir: bajan de varios
+                // MB a unos cientos de KB. Después van directo a Storage, sin
+                // pasar por el servidor (ver `api.enviarInscripcion`).
+                const [fotoDni, fotoCertificado] = await Promise.all([
+                    compressImage(formData.fotoDni),
+                    compressImage(formData.fotoCertificado),
+                ])
+                result = await api.enviarInscripcion(campos, { fotoDni, fotoCertificado })
             } else {
-                result = await api.postInscripcion({
-                    apellido: formData.apellido,
-                    nombre: formData.nombre,
-                    c_documento: "DNI",
-                    numeroDocumento: formData.numeroDocumento,
-                    cuil: formData.cuil,
-                    fechaNacimiento: formData.fechaNacimiento,
-                    c_sexo: formData.c_sexo,
-                    c_pais_nacimiento: formData.c_pais_nacimiento,
-                    c_provincia_nacimiento: formData.c_provincia_nacimiento,
-                    lugar_nacimiento: formData.lugar_nacimiento,
-                    c_nacionalidad: formData.c_nacionalidad,
-                    email: formData.email,
-                    celular: formData.celular,
-                    celularUrgencia: formData.celularUrgencia,
-                    domicilio: formData.domicilio,
-                    departamento: formData.departamento,
-                    careerId: formData.careerId,
-                    courseTitle,
-                    anioDivision: formData.anioDivision,
-                    c_discapacidad: formData.c_discapacidad,
-                    cud: formData.cud,
-                    c_pueblo_indigena: formData.c_pueblo_indigena,
-                    problematicaIntegrado: formData.problematicaIntegrado,
-                })
+                // Sin las dos fotos la API lo rechaza con el mensaje de qué falta.
+                result = await api.postInscripcion(campos)
             }
 
             setRegisteredName(result.nombre)
@@ -317,6 +304,8 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
             }
             setErrorMsg(msg)
             setStatus("error")
+        } finally {
+            enviandoRef.current = false
         }
     }
 
@@ -352,6 +341,8 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
     const containerRef = useRef<HTMLDivElement | null>(null)
     const cardRef = useRef<HTMLDivElement | null>(null)
     const scrollAnchorRef = useRef<{ y: number; bottom: number } | null>(null)
+    /** Hay un envío en curso: frena el doble clic en "Finalizar". */
+    const enviandoRef = useRef(false)
 
     useEffect(() => {
         const observer = new IntersectionObserver(

@@ -12,6 +12,11 @@ import {
     parseStorageKey,
     publicUrlFor,
     signedUrlFor,
+    signedUrlsFor,
+    createPendingUploadUrl,
+    readHeadBytes,
+    moveUpload,
+    PENDING_PREFIX,
 } from "./supabase.mjs"
 import { PublicError } from "./errors.mjs"
 
@@ -162,15 +167,114 @@ export async function saveUpload(file, { visibility = "private", kind = "image" 
 
     const detected = kind === "video" ? assertValidVideoType(file.buffer) : assertValidFileType(file.buffer)
     const bucket = visibility === "public" ? ASSETS_BUCKET : UPLOADS_BUCKET
-    const key = `${bucket}/${buildName(detected)}`
+    const filename = buildName(detected)
+    const key = `${bucket}/${filename}`
 
     if (supabaseEnabled) {
         return uploadToStorage(key, file.buffer, detected.mime)
     }
 
+    // El mismo nombre que la clave: antes se generaba otro y el archivo
+    // guardado no coincidía con lo que quedaba en la inscripción.
     await fs.mkdir(UPLOADS_DIR, { recursive: true })
-    await fs.writeFile(path.join(UPLOADS_DIR, buildName(detected)), file.buffer)
+    await fs.writeFile(path.join(UPLOADS_DIR, filename), file.buffer)
     return key
+}
+
+/* ---------- subida directa (navegador → Storage) ---------- */
+
+const EXT_BY_MIME = new Map(SIGNATURES.map((s) => [s.mime, s.ext]))
+
+/** Claves que puede reclamar una inscripción: solo lo que emitió `createUploadTickets`. */
+const PENDING_KEY_RE = new RegExp(
+    `^${UPLOADS_BUCKET}/${PENDING_PREFIX}[0-9a-f-]{36}\\.(png|jpg|webp|gif|pdf)$`,
+)
+
+export function isPendingKey(key) {
+    return typeof key === "string" && PENDING_KEY_RE.test(key)
+}
+
+/**
+ * Descarta subidas pendientes de un envío que no prosperó. Solo toca claves de
+ * `pending/`: cualquier otra cosa que mande el cliente se ignora, para que no
+ * se pueda usar esto para borrar el adjunto de otra inscripción.
+ */
+export async function discardPendingUploads(keys) {
+    const pendientes = keys.filter(isPendingKey)
+    await Promise.allSettled(pendientes.map((key) => removeFromStorage(key)))
+}
+
+/** La subida directa existe solo con Supabase; en local se usa el multipart. */
+export const directUploadsEnabled = supabaseEnabled
+
+/**
+ * Emite un permiso de subida por archivo declarado. El tipo y el tamaño los
+ * declara el navegador, así que esto es solo un filtro temprano: el bucket
+ * vuelve a imponer tipo y tamaño, y `claimDirectUpload` verifica el contenido.
+ */
+export async function createUploadTickets(files) {
+    if (!Array.isArray(files) || files.length === 0 || files.length > 2) {
+        throw new PublicError("Solicitud de subida inválida.")
+    }
+    return Promise.all(
+        files.map(async (file) => {
+            const type = String(file?.type || "")
+            const ext = EXT_BY_MIME.get(type)
+            if (!ext) throw new PublicError("Solo se admiten imágenes (JPG, PNG, WEBP, GIF) o PDF.")
+            const size = Number(file?.size)
+            if (!Number.isFinite(size) || size <= 0) throw new PublicError("El archivo adjunto está vacío.")
+            if (size > MAX_UPLOAD_BYTES) throw new PublicError("Cada imagen debe pesar menos de 10MB.")
+            return createPendingUploadUrl(`${randomUUID()}${ext}`)
+        }),
+    )
+}
+
+/**
+ * Toma un archivo que el navegador subió a `pending/`, verifica por sus
+ * primeros bytes que sea de verdad una imagen o un PDF y lo mueve a su lugar
+ * definitivo. Devuelve la clave final, la que se guarda en la inscripción.
+ *
+ * Una vez movido ya no está en `pending/`, así que la misma clave no se puede
+ * usar para otra inscripción.
+ */
+export async function claimDirectUpload(key) {
+    if (!isPendingKey(key)) {
+        throw new PublicError("El archivo adjunto no es válido. Volvé a adjuntarlo.")
+    }
+    const parsed = parseStorageKey(key)
+    const head = await readHeadBytes(parsed.path)
+    if (!head) {
+        throw new PublicError("No encontramos el archivo adjunto. Volvé a adjuntarlo e intentá de nuevo.")
+    }
+    let detected
+    try {
+        detected = assertValidFileType(head)
+    } catch (err) {
+        // No sirve para nada: se borra en el acto en vez de esperar la limpieza.
+        await removeFromStorage(key).catch(() => {})
+        throw err
+    }
+    const finalName = buildName(detected)
+    await moveUpload(parsed.path, finalName)
+    return `${UPLOADS_BUCKET}/${finalName}`
+}
+
+/** Firma en lote las URLs de los adjuntos privados (listado del panel). */
+export async function resolveMediaUrls(values) {
+    if (!supabaseEnabled) {
+        return new Map(values.filter(Boolean).map((v) => [v, resolveLocalUrl(v)]))
+    }
+    const firmables = values.filter((v) => v && parseStorageKey(v))
+    const firmadas = await signedUrlsFor(firmables)
+    // Lo que no es clave de Storage (URLs viejas) se devuelve tal cual.
+    for (const v of values) if (v && !firmadas.has(v)) firmadas.set(v, v)
+    return firmadas
+}
+
+function resolveLocalUrl(value) {
+    const parsed = parseStorageKey(value)
+    if (!parsed) return value
+    return `${UPLOADS_URL_PREFIX}/${parsed.path}`
 }
 
 /** Borra el archivo anterior cuando se reemplaza o se quita un adjunto. */

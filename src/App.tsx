@@ -5,18 +5,32 @@ import About from "@/pages/About"
 import Location from "@/pages/Location"
 import Admin from "@/pages/Admin"
 import Login from "@/pages/Login"
+import Privacy from "@/pages/Privacy"
+import Terms from "@/pages/Terms"
+import Accessibility from "@/pages/Accessibility"
+import Contact from "@/pages/Contact"
+import CookieBanner from "@/components/layout/CookieBanner"
 import FloatingNav from "@/components/layout/FloatingNav"
 import { SiteConfigProvider } from "@/siteConfig"
 import { hasAdminSession, subscribeAdminSession } from "@/lib/adminSession"
 
-type ViewName = "home" | "detail" | "about" | "location" | "admin" | "login"
+type ViewName = "home" | "detail" | "about" | "location" | "admin" | "login" | "privacy" | "terms" | "accessibility" | "contact"
 
 interface ViewState {
     name: ViewName
     params?: { id: string }
 }
 
+const INFO_HASHES: Record<string, ViewName> = {
+    "#privacidad": "privacy",
+    "#terminos": "terms",
+    "#accesibilidad": "accessibility",
+    "#contacto": "contact",
+}
+
 const resolveHashView = (): ViewState => {
+    const info = INFO_HASHES[window.location.hash]
+    if (info) return { name: info }
     if (window.location.hash === "#login") return { name: "login" }
     if (window.location.hash === "#admin") return hasAdminSession() ? { name: "admin" } : { name: "login" }
     return { name: "home" }
@@ -178,9 +192,14 @@ function App() {
             }}
           />
         )}
+        {view.name === "privacy" && <Privacy onBack={navigateHome} />}
+        {view.name === "terms" && <Terms onBack={navigateHome} />}
+        {view.name === "accessibility" && <Accessibility onBack={navigateHome} />}
+        {view.name === "contact" && <Contact onBack={navigateHome} />}
         {view.name === "login" && (
           <Login onSuccess={handleLoginSuccess} onBack={navigateHome} />
         )}
+        <CookieBanner hidden={view.name === "admin" || view.name === "login"} />
       </div>
     </SiteConfigProvider>
   )

@@ -1,0 +1,116 @@
+- generic [ref=f1e3]:
+  - navigation:
+    - generic [ref=f1e4]:
+      - button [ref=f1e5] [cursor=pointer]
+      - button [ref=f1e12] [cursor=pointer]
+      - button [ref=f1e17] [cursor=pointer]
+      - button [ref=f1e22] [cursor=pointer]
+      - button [ref=f1e26] [cursor=pointer]
+      - button "Minimizar menú" [ref=f1e31] [cursor=pointer]
+  - generic [ref=f1e249]:
+    - banner [ref=f1e250]:
+      - generic [ref=f1e251]:
+        - button "Volver al inicio" [ref=f1e252] [cursor=pointer]
+        - generic [ref=f1e255]: Estamos para ayudarte
+        - heading "Ponete en Contacto" [level=1] [ref=f1e256]
+        - paragraph [ref=f1e257]: Escribinos, llamanos o visitanos. Te respondemos lo antes posible.
+    - main [ref=f1e258]:
+      - generic [ref=f1e259]:
+        - complementary [ref=f1e260]:
+          - heading "Datos de contacto" [level=2] [ref=f1e261]
+          - paragraph [ref=f1e262]: Elegí el canal que te quede más cómodo.
+          - list [ref=f1e263]:
+            - listitem [ref=f1e264]:
+              - link "Teléfono +54 264 581-5111" [ref=f1e265] [cursor=pointer]:
+                - /url: tel:+542645815111
+                - generic [ref=f1e269]:
+                  - generic [ref=f1e270]: Teléfono
+                  - generic [ref=f1e271]: +54 264 581-5111
+            - listitem [ref=f1e275]:
+              - link "Correo electrónico info@porvenir.edu.ar" [ref=f1e276] [cursor=pointer]:
+                - /url: mailto:info@porvenir.edu.ar
+                - generic [ref=f1e281]:
+                  - generic [ref=f1e282]: Correo electrónico
+                  - generic [ref=f1e283]: info@porvenir.edu.ar
+            - listitem [ref=f1e287]:
+              - link "Dirección Avenida Alem, San Juan" [ref=f1e288] [cursor=pointer]:
+                - /url: https://www.google.com/maps/search/?api=1&query=Avenida+Alem+San+Juan+Argentina
+                - generic [ref=f1e293]:
+                  - generic [ref=f1e294]: Dirección
+                  - generic [ref=f1e295]: Avenida Alem, San Juan
+            - listitem [ref=f1e299]:
+              - generic [ref=f1e305]:
+                - generic [ref=f1e306]: Horario de atención
+                - generic [ref=f1e307]: Lunes a Viernes de 18:00 a 22:30 hs
+          - generic [ref=f1e308]:
+            - link "WhatsApp" [ref=f1e309] [cursor=pointer]:
+              - /url: https://wa.me/542645815111?text=Hola%2C%20quisiera%20hacer%20una%20consulta.
+            - link "Cómo llegar" [ref=f1e312] [cursor=pointer]:
+              - /url: https://www.google.com/maps/search/?api=1&query=Avenida+Alem+San+Juan+Argentina
+        - generic [ref=f1e315]:
+          - generic [ref=f1e316]:
+            - heading "Envianos tu consulta" [level=2] [ref=f1e317]
+            - paragraph [ref=f1e318]: Completá el formulario y te escribimos a la brevedad.
+          - generic [ref=f1e319]:
+            - generic [ref=f1e320]:
+              - generic [ref=f1e321]: Nombre y apellido
+              - textbox "Nombre y apellido" [ref=f1e322]:
+                - /placeholder: María Pérez
+            - generic [ref=f1e323]:
+              - generic [ref=f1e324]: Correo electrónico
+              - textbox "Correo electrónico" [ref=f1e325]:
+                - /placeholder: tu@correo.com
+          - generic [ref=f1e326]:
+            - generic [ref=f1e327]: Mensaje
+            - textbox "Mensaje" [ref=f1e328]:
+              - /placeholder: Contanos en qué podemos ayudarte…
+          - button "Enviar consulta" [ref=f1e329] [cursor=pointer]
+          - paragraph [ref=f1e333]:
+            - text: Tus datos se tratan según nuestra
+            - link "Política de Privacidad" [ref=f1e334] [cursor=pointer]:
+              - /url: "#privacidad"
+            - text: .
+    - contentinfo [ref=f1e336]:
+      - generic [ref=f1e338]:
+        - generic [ref=f1e339]:
+          - img "Obreros del Porvenir" [ref=f1e341]
+          - paragraph [ref=f1e342]: Más de 100 años formando profesionales comprometidos con la excelencia académica y el desarrollo social.
+          - generic [ref=f1e343]:
+            - link "Facebook" [ref=f1e344] [cursor=pointer]:
+              - /url: https://www.facebook.com/EscuelaObrerosdelProvenir
+            - link "Instagram" [ref=f1e347] [cursor=pointer]:
+              - /url: https://www.instagram.com/obrerosdelporvenir
+            - link "LinkedIn" [ref=f1e352] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=f1e357]:
+          - heading "Contacto" [level=4] [ref=f1e358]
+          - list [ref=f1e359]:
+            - listitem [ref=f1e360]:
+              - generic [ref=f1e363]: "Ingresantes: +54 264 581-5111"
+            - listitem [ref=f1e364]:
+              - generic [ref=f1e367]: "Alumnos: +54 264 581-5111"
+            - listitem [ref=f1e368]:
+              - generic [ref=f1e372]: info@porvenir.edu.ar
+            - listitem [ref=f1e373]:
+              - generic [ref=f1e377]: Avenida Alem, San Juan
+        - generic [ref=f1e378]:
+          - heading "Enlaces Rápidos" [level=4] [ref=f1e379]
+          - list [ref=f1e380]:
+            - listitem [ref=f1e381]:
+              - link "Institucional" [ref=f1e382] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f1e383]:
+              - link "Carreras" [ref=f1e384] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f1e385]:
+              - link "Contacto" [ref=f1e386] [cursor=pointer]:
+                - /url: "#"
+      - generic [ref=f1e388]:
+        - paragraph [ref=f1e389]: © 2026 Obreros del Porvenir. Todos los derechos reservados.
+        - generic [ref=f1e390]:
+          - link "Privacidad" [ref=f1e391] [cursor=pointer]:
+            - /url: "#privacidad"
+          - link "Términos" [ref=f1e392] [cursor=pointer]:
+            - /url: "#terminos"
+          - link "Accesibilidad" [ref=f1e393] [cursor=pointer]:
+            - /url: "#accesibilidad"

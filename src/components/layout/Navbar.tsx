@@ -437,13 +437,13 @@ const Navbar = ({
 
             {/* Big floating search bar section (outside sticky header, in page flow below header, z-40) */}
             <div className="hidden lg:block w-full bg-[#1e1e1e] relative z-40 border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-4 pb-7">
-                    <h2 className="text-2xl xl:text-3xl font-extrabold text-white mb-4 tracking-tight">
+                <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-3 pb-4">
+                    <h2 className="text-xl xl:text-2xl font-extrabold text-white mb-3 tracking-tight">
                         ¿Qué quieres estudiar?
                     </h2>
                     
                     <div className="relative">
-                        <div className="w-full bg-white rounded-full shadow-2xl p-2 pl-6 pr-2 flex items-center gap-3 border border-white/20">
+                        <div className="w-full bg-white rounded-full shadow-2xl py-1.5 pl-6 pr-1.5 flex items-center gap-3 border border-white/20">
                             <Search className="w-5 h-5 text-red-600 shrink-0" />
                             <input
                                 type="text"
@@ -473,7 +473,7 @@ const Navbar = ({
                             <button
                                 type="button"
                                 onClick={goToOffer}
-                                className="shrink-0 bg-gray-400 hover:bg-gray-500 text-white font-bold text-xs xl:text-sm px-6 py-3 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
+                                className="shrink-0 bg-gray-400 hover:bg-gray-500 text-white font-bold text-xs xl:text-sm px-6 py-2 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
                                 Buscar formación →
                             </button>

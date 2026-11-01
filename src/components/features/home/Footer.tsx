@@ -22,19 +22,29 @@ const IconLinkedin = ({ className }: { className?: string }) => (
     </svg>
 );
 
-const footerLinks = [
-    "Institucional",
-    "Carreras",
-    "Campus Virtual",
-    "Biblioteca",
-    "Contacto",
-];
+interface FooterProps {
+    onNavigateAbout?: () => void;
+}
+
+const scrollToId = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+};
+
+const MAPS_URL =
+    "https://www.google.com/maps/place/Escuela+T%C3%A9cnica+de+Capacitaci%C3%B3n+Laboral+N%C2%B0+917+%22Obreros+del+Porvenir%22/@-31.5412373,-68.5362055,17z/data=!3m1!4b1!4m16!1m9!4m8!1m0!1m6!1m2!1s0x96814025cfa112c5:0x6a87c5233dab7f3d!2sEscuela+T%C3%A9cnica+de+Capacitaci%C3%B3n+Laboral+N%C2%B0+917+%22Obreros+del+Porvenir%22,+J5402+San+Juan!2m2!1d-68.5316472!2d-31.5412444!3m5!1s0x96814025cfa112c5:0x6a87c5233dab7f3d!8m2!3d-31.541242!4d-68.5315921!16s%2Fg%2F11fy2lrfsf";
 
 const contactItems = [
     { icon: Phone, text: "Ingresantes: +54 264 581-5111" },
     { icon: Phone, text: "Alumnos: +54 264 581-5111" },
-    { icon: Mail, text: "info@porvenir.edu.ar" },
-    { icon: MapPin, text: "Avenida Alem, San Juan" },
+    { icon: Mail, text: "Mail de consultas", href: "#contacto" },
+    { icon: MapPin, text: "Avenida Alem, San Juan", href: MAPS_URL, external: true },
+];
+
+const legalLinks = [
+    { label: "Privacidad", href: "#privacidad" },
+    { label: "Términos", href: "#terminos" },
+    { label: "Accesibilidad", href: "#accesibilidad" },
 ];
 
 const socialLinks = [
@@ -43,7 +53,32 @@ const socialLinks = [
     { icon: IconLinkedin, href: "#", label: "LinkedIn" },
 ];
 
-const Footer = () => {
+const Footer = ({ onNavigateAbout }: FooterProps) => {
+    const footerLinks: { label: string; onClick: (e: React.MouseEvent) => void }[] = [
+        {
+            label: "Institucional",
+            onClick: (e) => {
+                e.preventDefault();
+                if (onNavigateAbout) onNavigateAbout();
+                else scrollToId("nosotros");
+            },
+        },
+        {
+            label: "Carreras",
+            onClick: (e) => {
+                e.preventDefault();
+                scrollToId("academic-offer-section");
+            },
+        },
+        {
+            label: "Contacto",
+            onClick: (e) => {
+                e.preventDefault();
+                window.location.hash = "contacto";
+            },
+        },
+    ];
+
     return (
         <footer className="bg-[#1a1a1a] text-white">
             <div className="site-container py-16 lg:py-20">
@@ -82,10 +117,20 @@ const Footer = () => {
                             Contacto
                         </h4>
                         <ul className="flex flex-col gap-3.5">
-                            {contactItems.map(({ icon: Icon, text }) => (
+                            {contactItems.map(({ icon: Icon, text, href, external }) => (
                                 <li key={text} className="flex items-start gap-3 text-sm text-[#9ca3af]">
                                     <Icon className="w-4 h-4 text-[#f5c518] shrink-0 mt-0.5" strokeWidth={1.8} />
-                                    <span className="leading-snug">{text}</span>
+                                    {href ? (
+                                        <a
+                                            href={href}
+                                            target={external ? "_blank" : undefined}
+                                            rel={external ? "noreferrer" : undefined}
+                                            className="leading-snug underline-offset-2 hover:text-white hover:underline transition-colors duration-200">
+                                            {text}
+                                        </a>
+                                    ) : (
+                                        <span className="leading-snug">{text}</span>
+                                    )}
                                 </li>
                             ))}
                         </ul>
@@ -97,12 +142,13 @@ const Footer = () => {
                         </h4>
                         <ul className="flex flex-col gap-3">
                             {footerLinks.map((link) => (
-                                <li key={link}>
+                                <li key={link.label}>
                                     <a
                                         href="#"
+                                        onClick={link.onClick}
                                         className="text-sm text-[#9ca3af] hover:text-white transition-colors duration-200 relative group"
                                     >
-                                        {link}
+                                        {link.label}
                                         <span className="absolute left-0 -bottom-0.5 h-px w-0 bg-[#f5c518] group-hover:w-full transition-all duration-300" />
                                     </a>
                                 </li>
@@ -119,13 +165,13 @@ const Footer = () => {
                         © {new Date().getFullYear()} Obreros del Porvenir. Todos los derechos reservados.
                     </p>
                     <div className="flex items-center gap-5">
-                        {["Privacidad", "Términos", "Accesibilidad"].map((item) => (
+                        {legalLinks.map(({ label, href }) => (
                             <a
-                                key={item}
-                                href="#"
+                                key={label}
+                                href={href}
                                 className="text-xs text-[#6b7280] hover:text-white transition-colors duration-200"
                             >
-                                {item}
+                                {label}
                             </a>
                         ))}
                     </div>

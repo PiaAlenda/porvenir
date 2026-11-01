@@ -16,9 +16,9 @@ const LocationSidebar = () => {
                             <Phone className="w-5 h-5 text-[#ffcc00]" />
                             <span className="font-bold text-sm text-white">+54 264 581-5111</span>
                         </a>
-                        <a href="mailto:info@porvenir.edu.ar" className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors no-underline">
+                        <a href="#contacto" className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors no-underline">
                             <Mail className="w-5 h-5 text-[#ffcc00]" />
-                            <span className="font-bold text-sm text-white">info@porvenir.edu.ar</span>
+                            <span className="font-bold text-sm text-white">Escribinos una consulta</span>
                         </a>
                     </div>
                 </div>

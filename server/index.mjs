@@ -2,6 +2,7 @@ import express from "express"
 import cors from "cors"
 import rateLimit from "express-rate-limit"
 import helmet from "helmet"
+import { isContactConfigured, sendContactEmail, validateContact } from "./contact.mjs"
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -12,7 +13,8 @@ import {
   updateAlumno,
   deleteAlumno,
   findByDocumento,
-  countByCareer,
+  positionInCareer,
+  DUPLICATE_MESSAGE,
 } from "./db.mjs"
 import {
   getConfig,
@@ -38,8 +40,19 @@ import {
   hasUsableAdminConfig,
   SESSION_EXPIRED_MESSAGE,
 } from "./auth.mjs"
-import { upload, careerUpload, saveUpload, deleteUpload, UPLOADS_URL_PREFIX } from "./storage.mjs"
-import { ensureBuckets, supabaseEnabled } from "./supabase.mjs"
+import {
+  upload,
+  careerUpload,
+  saveUpload,
+  deleteUpload,
+  UPLOADS_URL_PREFIX,
+  directUploadsEnabled,
+  createUploadTickets,
+  claimDirectUpload,
+  discardPendingUploads,
+  isPendingKey,
+} from "./storage.mjs"
+import { ensureBuckets, supabaseEnabled, cleanupPendingUploads } from "./supabase.mjs"
 import { generarFichaPdf } from "./pdf.mjs"
 import { PublicError } from "./errors.mjs"
 
@@ -101,12 +114,36 @@ const loginLimiter = rateLimit({
 /*
  * Inscripción pública: tiene que tolerar que una escuela entera se conecte
  * desde la misma IP (mismo wifi, NAT de la institución), por eso el tope es
- * alto. Igual pone un techo al antiflood: cada request puede arrastrar hasta
- * 20MB de adjuntos en memoria.
+ * alto. Con 40 por hora, de un aula de 100 alumnos en el mismo wifi quedaban
+ * 60 rechazados. Igual pone un techo al antiflood: cada request puede
+ * arrastrar hasta 20MB de adjuntos en memoria (aunque el formulario ya las
+ * manda comprimidas, a unos cientos de KB).
  */
 const inscriptionLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  limit: 40,
+  limit: 300,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Demasiadas inscripciones desde esta conexión. Probá más tarde." },
+})
+
+/** Contacto público: pocas consultas por hora y por conexión (anti-spam). */
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 8,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Enviaste varias consultas seguidas. Probá de nuevo en un rato." },
+})
+
+/**
+ * Permisos de subida directa: un pedido por intento de inscripción (trae los
+ * dos permisos). Margen doble que la inscripción para cubrir los reintentos,
+ * con el mismo criterio: una escuela entera puede estar detrás de una IP.
+ */
+const uploadUrlsLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 600,
   standardHeaders: "draft-7",
   legacyHeaders: false,
   message: { error: "Demasiadas inscripciones desde esta conexión. Probá más tarde." },
@@ -328,16 +365,21 @@ const inscripcionUpload = (req, res, next) => {
 }
 
 /**
- * Determina si la carrera/curso todavía tiene lugar para una nueva inscripción
- * (titular) o si la persona queda como suplente.
+ * Determina si la inscripción recién guardada entró como titular o quedó como
+ * suplente.
  *
- * Se considera "sin cupos" cuando:
+ * Queda como suplente cuando:
  *  - la carrera/curso está marcada como no disponible ("Sin cupo") en la config, o
- *  - tiene cupo de titulares cargado y ya se cubrió con las inscripciones existentes.
+ *  - tiene cupo de titulares cargado y su posición por orden de llegada lo supera.
  * Sin cupo cargado (0) no se limita el registro: todos entran como titulares.
+ *
+ * Se llama con el record ya insertado: la posición sale de contar las
+ * inscripciones hasta su `createdAt`, el mismo criterio que usa el panel. Si
+ * se contara antes de insertar, varias inscripciones simultáneas verían el
+ * mismo último lugar libre y todas se creerían titulares.
  */
-async function resolverHayCupo(careerId) {
-  const id = String(careerId || "").trim()
+async function resolverHayCupo(record) {
+  const id = String(record.careerId || "").trim()
   if (!id) return true
   const config = await getConfig()
   const item = config[id]
@@ -346,72 +388,169 @@ async function resolverHayCupo(careerId) {
   if (item.available === false) return false
   const cupo = parseCantidadTitulares(item.cantidadTitulares) ?? 0
   if (cupo <= 0) return true
-  const inscriptos = await countByCareer(id)
-  return inscriptos < cupo
+  const posicion = await positionInCareer(id, record.createdAt)
+  return posicion <= cupo
 }
+
+/*
+ * Permisos de subida directa a Storage para las dos fotos del formulario.
+ * El navegador sube con estos permisos y después manda la inscripción en
+ * JSON con las claves (`fotoDniKey`, `fotoCertificadoKey`): las fotos nunca
+ * pasan por la memoria de esta instancia.
+ *
+ * Sin Supabase responde `direct: false` y el formulario usa el multipart.
+ */
+app.post("/api/contacto", contactLimiter, async (req, res) => {
+  // Campo trampa: las personas no lo ven ni lo completan, los bots sí.
+  // Se responde "ok" igual para no darles pistas.
+  if (req.body?.website) return res.json({ ok: true })
+
+  const parsed = validateContact(req.body)
+  if (!parsed.ok) return res.status(400).json({ error: parsed.error })
+
+  if (!isContactConfigured()) {
+    console.error("[contacto] Faltan RESEND_API_KEY o CONTACT_TO_EMAIL: no se pudo enviar la consulta.")
+    return res.status(503).json({ error: "El envío de consultas no está disponible por el momento. Llamanos al +54 264 581-5111." })
+  }
+
+  try {
+    await sendContactEmail(parsed.data)
+  } catch (e) {
+    console.error("[contacto] fallo el envío:", e?.message || e)
+    return res.status(502).json({ error: "No pudimos enviar tu consulta. Probá de nuevo en unos minutos o llamanos al +54 264 581-5111." })
+  }
+  res.status(201).json({ ok: true })
+})
+
+app.post("/api/inscripciones/upload-urls", uploadUrlsLimiter, async (req, res) => {
+  if (!directUploadsEnabled) return res.json({ direct: false })
+  const tickets = await createUploadTickets(req.body?.files)
+  res.json({ direct: true, uploads: tickets })
+})
 
 app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req, res) => {
   const body = req.body || {}
+
+  /*
+   * Dos formas de recibir las fotos:
+   *  - directa: el navegador ya las subió a `pending/` y manda las claves;
+   *  - multipart: vienen en el request (modo local, o un front viejo en caché).
+   */
+  const directKeys = [body.fotoDniKey, body.fotoCertificadoKey]
+  const esDirecta = !req.files?.fotoDni?.[0] && !req.files?.fotoCertificado?.[0] &&
+    directKeys.some((k) => typeof k === "string" && k)
+  // Si el envío se rechaza antes de reclamar las fotos, se borran ya: la
+  // persona vuelve a subirlas en el próximo intento.
+  const rechazar = async (status, error) => {
+    if (esDirecta) await discardPendingUploads(directKeys)
+    return res.status(status).json({ error })
+  }
+
   const err = validateRequeridos(body)
-  if (err) return res.status(400).json({ error: err })
+  if (err) return rechazar(400, err)
+
+  if (esDirecta && !directUploadsEnabled) {
+    return rechazar(400, "Faltan adjuntar las fotos del DNI y del certificado.")
+  }
+  if (esDirecta) {
+    if (!isPendingKey(body.fotoDniKey)) return rechazar(400, "Falta adjuntar la foto del DNI")
+    if (!isPendingKey(body.fotoCertificadoKey)) {
+      return rechazar(400, "Falta adjuntar la foto del certificado de estudios")
+    }
+    if (body.fotoDniKey === body.fotoCertificadoKey) {
+      return rechazar(400, "El DNI y el certificado tienen que ser dos archivos distintos.")
+    }
+  } else {
+    if (!req.files?.fotoDni?.[0]) {
+      return rechazar(400, "Falta adjuntar la foto del DNI")
+    }
+    if (!req.files?.fotoCertificado?.[0]) {
+      return rechazar(400, "Falta adjuntar la foto del certificado de estudios")
+    }
+  }
 
   const email = body.email ? String(body.email).trim() : ""
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.status(400).json({ error: "Correo electrónico inválido" })
+    return rechazar(400, "Correo electrónico inválido")
   }
 
   /*
    * Una persona no puede inscribirse dos veces: el documento es la clave
-   * natural del alumno. El chequeo vive en el servidor (no en el cliente) para
-   * que también cubra reintentos, otra pestaña o cualquier llamada directa a
-   * la API.
+   * natural del alumno. Este chequeo es el camino rápido (evita guardar fotos
+   * de alguien que ya está inscripto); la garantía real es el índice único de
+   * la base: dos envíos simultáneos del mismo documento pueden pasar los dos
+   * por acá, y el segundo lo frena `createAlumno` con el mismo 409.
    */
   const duplicada = await findByDocumento(body.numeroDocumento)
-  if (duplicada) {
-    return res.status(409).json({
-      error:
-        "Ya existe una inscripción registrada con este número de documento. " +
-        "No se puede realizar otra inscripción. Si necesitás modificar tus datos, " +
-        "comunicate con la administración de la escuela.",
-    })
+  if (duplicada) return rechazar(409, DUPLICATE_MESSAGE)
+
+  /*
+   * Las dos fotos se guardan (o se reclaman de `pending/`) en paralelo. Si
+   * alguna falla, o si después falla el guardado, se borran las que sí
+   * quedaron: si no, ocupan el bucket sin pertenecer a ninguna inscripción.
+   */
+  const subidas = await Promise.allSettled(
+    esDirecta
+      ? directKeys.map((key) => claimDirectUpload(key))
+      : [saveUpload(req.files.fotoDni[0]), saveUpload(req.files.fotoCertificado[0])],
+  )
+  const subidasOk = subidas.filter((s) => s.status === "fulfilled").map((s) => s.value)
+  const limpiarSubidas = async () => {
+    await Promise.allSettled(subidasOk.map((key) => deleteUpload(key)))
+    // Las que no se llegaron a reclamar siguen en pending/.
+    if (esDirecta) await discardPendingUploads(directKeys)
   }
 
-  // Se calcula antes de crear el registro, para que el conteo no incluya a la
-  // persona que se está inscribiendo en este momento.
-  const hayCupo = await resolverHayCupo(body.careerId)
+  const fallida = subidas.find((s) => s.status === "rejected")
+  if (fallida) {
+    await limpiarSubidas()
+    throw fallida.reason
+  }
+  const [fotoDni, fotoCertificado] = subidasOk
 
-  let fotoDni = ""
-  let fotoCertificado = ""
+  let record
+  try {
+    record = await createAlumno({
+      apellido: String(body.apellido).trim(),
+      nombre: String(body.nombre).trim(),
+      c_documento: String(body.c_documento).trim(),
+      numeroDocumento: String(body.numeroDocumento).trim(),
+      cuil: String(body.cuil).trim(),
+      fechaNacimiento: String(body.fechaNacimiento).trim(),
+      c_sexo: String(body.c_sexo).toUpperCase(),
+      c_pais_nacimiento: body.c_pais_nacimiento ? String(body.c_pais_nacimiento).trim() : "",
+      c_provincia_nacimiento: body.c_provincia_nacimiento ? String(body.c_provincia_nacimiento).trim() : "",
+      lugar_nacimiento: body.lugar_nacimiento ? String(body.lugar_nacimiento).trim() : "",
+      c_nacionalidad: body.c_nacionalidad ? String(body.c_nacionalidad).trim() : "",
+      email,
+      celular: body.celular ? String(body.celular).trim() : "",
+      celularUrgencia: body.celularUrgencia ? String(body.celularUrgencia).trim() : "",
+      domicilio: body.domicilio ? String(body.domicilio).trim() : "",
+      departamento: body.departamento ? String(body.departamento).trim() : "",
+      careerId: body.careerId ? String(body.careerId) : "",
+      courseTitle: body.courseTitle ? String(body.courseTitle) : "",
+      especialidad: body.especialidad ? String(body.especialidad).trim() : "",
+      anioDivision: body.anioDivision ? String(body.anioDivision).trim() : "",
+      c_discapacidad: body.c_discapacidad ? String(body.c_discapacidad).trim() : "",
+      cud: body.cud ? String(body.cud).trim() : "",
+      c_pueblo_indigena: body.c_pueblo_indigena ? String(body.c_pueblo_indigena).trim() : "",
+      problematicaIntegrado: body.problematicaIntegrado ? String(body.problematicaIntegrado).trim() : "",
+      fotoDni,
+      fotoCertificado,
+    })
+  } catch (err) {
+    await limpiarSubidas()
+    throw err
+  }
 
-  if (req.files?.fotoDni?.[0]) fotoDni = await saveUpload(req.files.fotoDni[0])
-  if (req.files?.fotoCertificado?.[0]) fotoCertificado = await saveUpload(req.files.fotoCertificado[0])
-  const record = await createAlumno({
-    apellido: String(body.apellido).trim(),
-    nombre: String(body.nombre).trim(),
-    c_documento: String(body.c_documento).trim(),
-    numeroDocumento: String(body.numeroDocumento).trim(),
-    cuil: String(body.cuil).trim(),
-    fechaNacimiento: String(body.fechaNacimiento).trim(),
-    c_sexo: String(body.c_sexo).toUpperCase(),
-    c_pais_nacimiento: body.c_pais_nacimiento ? String(body.c_pais_nacimiento).trim() : "",
-    c_provincia_nacimiento: body.c_provincia_nacimiento ? String(body.c_provincia_nacimiento).trim() : "",
-    lugar_nacimiento: body.lugar_nacimiento ? String(body.lugar_nacimiento).trim() : "",
-    c_nacionalidad: body.c_nacionalidad ? String(body.c_nacionalidad).trim() : "",
-    email,
-    celular: body.celular ? String(body.celular).trim() : "",
-    celularUrgencia: body.celularUrgencia ? String(body.celularUrgencia).trim() : "",
-    domicilio: body.domicilio ? String(body.domicilio).trim() : "",
-    departamento: body.departamento ? String(body.departamento).trim() : "",
-    careerId: body.careerId ? String(body.careerId) : "",
-    courseTitle: body.courseTitle ? String(body.courseTitle) : "",
-    especialidad: body.especialidad ? String(body.especialidad).trim() : "",
-    anioDivision: body.anioDivision ? String(body.anioDivision).trim() : "",
-    c_discapacidad: body.c_discapacidad ? String(body.c_discapacidad).trim() : "",
-    cud: body.cud ? String(body.cud).trim() : "",
-    c_pueblo_indigena: body.c_pueblo_indigena ? String(body.c_pueblo_indigena).trim() : "",
-    problematicaIntegrado: body.problematicaIntegrado ? String(body.problematicaIntegrado).trim() : "",
-    fotoDni,
-    fotoCertificado,
+  /*
+   * La inscripción ya está guardada: si contar la posición falla, no se puede
+   * responder con error (la persona reintentaría y chocaría con "ya existe").
+   * Se informa como titular y el panel muestra la condición real.
+   */
+  const hayCupo = await resolverHayCupo(record).catch((err) => {
+    console.error("[cupo] no se pudo calcular la posición:", err?.message || err)
+    return true
   })
 
   res.status(201).json({
@@ -723,6 +862,15 @@ app.use((err, _req, res, _next) => {
 /* ---------- arranque ---------- */
 
 await ensureBuckets()
+
+/*
+ * Limpieza de fotos subidas a pending/ por formularios que no se terminaron
+ * de enviar. Corre al arrancar y cada hora; un fallo solo se loguea.
+ */
+const limpiarPendientes = () =>
+  cleanupPendingUploads().catch((err) => console.warn("[limpieza] falló:", err?.message || err))
+limpiarPendientes()
+setInterval(limpiarPendientes, 60 * 60 * 1000).unref()
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`)

@@ -172,11 +172,43 @@ function errorDeRed(): Error {
     )
 }
 
+/** Error de una respuesta HTTP, con el status para poder decidir reintentos. */
+export class HttpError extends Error {
+    status: number
+    constructor(message: string, status: number) {
+        super(message)
+        this.name = "HttpError"
+        this.status = status
+    }
+}
+
 function errorDeRespuesta(res: Response): Promise<Error> {
     return res
         .json()
         .catch(() => ({}))
-        .then((body) => new Error(body?.error || `Error en el servidor (${res.status})`))
+        .then((body) => new HttpError(body?.error || `Error en el servidor (${res.status})`, res.status))
+}
+
+const esperar = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Reintenta solo ante un 503. Es el único caso seguro: la API responde 503
+ * cuando falló la base o Storage *antes* de guardar la inscripción, y el
+ * proxy de Render lo responde cuando la instancia está reiniciando (el pedido
+ * ni llegó). Un error de red no se reintenta: el servidor pudo haber guardado
+ * y el reintento chocaría con "ya existe una inscripción".
+ */
+async function conReintentos<T>(fn: () => Promise<T>, intentos = 3): Promise<T> {
+    for (let i = 1; ; i++) {
+        try {
+            return await fn()
+        } catch (err) {
+            const reintentable = err instanceof HttpError && err.status === 503
+            if (!reintentable || i >= intentos) throw err
+            // 1.5s, 3s... con algo de azar para que no reintenten todos juntos.
+            await esperar(1500 * i + Math.random() * 1000)
+        }
+    }
 }
 
 /** Llamadas públicas: sin Authorization y sin renovación de sesión. */
@@ -303,19 +335,123 @@ export interface InscripcionResult {
     hayCupo?: boolean
 }
 
+interface UploadTicket {
+    key: string
+    signedUrl: string
+}
+
+/**
+ * Sube un archivo directo a Supabase Storage con un permiso firmado, sin
+ * pasar por la API. Mismo formato que `uploadToSignedUrl` de supabase-js.
+ */
+async function subirConPermiso(ticket: UploadTicket, file: File): Promise<void> {
+    const body = new FormData()
+    body.append("cacheControl", "3600")
+    body.append("", file)
+
+    let res: Response
+    try {
+        res = await fetch(ticket.signedUrl, { method: "PUT", body, headers: { "x-upsert": "false" } })
+    } catch {
+        // Corte de red durante la subida: no se guardó nada todavía (la
+        // inscripción se manda recién después), así que es seguro reintentar.
+        throw new HttpError("No se pudo subir el archivo adjunto. Revisá tu conexión e intentá de nuevo.", 503)
+    }
+    if (res.ok) return
+    if (res.status >= 500) {
+        throw new HttpError("No se pudo subir el archivo adjunto. Intentá de nuevo.", 503)
+    }
+    if (res.status === 413) throw new HttpError("Cada imagen debe pesar menos de 10MB.", 413)
+    throw new HttpError("No se pudo subir el archivo adjunto. Probá con otra foto (JPG, PNG o PDF).", res.status)
+}
+
+/** Arma el multipart del envío clásico (fotos dentro del mismo request). */
+function armarMultipart(campos: InscripcionPayload, fotos: InscripcionFotos): FormData {
+    const data = new FormData()
+    for (const [clave, valor] of Object.entries(campos)) {
+        if (valor !== undefined && valor !== null) data.append(clave, String(valor))
+    }
+    data.append("fotoDni", fotos.fotoDni)
+    data.append("fotoCertificado", fotos.fotoCertificado)
+    return data
+}
+
+export interface InscripcionFotos {
+    fotoDni: File
+    fotoCertificado: File
+}
+
 export const api = {
-    async postInscripcion(data: FormData | InscripcionPayload) {
-        if (data instanceof FormData) {
-            return request<InscripcionResult>("/api/inscripciones", {
-                method: "POST",
-                body: data,
-            })
-        }
-        return request<InscripcionResult>("/api/inscripciones", {
+    /** Consulta del formulario de contacto: el servidor la envía por correo. */
+    enviarContacto: (data: { nombre: string; email: string; mensaje: string; website?: string }) =>
+        request<{ ok: true }>("/api/contacto", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
+        }),
+
+    /**
+     * Envía una inscripción con sus dos fotos.
+     *
+     * Camino normal: las fotos van directo del navegador a Storage y a la API
+     * solo le llega el JSON con las claves. Si la API no ofrece subida directa
+     * (modo local, o una API anterior a este cambio), las fotos viajan en el
+     * mismo request como antes.
+     *
+     * Cada reintento rehace todo (permisos, subidas y envío): si un intento
+     * falla, la API descarta lo que se había subido en ese intento.
+     */
+    async enviarInscripcion(campos: InscripcionPayload, fotos: InscripcionFotos) {
+        return conReintentos(async () => {
+            let permisos: { direct: boolean; uploads?: UploadTicket[] } | null = null
+            try {
+                permisos = await request("/api/inscripciones/upload-urls", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        files: [fotos.fotoDni, fotos.fotoCertificado].map((f) => ({ type: f.type, size: f.size })),
+                    }),
+                })
+            } catch (err) {
+                // API vieja sin el endpoint: se sigue con el envío clásico.
+                if (!(err instanceof HttpError && err.status === 404)) throw err
+            }
+
+            if (!permisos?.direct || permisos.uploads?.length !== 2) {
+                return request<InscripcionResult>("/api/inscripciones", {
+                    method: "POST",
+                    body: armarMultipart(campos, fotos),
+                })
+            }
+
+            const [dni, certificado] = permisos.uploads
+            await Promise.all([subirConPermiso(dni, fotos.fotoDni), subirConPermiso(certificado, fotos.fotoCertificado)])
+
+            return request<InscripcionResult>("/api/inscripciones", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...campos, fotoDniKey: dni.key, fotoCertificadoKey: certificado.key }),
+            })
         })
+    },
+
+
+    async postInscripcion(data: FormData | InscripcionPayload) {
+        if (data instanceof FormData) {
+            return conReintentos(() =>
+                request<InscripcionResult>("/api/inscripciones", {
+                    method: "POST",
+                    body: data,
+                })
+            )
+        }
+        return conReintentos(() =>
+            request<InscripcionResult>("/api/inscripciones", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            })
+        )
     },
 
     async uploadArchivos(token: string, id: string, form: FormData) {

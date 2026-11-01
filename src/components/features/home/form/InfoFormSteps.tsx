@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from "react"
-import { Briefcase, GraduationCap } from "lucide-react"
+import { AlertCircle, Briefcase, GraduationCap } from "lucide-react"
 import type { SiteConfigMap } from "@/api"
 import { getCareers } from "@/siteConfig"
 import CuilInput from "./CuilInput"
@@ -33,21 +33,32 @@ const spanClass = (span?: 1 | 2) => (span === 2 ? "sm:col-span-2" : "")
 
 function FileField({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps }) {
     const file = ctx.values[campo.id] as File | null
+    const error = ctx.errors[campo.id]
+    const fieldId = `field-${campo.id}`
 
     return (
         <div className={spanClass(campo.span)}>
-            <label className="mb-1.5 block text-xs font-black uppercase tracking-widest text-gray-500">
+            <label htmlFor={fieldId} className="mb-1.5 block text-xs font-black uppercase tracking-widest text-gray-500">
                 {campo.label}
                 {campo.required && <span className="text-red-700" aria-hidden="true"> *</span>}
             </label>
             <input
+                id={fieldId}
                 type="file"
                 accept="image/*,.pdf"
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? `${fieldId}-error` : undefined}
                 onChange={(e) => {
                     ctx.onFileChange(campo.id as "fotoDni" | "fotoCertificado", e.target.files?.[0] || null)
                 }}
-                className="block w-full text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#4d0706]/10 file:text-[#4d0706] hover:file:bg-[#4d0706]/20 cursor-pointer border border-gray-200 rounded-2xl p-2 bg-white"
+                className={`block w-full text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#4d0706]/10 file:text-[#4d0706] hover:file:bg-[#4d0706]/20 cursor-pointer border rounded-2xl p-2 bg-white ${error ? "border-red-400" : "border-gray-200"}`}
             />
+            {error && (
+                <p id={`${fieldId}-error`} className="mt-1.5 flex items-start gap-1.5 text-xs font-semibold text-red-700">
+                    <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span>{error}</span>
+                </p>
+            )}
             {file && (
                 <div className="mt-2 space-y-1">
                     <p className="text-xs font-semibold text-emerald-600 truncate">Seleccionado: {file.name}</p>

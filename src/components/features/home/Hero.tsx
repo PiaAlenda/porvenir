@@ -6,7 +6,21 @@ interface HeroProps {
     onNavigateAbout?: () => void;
 }
 
-const carouselSlides = [
+interface CarouselSlide {
+    id: string;
+    tag: string;
+    title: string;
+    description: string;
+    buttonText?: string;
+    href?: string;
+    /** Si está definido, el botón del slide muestra este video al tocarlo. */
+    videoSrc?: string;
+}
+
+/* Video del instructivo de inscripción (en public/videos/). Se muestra al tocar el botón del slide. */
+const INSTRUCTIVO_VIDEO_SRC = "/videos/Video explicativo formulario inscripcion subtitulos.mp4";
+
+const carouselSlides: CarouselSlide[] = [
     {
         id: "institucion",
         tag: "Nuestra Institución",
@@ -24,6 +38,14 @@ const carouselSlides = [
         href: "#inscripciones",
     },
     {
+        id: "instructivo",
+        tag: "Ciclo Lectivo 2027",
+        title: "¿Cómo me inscribo al ciclo lectivo 2027?",
+        description: "Muy fácil, mirá el instructivo e inscribite, te esperamos.",
+        buttonText: "Ver instructivo",
+        videoSrc: INSTRUCTIVO_VIDEO_SRC,
+    },
+    {
         id: "carreras",
         tag: "Formación Integral",
         title: "Carreras y Cursos",
@@ -37,13 +59,21 @@ const bgImage = "/img/fondo final 1 .jpg.jpeg";
 
 const Hero = ({ onNavigateAbout }: HeroProps) => {
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [videoOpen, setVideoOpen] = useState(false);
 
+    /* El carrusel se pausa mientras el video está abierto. */
     useEffect(() => {
+        if (videoOpen) return;
         const interval = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
         }, 8000);
         return () => clearInterval(interval);
-    }, []);
+    }, [videoOpen]);
+
+    /* Al cambiar de slide se cierra el video para que no quede reproduciéndose. */
+    useEffect(() => {
+        setVideoOpen(false);
+    }, [currentSlide]);
 
     const containerVariants: Variants = {
         hidden: { opacity: 0 },
@@ -79,41 +109,63 @@ const Hero = ({ onNavigateAbout }: HeroProps) => {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/10 to-black/40" />
             </div>
 
-            <section className="relative z-10 min-h-[50vh] sm:min-h-[60vh] flex flex-col items-center justify-center px-4 py-8 sm:py-12">
+            <section className="relative z-10 min-h-[60vh] sm:min-h-[75vh] flex flex-col items-center justify-center px-4 py-10 sm:py-16">
                 <motion.div
                     key={currentSlide}
-                    className="w-full max-w-[90vw] flex flex-col items-center text-center space-y-5 sm:space-y-6 h-[280px] sm:h-[320px] justify-center"
+                    className="w-full max-w-[90vw] flex flex-col items-center text-center space-y-5 sm:space-y-6 h-[340px] sm:h-[400px] lg:h-[440px] justify-center"
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
                 >
-                    <motion.h1 variants={itemVariants} className="text-5xl sm:text-7xl md:text-8xl font-black text-white leading-[1.1] sm:leading-[0.9] tracking-tighter">
+                    <motion.h1 variants={itemVariants} className={`font-black text-white leading-[1.1] sm:leading-[0.9] tracking-tighter ${carouselSlides[currentSlide].id === "instructivo" ? "text-3xl sm:text-5xl md:text-6xl px-4" : "text-5xl sm:text-7xl md:text-8xl"}`}>
                         <span className="text-gold italic drop-shadow-[0_0_30px_rgba(245,197,24,0.2)]">
                             {carouselSlides[currentSlide].id === "institucion" ? (
-                                <>Tu Futuro está <span className="text-[#b91c1c]">Porvenir</span></>
+                                <>Tu Futuro está <span className="text-white">Porvenir</span></>
                             ) : carouselSlides[currentSlide].id === "distancia" ? (
-                                <>Inscribite <span className="text-[#b91c1c]">Ahora</span></>
+                                <>Inscribite <span className="text-white">Ahora</span></>
+                            ) : carouselSlides[currentSlide].id === "instructivo" ? (
+                                <>¿Cómo me inscribo al <span className="text-white">ciclo lectivo 2027</span>?</>
                             ) : carouselSlides[currentSlide].id === "carreras" ? (
-                                <>Carreras y <span className="text-[#b91c1c]">Cursos</span></>
+                                <>Carreras y <span className="text-white">Cursos</span></>
                             ) : (
                                 carouselSlides[currentSlide].title
                             )}
                         </span>
                     </motion.h1>
 
-                    <motion.p variants={itemVariants} className="max-w-4xl text-sm sm:text-lg text-white leading-relaxed font-medium px-4">
+                    <motion.p variants={itemVariants} className="max-w-4xl text-sm sm:text-lg text-white leading-relaxed font-medium px-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                         {carouselSlides[currentSlide].description}
                     </motion.p>
 
                     <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto pt-4 px-4 sm:px-0">
-                        <a
-                            href={carouselSlides[currentSlide].href || ""}
-                            onClick={(e) => handleItemClick(e, carouselSlides[currentSlide].href || "")}
-                            className="w-full sm:w-auto h-10 sm:h-12 flex items-center justify-center px-5 bg-[#b91c1c] text-white font-black uppercase tracking-widest text-xs transition-transform active:scale-95 no-underline"
-                        >
-                            {carouselSlides[currentSlide].buttonText || ""}
-                            <ChevronRight className="ml-2 w-3.5 h-3.5" />
-                        </a>
+                        {carouselSlides[currentSlide].videoSrc && videoOpen ? (
+                            <video
+                                src={carouselSlides[currentSlide].videoSrc}
+                                controls
+                                autoPlay
+                                playsInline
+                                preload="metadata"
+                                className="w-full sm:w-[480px] max-w-full aspect-video rounded-lg shadow-2xl bg-black"
+                            />
+                        ) : carouselSlides[currentSlide].videoSrc ? (
+                            <button
+                                type="button"
+                                onClick={() => setVideoOpen(true)}
+                                className="w-full sm:w-auto h-10 sm:h-12 flex items-center justify-center px-5 bg-[#b91c1c] text-white font-black uppercase tracking-widest text-xs transition-transform active:scale-95 cursor-pointer"
+                            >
+                                {carouselSlides[currentSlide].buttonText || ""}
+                                <ChevronRight className="ml-2 w-3.5 h-3.5" />
+                            </button>
+                        ) : (
+                            <a
+                                href={carouselSlides[currentSlide].href || ""}
+                                onClick={(e) => handleItemClick(e, carouselSlides[currentSlide].href || "")}
+                                className="w-full sm:w-auto h-10 sm:h-12 flex items-center justify-center px-5 bg-[#b91c1c] text-white font-black uppercase tracking-widest text-xs transition-transform active:scale-95 no-underline"
+                            >
+                                {carouselSlides[currentSlide].buttonText || ""}
+                                <ChevronRight className="ml-2 w-3.5 h-3.5" />
+                            </a>
+                        )}
                     </motion.div>
 
                     <motion.div variants={itemVariants} className="flex gap-2.5 justify-center mt-4">

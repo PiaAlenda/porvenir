@@ -3,7 +3,7 @@ import path from "node:path"
 import { randomUUID } from "node:crypto"
 import { fileURLToPath } from "node:url"
 import { supabase, supabaseEnabled } from "./supabase.mjs"
-import { resolveMediaUrl } from "./storage.mjs"
+import { resolveMediaUrl, resolveMediaUrls } from "./storage.mjs"
 import { PublicError } from "./errors.mjs"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -11,6 +11,11 @@ const DATA_DIR = path.join(__dirname, "data")
 const FILE = path.join(DATA_DIR, "inscripciones.json")
 
 const TABLE = "inscripciones"
+
+export const DUPLICATE_MESSAGE =
+  "Ya existe una inscripción registrada con este número de documento. " +
+  "No se puede realizar otra inscripción. Si necesitás modificar tus datos, " +
+  "comunicate con la administración de la escuela."
 
 const CAMPOS = [
   "apellido",
@@ -125,7 +130,19 @@ export async function getAll() {
     .select("id, data, created_at, updated_at")
     .order("created_at", { ascending: false })
   if (error) fail("no se pudieron leer las inscripciones", error)
-  return Promise.all((data || []).map(toRecord))
+
+  /*
+   * Las URLs de los adjuntos se firman todas juntas: antes eran dos llamadas a
+   * Storage por inscripción, así que con 300 inscriptos el panel hacía 600
+   * pedidos cada vez que se abría.
+   */
+  const records = (data || []).map(toRawRecord)
+  const urls = await resolveMediaUrls(records.flatMap((r) => [r.fotoDni, r.fotoCertificado]))
+  for (const r of records) {
+    if (r.fotoDni) r.fotoDni = urls.get(r.fotoDni) ?? ""
+    if (r.fotoCertificado) r.fotoCertificado = urls.get(r.fotoCertificado) ?? ""
+  }
+  return records
 }
 
 /** Lectura interna: devuelve las claves crudas, sin firmar URLs. */
@@ -159,17 +176,26 @@ export async function findByDocumento(numeroDocumento) {
   return data && data.length ? toRawRecord(data[0]) : null
 }
 
-/** Cantidad de inscripciones registradas para una carrera/curso. */
-export async function countByCareer(careerId) {
+/**
+ * Posición de una inscripción dentro de su carrera: cuántas hay registradas
+ * hasta ese instante, ella incluida. Es el mismo orden que usa el panel para
+ * repartir titulares y suplentes, así que el mensaje que recibe la persona
+ * coincide con lo que después ve la administración.
+ *
+ * Se calcula *después* de insertar: contar antes y guardar después dejaba que
+ * diez inscripciones simultáneas vieran el mismo "queda un lugar".
+ */
+export async function positionInCareer(careerId, createdAt) {
   const id = String(careerId || "").trim()
-  if (!id) return 0
+  if (!id || !createdAt) return 0
   if (!supabaseEnabled) {
-    return readFile().filter((r) => String(r.careerId || "") === id).length
+    return readFile().filter((r) => String(r.careerId || "") === id && r.createdAt <= createdAt).length
   }
   const { count, error } = await supabase
     .from(TABLE)
     .select("id", { count: "exact", head: true })
     .eq("data->>careerId", id)
+    .lte("created_at", createdAt)
   if (error) fail("no se pudieron contar las inscripciones", error)
   return count || 0
 }
@@ -192,6 +218,12 @@ export async function createAlumno(data) {
   if (!supabaseEnabled) {
     const record = { id: randomUUID(), ...payload, createdAt: now, updatedAt: now }
     const list = readFile()
+    // Equivalente local del índice único: leer y escribir es síncrono, así
+    // que no se puede colar otro envío entre el chequeo y el push.
+    const doc = String(payload.numeroDocumento || "").trim()
+    if (doc && list.some((r) => String(r.numeroDocumento || "").trim() === doc)) {
+      throw new PublicError(DUPLICATE_MESSAGE, 409)
+    }
     list.push(record)
     writeFile(list)
     return record
@@ -202,8 +234,18 @@ export async function createAlumno(data) {
     .insert({ data: payload })
     .select("id, data, created_at, updated_at")
     .single()
-  if (error) fail("no se pudo guardar la inscripción", error)
-  return toRecord(row)
+  if (error) {
+    /*
+     * 23505 = violación de índice único. Con el índice de
+     * `supabase/optimizaciones.sql` es lo que pasa cuando dos envíos del mismo
+     * documento llegan a la vez y los dos pasaron el chequeo previo.
+     */
+    if (error.code === "23505") throw new PublicError(DUPLICATE_MESSAGE, 409)
+    fail("no se pudo guardar la inscripción", error)
+  }
+  // Crudo a propósito: quien crea la inscripción no necesita las URLs de los
+  // adjuntos, y firmarlas eran dos llamadas extra a Storage por envío.
+  return toRawRecord(row)
 }
 export async function updateAlumno(id, patch) {
   if (!supabaseEnabled) {

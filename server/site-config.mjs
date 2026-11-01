@@ -46,7 +46,7 @@ const MAX_SUBJECTS_PER_ENTRY = 30
  * saca del mapa de cursos y `getFormOptions` las devuelve aparte.
  */
 export const FORM_OPTIONS_KEY = "__formulario__"
-export const DEFAULT_ANIOS_DIVISIONES = ["1 año", "2 año", "3 año"]
+export const DEFAULT_ANIOS_DIVISIONES = ["1 año"]
 const MAX_FORM_ITEMS = 40
 const MAX_FORM_ITEM_LENGTH = 60
 const MAX_FORM_CAMPOS = 40
@@ -371,21 +371,57 @@ function writeFile(map) {
  * eliminados, que `getConfig` esconde pero que hay que conservar para no
  * resucitar un curso borrado al guardar cualquier otra cosa.
  */
+/*
+ * Con Supabase el mapa también se cachea, pero por poco tiempo. Cada
+ * inscripción y cada visita al home leían la tabla entera; con muchas en
+ * paralelo eran cientos de consultas iguales. Hay una sola instancia de la
+ * API, así que las escrituras del panel invalidan el caché en el acto y el
+ * TTL solo cubre cambios hechos a mano en la base.
+ *
+ * Las lecturas que llegan juntas comparten la misma consulta en vuelo.
+ */
+const REMOTE_CACHE_TTL_MS = 30 * 1000
+let remoteCache = null
+let remoteCacheAt = 0
+let remoteInFlight = null
+
+async function fetchRemoteStored() {
+  try {
+    const { data, error } = await supabase.from(TABLE).select("id, data")
+    if (error) {
+      console.warn("[supabase] no se pudo leer la tabla site_config, usando configuración por defecto:", error.message)
+      return null
+    }
+    const saved = {}
+    for (const row of data || []) saved[row.id] = row.data || {}
+    return saved
+  } catch (err) {
+    console.warn("[supabase] error inesperado en getConfig:", err.message)
+    return null
+  }
+}
+
+function invalidateRemoteCache() {
+  remoteCache = null
+  remoteCacheAt = 0
+}
+
 async function readStored() {
   if (supabaseEnabled) {
-    try {
-      const { data, error } = await supabase.from(TABLE).select("id, data")
-      if (error) {
-        console.warn("[supabase] no se pudo leer la tabla site_config, usando configuración por defecto:", error.message)
-        return {}
-      }
-      const saved = {}
-      for (const row of data || []) saved[row.id] = row.data || {}
-      return saved
-    } catch (err) {
-      console.warn("[supabase] error inesperado en getConfig:", err.message)
-      return {}
+    if (remoteCache && Date.now() - remoteCacheAt < REMOTE_CACHE_TTL_MS) return remoteCache
+    if (!remoteInFlight) {
+      remoteInFlight = fetchRemoteStored().finally(() => {
+        remoteInFlight = null
+      })
     }
+    const fresh = await remoteInFlight
+    // Si la lectura falló, se sigue usando la última buena (aunque esté
+    // vencida) antes que caer a la configuración por defecto. El error no se
+    // cachea: el próximo pedido vuelve a intentar.
+    if (!fresh) return remoteCache || {}
+    remoteCache = fresh
+    remoteCacheAt = Date.now()
+    return fresh
   }
 
   if (!cache) cache = readFile()
@@ -467,6 +503,7 @@ async function writeStored(id, data) {
     .upsert({ id, data, updated_at: new Date().toISOString() })
     .select("id, data")
     .single()
+  invalidateRemoteCache()
   if (error) {
     console.error("[supabase] no se pudo guardar la configuración:", error.message)
     throw new PublicError("No se pudo guardar la configuración del sitio.", 503)
@@ -485,6 +522,7 @@ async function removeStored(id) {
   }
 
   const { error } = await supabase.from(TABLE).delete().eq("id", id)
+  invalidateRemoteCache()
   if (error) {
     console.error("[supabase] no se pudo eliminar la configuración:", error.message)
     throw new PublicError("No se pudo eliminar el curso del sitio.", 503)
@@ -528,4 +566,5 @@ export { normalizeList, normalizeSyllabus, normalizeTeachers, normalizeAniosDivi
 
 export function resetCache() {
   cache = null
+  invalidateRemoteCache()
 }
