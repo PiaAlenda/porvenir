@@ -103,6 +103,8 @@ export interface RegistroExportable {
     cud?: ValorExportable
     c_pueblo_indigena?: ValorExportable
     problematicaIntegrado?: ValorExportable
+    /** Respuestas a los campos personalizados del formulario ("Etiqueta: valor; …"). */
+    datosAdicionales?: ValorExportable
     fotoDni?: ValorExportable
     fotoCertificado?: ValorExportable
     fechaInscripcion?: ValorExportable
@@ -403,6 +405,15 @@ const COLUMNAS: Columna[] = [
         wrap: true,
         valor: (r) => texto(r.problematicaIntegrado),
     },
+    {
+        campo: "datosAdicionales",
+        titulo: "Otros datos del formulario",
+        grupo: GRUPOS.adicional,
+        ancho: 40,
+        alineacion: "left",
+        wrap: true,
+        valor: (r) => texto(r.datosAdicionales),
+    },
 
     // ── Documentación ──
     {
@@ -487,6 +498,7 @@ const COLUMNAS_TECNICAS: ColumnaTecnica[] = [
     { campo: "cud", titulo: "cud", ancho: 14 },
     { campo: "c_pueblo_indigena", titulo: "c_pueblo_indigena", ancho: 20 },
     { campo: "problematicaIntegrado", titulo: "problematicaIntegrado", ancho: 34 },
+    { campo: "datosAdicionales", titulo: "datosAdicionales", ancho: 40 },
     { campo: "fotoDni", titulo: "fotoDni (URL / archivo)", ancho: 52 },
     { campo: "fotoCertificado", titulo: "fotoCertificado (URL / archivo)", ancho: 52 },
     { campo: "fechaInscripcion", titulo: "fechaInscripcion (ISO)", ancho: 26 },

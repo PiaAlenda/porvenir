@@ -1,7 +1,9 @@
 import { parsePhoneNumber } from "libphonenumber-js"
-import type { FormFieldConfig } from "./formSchema"
+import { esPersonalizado, type FormFieldConfig } from "./formSchema"
 
 export interface InscriptionFormValues {
+    /** Respuestas de los campos que agregó el admin, indexadas por el id del campo. */
+    extras: Record<string, string>
     tipoPropuesta: "curso" | "carrera" | ""
     apellido: string
     nombre: string
@@ -28,7 +30,19 @@ export interface InscriptionFormValues {
     fotoCertificado: File | null
 }
 
-export type FormErrors = Partial<Record<keyof InscriptionFormValues, string>>
+/** Errores por campo; las claves `x_…` son campos personalizados. */
+export type FormErrors = Partial<Record<keyof InscriptionFormValues, string>> & Record<string, string | undefined>
+
+export const MAX_EXTRA_LENGTH = 500
+
+export function validateExtra(campo: FormFieldConfig, value: string): string | undefined {
+    const v = value.trim()
+    if (!v) return campo.required ? `Completá el campo ${campo.label}` : undefined
+    if (v.length > MAX_EXTRA_LENGTH) return `Máximo ${MAX_EXTRA_LENGTH} caracteres`
+    if (campo.kind === "select" && !(campo.options ?? []).some((o) => o.value === v)) return "Opción inválida"
+    if (campo.kind === "date" && !isValidDate(v)) return "Fecha inválida"
+    return undefined
+}
 
 export const STEP1_FIELDS: (keyof InscriptionFormValues)[] = [
     "tipoPropuesta",
@@ -159,7 +173,7 @@ function getAge(birth: Date, today: Date): number {
 
 export function validateField(
     name: keyof InscriptionFormValues,
-    value: string | File | null,
+    value: InscriptionFormValues[keyof InscriptionFormValues],
     values?: InscriptionFormValues,
     campos?: FormFieldConfig[],
 ): string | undefined {
@@ -299,6 +313,11 @@ export function validateStep(
         const val = values[field]
         const error = validateField(field, val, values, campos)
         if (error) errors[field] = error
+    }
+    for (const campo of campos ?? []) {
+        if (campo.step !== step || !campo.visible || !esPersonalizado(campo)) continue
+        const error = validateExtra(campo, values.extras?.[campo.id] ?? "")
+        if (error) errors[campo.id] = error
     }
     return errors
 }

@@ -1,5 +1,5 @@
 /** Requisitos de inscripción que se cargan por defecto en carreras y cursos. */
-export const REQUISITOS_GENERALES = ["DNI", "Copia de CUIL", "Analítico"] as const
+export const REQUISITOS_GENERALES = ["DNI", "Analítico"] as const
 
 /** Mismo listado en el formato en que se guarda: un requisito por línea. */
 export const REQUISITOS_GENERALES_TEXTO = REQUISITOS_GENERALES.join("\n")
@@ -14,7 +14,18 @@ export function parseRequisitos(value?: string): string[] {
         .split(/\r?\n|;/)
         .map((s) => s.trim())
         .filter(Boolean)
-    return items.length ? items : [...REQUISITOS_GENERALES]
+        /*
+         * Carreras viejas guardaron los dos requisitos en una sola línea
+         * ("Fotocopia de DNI y certificado de estudios completos"). Se separan
+         * en dos ítems para que se muestren igual que el resto.
+         */
+        .flatMap((item) =>
+            /\bdni\b/i.test(item) && /certificado|anal[ií]tico|estudios/i.test(item)
+                ? ["DNI", "Analítico"]
+                : [item],
+        )
+    const unicos = [...new Set(items)]
+    return unicos.length ? unicos : [...REQUISITOS_GENERALES]
 }
 
 /** true si el texto guardado coincide con el listado general (sin importar el orden). */

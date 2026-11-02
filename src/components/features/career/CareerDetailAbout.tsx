@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState, useEffect } from "react";
-import { Clock, FileText, CheckCircle2, BookOpen, Play, X } from "lucide-react";
+import { useMemo, useRef, useState, useEffect, type ReactNode } from "react";
+import { Check, FileText, GraduationCap, IdCard, Play, X } from "lucide-react";
 import { type Career } from "@/config/careerData";
 import { parseRequisitos } from "@/lib/requisitos";
 
@@ -78,146 +78,138 @@ const SUBJECT_DESCRIPTIONS: Record<string, string> = {
     "Ciencias Naturales": "Estudio multidisciplinar del ecosistema, recursos de la Tierra y conservación ambiental."
 };
 
-interface CareerSyllabusProps {
-    career: Career;
-}
+/**
+ * Bloque de contenido de la página: título a la izquierda y contenido a la
+ * derecha, separados por una línea. Reemplaza a las tarjetas: menos cajas,
+ * más aire útil y una lectura de arriba hacia abajo.
+ */
+export const CareerSection = ({
+    title,
+    index = 0,
+    children,
+}: {
+    title: string;
+    index?: number;
+    children: ReactNode;
+}) => (
+    <section
+        className="reveal grid gap-4 py-8 first:pt-0 last:pb-0 md:grid-cols-[8.5rem_minmax(0,1fr)] md:gap-8"
+        style={{ "--i": index } as React.CSSProperties}
+    >
+        <h3 className="self-start text-sm font-black uppercase tracking-[0.12em] text-[#4d0706] md:sticky md:top-6 md:pt-0.5">
+            {title}
+            <span className="mt-2 block h-1 w-9 rounded-full bg-[#ffcc00]" aria-hidden="true" />
+        </h3>
+        <div>{children}</div>
+    </section>
+);
 
-export const CareerSyllabus = ({ career }: CareerSyllabusProps) => {
-    /*
-     * Se aplana el syllabus a una sola lista de ejes. Antes solo se tomaba
-     * `syllabus[0]`, así que en las carreras de dos años el segundo año nunca
-     * se veía. El año se guarda en cada eje para poder etiquetarlo.
-     */
-    const syllabusList = useMemo(
-        () =>
-            (career.syllabus || []).flatMap((entry) =>
-                (entry.subjects || []).map((subject) => ({
-                    subject,
-                    year: entry.year,
-                })),
-            ),
+const CheckList = ({ items }: { items: string[] }) => (
+    <ul className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+        {items.map((item, idx) => (
+            <li key={idx} className="flex items-start gap-2.5 text-[15px] font-medium leading-snug text-stone-700">
+                <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#4d0706]">
+                    <Check className="h-3 w-3 text-[#ffcc00]" strokeWidth={3} aria-hidden="true" />
+                </span>
+                {item}
+            </li>
+        ))}
+    </ul>
+);
+
+export const CareerSyllabus = ({ career, index = 0 }: { career: Career; index?: number }) => {
+    /* Un bloque por año; los años sin ejes no se muestran. */
+    const years = useMemo(
+        () => (career.syllabus || []).filter((entry) => (entry.subjects || []).length > 0),
         [career.syllabus],
     );
-    /* Con un solo año el etiqueta sería ruido repetido en cada tarjeta. */
-    const showYear = (career.syllabus || []).length > 1;
-    const sliderRef = useRef<HTMLDivElement>(null);
-    const [activeIndex, setActiveIndex] = useState(0);
-
-    useEffect(() => {
-        const el = sliderRef.current;
-        if (!el || syllabusList.length <= 1) return;
-
-        const handleScroll = () => {
-            const index = Math.round(el.scrollLeft / el.clientWidth);
-            setActiveIndex(index);
-        };
-
-        el.addEventListener("scroll", handleScroll, { passive: true });
-        return () => el.removeEventListener("scroll", handleScroll);
-    }, [syllabusList.length]);
-
-    const showDots = syllabusList.length > 1;
-
-    if (syllabusList.length === 0) {
-        return (
-            <div className="lg:bg-white lg:rounded-2xl lg:border lg:border-stone-200/60 lg:p-8 lg:shadow-sm">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-stone-100">
-                    <BookOpen className="w-5 h-5 text-[#4d0706]" />
-                    <h3 className="text-sm font-black text-stone-700 tracking-wider uppercase">
-                        Ejes de Formación
-                    </h3>
-                </div>
-                <p className="text-sm text-stone-400 italic">Sin ejes de formación disponibles.</p>
-            </div>
-        );
-    }
+    /* Con un solo año el rótulo sería ruido: se muestra la lista sin encabezado. */
+    const showYear = years.length > 1;
 
     return (
-        <div className="lg:bg-white lg:rounded-2xl lg:border lg:border-stone-200/60 lg:p-8 lg:shadow-sm">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-stone-100">
-                <BookOpen className="w-5 h-5 text-[#4d0706]" />
-                <h3 className="text-sm font-black text-stone-700 tracking-wider uppercase">
-                    Ejes de Formación
-                </h3>
-            </div>
-
-            {/* Desktop: 3-column grid */}
-            <div className="hidden lg:grid grid-cols-3 gap-6">
-                {syllabusList.map(({ subject, year }: { subject: string; year: string }, idx: number) => {
-                    const moduleNum = String(idx + 1).padStart(2, "0");
-                    /* Solo se muestra texto propio del eje; nada generado automáticamente. */
-                    const description = SUBJECT_DESCRIPTIONS[subject.trim()];
-
-                    return (
-                        <div key={idx} className="border-l-4 border-[#4d0706] pl-4 py-2 space-y-2">
-                            <span className="text-[10px] font-black tracking-widest text-[#4d0706]/70 uppercase block">
-                                {showYear ? `${year} · Eje ${moduleNum}` : `Eje ${moduleNum}`}
-                            </span>
-                            <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-tight">
-                                {subject}
-                            </h4>
-                            {description && (
-                                <p className="text-xs font-semibold text-stone-500 leading-relaxed">
-                                    {description}
-                                </p>
+        <CareerSection title="Ejes de formación" index={index}>
+            {years.length === 0 ? (
+                <p className="text-sm italic text-stone-400">Sin ejes de formación disponibles.</p>
+            ) : (
+                <div className="space-y-10">
+                    {years.map((entry, yearIdx) => (
+                        <div key={`${entry.year}-${yearIdx}`}>
+                            {showYear && (
+                                <div className="mb-5 flex items-center gap-3">
+                                    <h4 className="rounded-md bg-[#ffcc00] px-2.5 py-1 text-xs font-black uppercase tracking-wider text-[#4d0706]">
+                                        {entry.year}
+                                    </h4>
+                                    <span className="h-px flex-1 bg-stone-200" aria-hidden="true" />
+                                </div>
                             )}
+                            <ol className="divide-y divide-stone-200">
+                                {entry.subjects.map((subject, idx) => {
+                                    const description = SUBJECT_DESCRIPTIONS[subject.trim()];
+                                    return (
+                                        <li key={idx} className="flex gap-4 py-5 first:pt-0 last:pb-0">
+                                            <span className="w-7 shrink-0 text-lg font-black leading-none tabular-nums text-[#4d0706]">
+                                                {String(idx + 1).padStart(2, "0")}
+                                            </span>
+                                            <div className="min-w-0">
+                                                <h4 className="text-[15px] font-extrabold leading-snug text-stone-900">
+                                                    {subject}
+                                                </h4>
+                                                {description && (
+                                                    <p className="mt-1.5 text-sm leading-relaxed text-stone-500">
+                                                        {description}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ol>
                         </div>
-                    );
-                })}
-            </div>
-
-            {/* Mobile: slider con mismo estilo border-left */}
-            <style>{`.ejes-slider::-webkit-scrollbar { display: none; }`}</style>
-            <div ref={sliderRef} className="lg:hidden flex overflow-x-auto snap-x snap-mandatory gap-6 ejes-slider" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                {syllabusList.map(({ subject, year }: { subject: string; year: string }, idx: number) => {
-                    const moduleNum = String(idx + 1).padStart(2, "0");
-                    const description = SUBJECT_DESCRIPTIONS[subject.trim()];
-
-                    return (
-                        <div key={idx} className="border-l-4 border-[#4d0706] pl-4 py-3 space-y-1.5 w-full shrink-0 snap-start">
-                            <span className="text-[9px] font-black tracking-widest text-[#4d0706]/70 uppercase block leading-none">
-                                {showYear ? `${year} · Eje ${moduleNum}` : `Eje ${moduleNum}`}
-                            </span>
-                            <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-tight">
-                                {subject}
-                            </h4>
-                            {description && (
-                                <p className="text-xs font-semibold text-stone-500 leading-relaxed">
-                                    {description}
-                                </p>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Dots indicator */}
-            {showDots && (
-                <div className="lg:hidden flex justify-center gap-1.5 mt-4">
-                    {syllabusList.map((_, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => {
-                                const el = sliderRef.current;
-                                if (el) {
-                                    el.scrollTo({ left: el.clientWidth * idx, behavior: "smooth" });
-                                }
-                            }}
-                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 cursor-pointer border-none ${
-                                idx === activeIndex ? "bg-[#b91c1c] w-3" : "bg-[#b91c1c]/30"
-                            }`}
-                            aria-label={`Ir al eje ${idx + 1}`}
-                        />
                     ))}
                 </div>
             )}
-        </div>
+        </CareerSection>
     );
 };
 
-interface CareerDetailsGridProps {
-    career: Career;
-}
+export const CareerOutcomes = ({ career, index = 0 }: { career: Career; index?: number }) => {
+    if (!career.salidaLaboral?.length) return null;
+    return (
+        <CareerSection title="Salida laboral" index={index}>
+            <CheckList items={career.salidaLaboral} />
+        </CareerSection>
+    );
+};
+
+const requisitoIcon = (item: string) => {
+    const t = item.toLowerCase();
+    if (t.includes("dni")) return IdCard;
+    if (t.includes("anal")) return GraduationCap;
+    return FileText;
+};
+
+export const CareerRequirements = ({ career, index = 0 }: { career: Career; index?: number }) => {
+    /* Los requisitos salen de lo que se cargó en el panel (uno por línea). */
+    const requisitos = useMemo(() => parseRequisitos(career.inscriptionDocs), [career.inscriptionDocs]);
+    return (
+        <CareerSection title="Requisitos" index={index}>
+            <ul className="grid gap-3 sm:grid-cols-2">
+                {requisitos.map((item, idx) => {
+                    const Icon = requisitoIcon(item);
+                    return (
+                        <li
+                            key={idx}
+                            className="flex items-center gap-3 border-l-4 border-[#ffcc00] bg-white py-3 pl-4 pr-3"
+                        >
+                            <Icon className="h-6 w-6 shrink-0 text-[#4d0706]" aria-hidden="true" />
+                            <span className="text-[15px] font-extrabold text-stone-900">{item}</span>
+                        </li>
+                    );
+                })}
+            </ul>
+        </CareerSection>
+    );
+};
 
 export { CAREER_VIDEOS } from "@/config/careerVideos";
 
@@ -309,108 +301,5 @@ export const ExpandableVideo = ({ src, center }: { src: string; center?: boolean
                 </div>
             </div>
         </>
-    );
-};
-
-export const CareerDetailsGrid = ({ career }: CareerDetailsGridProps) => {
-    /* Los requisitos salen de lo que se cargó en el panel (uno por línea). */
-    const requisitos = useMemo(() => parseRequisitos(career.inscriptionDocs), [career.inscriptionDocs])
-    return (
-        <div className="w-full">
-            {/* DESKTOP LAYOUT (Matches the desktop screenshot exactly) */}
-            <div className="hidden lg:grid grid-cols-3 gap-6 w-full">
-                {/* Salida Laboral Card */}
-                <div className="bg-white rounded-2xl border border-stone-200/60 p-6 lg:p-8 shadow-sm flex flex-col">
-                    <h4 className="text-xs font-black text-stone-400 uppercase tracking-widest mb-5">
-                        Salida Laboral
-                    </h4>
-                    <ul className="space-y-3.5 flex-1">
-                        {career.salidaLaboral.map((item: string, idx: number) => (
-                            <li key={idx} className="flex items-start gap-2.5">
-                                <CheckCircle2 className="w-4 h-4 text-[#ffcc00] shrink-0 mt-0.5" />
-                                <span className="text-xs font-bold text-stone-700 leading-normal">
-                                    {item}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                {/* Cronograma de Cursada Card */}
-                <div className="bg-white rounded-2xl border border-stone-200/60 p-6 lg:p-8 shadow-sm flex flex-col">
-                    <h4 className="text-xs font-black text-stone-400 uppercase tracking-widest mb-5">
-                        Cronograma de Cursada
-                    </h4>
-                    <div className="flex items-center gap-4 flex-1">
-                        <Clock className="w-6 h-6 text-[#4d0706] shrink-0" />
-                        <div>
-                            <p className="text-sm font-bold text-stone-800 leading-snug">
-                                {career.schedule}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Requisitos Card */}
-                <div className="bg-white rounded-2xl border border-stone-200/60 p-6 lg:p-8 shadow-sm flex flex-col">
-                    <h4 className="text-xs font-black text-stone-400 uppercase tracking-widest mb-5">
-                        Requisitos
-                    </h4>
-                    <div className="flex items-start gap-4 flex-1">
-                        <FileText className="w-6 h-6 text-[#4d0706] shrink-0 mt-0.5" />
-                        <ul className="space-y-3.5">
-                            {requisitos.map((item: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2.5">
-                                    <CheckCircle2 className="w-4 h-4 text-[#ffcc00] shrink-0 mt-0.5" />
-                                    <span className="text-xs font-bold text-stone-700 leading-normal">
-                                        {item}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            {/* MOBILE LAYOUT (Matches the mobile screenshot exactly) */}
-            <div className="lg:hidden space-y-3 w-full">
-                {/* Salida Laboral (Mobile Only) */}
-                <div className="bg-stone-100/70 rounded-xl p-3 border-l-4 border-[#0b1b33]">
-                    <h4 className="text-[10px] font-black text-[#0b1b33] uppercase tracking-widest mb-2">
-                        Salida Laboral
-                    </h4>
-                    <ul className="space-y-2">
-                        {career.salidaLaboral.map((item: string, idx: number) => (
-                            <li key={idx} className="flex items-start gap-2">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-[#c85a17] shrink-0 mt-0.5" />
-                                <span className="text-[11px] font-bold text-stone-700 leading-normal">
-                                    {item}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                {/* Requisitos (Mobile Only) */}
-                <div className="bg-stone-100/70 rounded-xl p-3 border-l-4 border-[#0b1b33]">
-                    <h4 className="text-[10px] font-black text-[#0b1b33] uppercase tracking-widest mb-2">
-                        Requisitos
-                    </h4>
-                    <div className="flex items-start gap-2">
-                        <FileText className="w-4 h-4 text-[#c85a17] shrink-0 mt-0.5" />
-                        <ul className="space-y-2">
-                            {requisitos.map((item: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2">
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#c85a17] shrink-0 mt-0.5" />
-                                    <span className="text-[11px] font-bold text-stone-700 leading-normal">
-                                        {item}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
     );
 };

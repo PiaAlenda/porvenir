@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { CalendarDays, ChevronDown, FileText, FileSpreadsheet, Mail, MoreVertical, Pencil, Phone, Trash2, RefreshCw, Loader2, Users, Search, GraduationCap, X } from "lucide-react"
 import { api, type Alumno } from "@/api"
 import { sexoLabel } from "@/components/features/home/form/options"
+import { extrasConEtiqueta } from "@/components/features/home/form/formSchema"
 import AlumnoEditModal from "./AlumnoEditModal"
 import { downloadContractPdf } from "@/pdf/downloadContract"
 import { downloadInscripcionXlsx } from "@/lib/excelExport"
@@ -34,7 +35,7 @@ export default function AlumnosPanel({ token }: Props) {
     const [menuOpen, setMenuOpen] = useState<string | null>(null)
     const actionsRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
-    const { config } = useSiteConfig()
+    const { config, formOptions } = useSiteConfig()
 
     useEffect(() => {
         if (!menuOpen) return
@@ -197,6 +198,10 @@ export default function AlumnosPanel({ token }: Props) {
                     // Lo que para el admin es "fecha de inscripción" en la
                     // base se guarda como `createdAt`.
                     fechaInscripcion: a.createdAt || "",
+                    // Respuestas de los campos que agregó el admin, en una sola celda.
+                    datosAdicionales: extrasConEtiqueta(formOptions.campos, a.extras)
+                        .map((e) => `${e.label}: ${e.value}`)
+                        .join("; "),
                 })),
             })
         } catch (err) {
@@ -731,6 +736,12 @@ export default function AlumnosPanel({ token }: Props) {
                                         <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Problemática integrado</p>
                                         <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.problematicaIntegrado || "—"}</p>
                                     </div>
+                                    {extrasConEtiqueta(formOptions.campos, detailAlumno.extras).map((e) => (
+                                        <div key={e.id} className="min-w-0">
+                                            <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">{e.label}</p>
+                                            <p className="text-sm font-bold text-gray-800 mt-0.5 break-words whitespace-pre-wrap">{e.value}</p>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -16,7 +16,7 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
     const videos = getVideosFor(career.id, config);
 
     return (
-        <header className="relative min-h-[380px] lg:min-h-[480px] flex items-center overflow-hidden bg-[#4d0706] border-b-4 border-[#ffcc00]">
+        <header className="relative lg:min-h-[400px] flex items-center overflow-hidden bg-[#4d0706] border-b-4 border-[#ffcc00]">
             <div className="absolute inset-0 z-0">
                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[#4d0706] via-[#4d0706]/95 to-[#4d0706]/80 z-10" />
@@ -68,7 +68,7 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                         </p>
 
                         <div className="flex flex-wrap gap-3 mt-6">
-                            <div className="hidden lg:flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/15">
+                            <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/15">
                                 <Clock className="w-4 h-4 text-[#ffcc00]" />
                                 <span className="text-white font-bold text-xs">{career.duration}</span>
                             </div>

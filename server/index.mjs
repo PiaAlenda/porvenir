@@ -348,6 +348,37 @@ function validateRequeridos(body) {
   return null
 }
 
+/**
+ * Respuestas a los campos que agregó el admin (ids `x_…`). Solo se aceptan las
+ * de campos que existen y están visibles en el esquema guardado; el resto se
+ * descarta. Devuelve { extras } o { error } si falta un obligatorio.
+ */
+async function resolverExtras(raw) {
+  let parsed = raw
+  if (typeof raw === "string") {
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      parsed = {}
+    }
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) parsed = {}
+
+  const { campos } = await getFormOptions()
+  const extras = {}
+  for (const campo of campos) {
+    if (!campo.id.startsWith("x_") || !campo.visible) continue
+    let valor = String(parsed[campo.id] ?? "").trim().slice(0, 500)
+    if (valor && campo.kind === "select" && !(campo.options ?? []).some((o) => o.value === valor)) valor = ""
+    if (!valor) {
+      if (campo.required) return { error: `Completá el campo ${campo.label}.` }
+      continue
+    }
+    extras[campo.id] = valor
+  }
+  return { extras }
+}
+
 const uploader = upload.fields([
   { name: "fotoDni", maxCount: 1 },
   { name: "fotoCertificado", maxCount: 1 },
@@ -452,6 +483,9 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
   const err = validateRequeridos(body)
   if (err) return rechazar(400, err)
 
+  const extrasResult = await resolverExtras(body.extras)
+  if (extrasResult.error) return rechazar(400, extrasResult.error)
+
   if (esDirecta && !directUploadsEnabled) {
     return rechazar(400, "Faltan adjuntar las fotos del DNI y del certificado.")
   }
@@ -538,6 +572,7 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
       cud: body.cud ? String(body.cud).trim() : "",
       c_pueblo_indigena: body.c_pueblo_indigena ? String(body.c_pueblo_indigena).trim() : "",
       problematicaIntegrado: body.problematicaIntegrado ? String(body.problematicaIntegrado).trim() : "",
+      ...(Object.keys(extrasResult.extras).length ? { extras: extrasResult.extras } : {}),
       fotoDni,
       fotoCertificado,
     })

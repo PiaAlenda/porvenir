@@ -6,15 +6,17 @@ import CuilInput from "./CuilInput"
 import DocInput from "./DocInput"
 import { PhoneInput } from "./PhoneInput"
 import { SearchableSelect, TextInput, TextAreaInput } from "./fields"
-import { campoPorId, type FormFieldConfig } from "./formSchema"
+import { campoPorId, esPersonalizado, type FieldId, type FormFieldConfig } from "./formSchema"
 import { localidadesDeProvincia } from "./localidades"
 import type { FormErrors, InscriptionFormValues } from "./validation"
 
 export interface StepsProps {
     values: InscriptionFormValues
     errors: FormErrors
-    isTouched: (name: keyof InscriptionFormValues) => boolean
+    isTouched: (name: string) => boolean
     onFieldChange: (name: keyof InscriptionFormValues, value: string) => void
+    onExtraChange: (id: string, value: string) => void
+    onExtraBlur: (id: string) => void
     onFileChange: (name: "fotoDni" | "fotoCertificado", file: File | null) => void
     onBlur: (name: keyof InscriptionFormValues) => void
     campos: FormFieldConfig[]
@@ -22,7 +24,7 @@ export interface StepsProps {
     tipo: "curso" | "carrera" | ""
 }
 
-function isValid(value: string | File | null, error: string | undefined, touched: boolean): boolean {
+function isValid(value: InscriptionFormValues[keyof InscriptionFormValues], error: string | undefined, touched: boolean): boolean {
     if (typeof value === "string") {
         return touched && value.trim() !== "" && !error
     }
@@ -32,7 +34,7 @@ function isValid(value: string | File | null, error: string | undefined, touched
 const spanClass = (span?: 1 | 2) => (span === 2 ? "sm:col-span-2" : "")
 
 function FileField({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps }) {
-    const file = ctx.values[campo.id] as File | null
+    const file = ctx.values[campo.id as FieldId] as File | null
     const error = ctx.errors[campo.id]
     const fieldId = `field-${campo.id}`
 
@@ -77,7 +79,64 @@ function FileField({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps }) 
     )
 }
 
-function CampoGenerico({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps }) {
+/** Campo agregado por el admin: su respuesta vive en `values.extras`. */
+function CampoExtra({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps }) {
+    const str = ctx.values.extras[campo.id] ?? ""
+    const error = ctx.errors[campo.id]
+    const valid = ctx.isTouched(campo.id) && str.trim() !== "" && !error
+    const onChange = (v: string) => ctx.onExtraChange(campo.id, v)
+    const onBlur = () => ctx.onExtraBlur(campo.id)
+
+    return (
+        <div className={spanClass(campo.span)}>
+            {campo.kind === "textarea" ? (
+                <TextAreaInput
+                    label={campo.label}
+                    name={campo.id}
+                    value={str}
+                    placeholder={campo.placeholder}
+                    hint={campo.hint}
+                    error={error}
+                    required={campo.required}
+                    onChange={(e) => onChange(e.target.value)}
+                    onBlur={onBlur}
+                />
+            ) : campo.kind === "select" ? (
+                <SearchableSelect
+                    label={campo.label}
+                    name={campo.id}
+                    value={str}
+                    options={campo.options ?? []}
+                    placeholderOption={campo.placeholderOption}
+                    hint={campo.hint}
+                    error={error}
+                    valid={valid}
+                    required={campo.required}
+                    onChange={onChange}
+                    onBlur={onBlur}
+                />
+            ) : (
+                <TextInput
+                    label={campo.label}
+                    name={campo.id}
+                    type={campo.kind === "date" ? "date" : "text"}
+                    value={str}
+                    placeholder={campo.kind === "date" ? undefined : campo.placeholder}
+                    hint={campo.hint}
+                    error={error}
+                    valid={valid}
+                    required={campo.required}
+                    onChange={(e) => onChange(e.target.value)}
+                    onBlur={onBlur}
+                />
+            )}
+        </div>
+    )
+}
+
+function CampoGenerico({ campo: campoCfg, ctx }: { campo: FormFieldConfig; ctx: StepsProps }) {
+    if (esPersonalizado(campoCfg)) return <CampoExtra campo={campoCfg} ctx={ctx} />
+    const campo = campoCfg as FormFieldConfig & { id: FieldId }
     const { values, errors, isTouched, onFieldChange, onBlur } = ctx
     const value = values[campo.id]
     const error = errors[campo.id]

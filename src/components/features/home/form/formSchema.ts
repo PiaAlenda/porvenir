@@ -27,8 +27,29 @@ export type FieldKind =
 
 export type FieldId = keyof InscriptionFormValues
 
+/**
+ * Campos que agrega el admin desde el panel. Sus respuestas no son columnas
+ * fijas: se guardan en `extras` de la inscripción, indexadas por este id.
+ */
+export type CustomFieldId = `x_${string}`
+
+export const CUSTOM_KINDS = ["text", "textarea", "select", "date"] as const satisfies readonly FieldKind[]
+
+export const CUSTOM_KIND_LABELS: Record<(typeof CUSTOM_KINDS)[number], string> = {
+    text: "Texto corto",
+    textarea: "Texto largo",
+    select: "Desplegable",
+    date: "Fecha",
+}
+
+export const esPersonalizado = (c: { id: string }): boolean => c.id.startsWith("x_")
+
+export function nuevoIdPersonalizado(): CustomFieldId {
+    return `x_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+}
+
 export interface FormFieldConfig extends Omit<ApiCampo, "id" | "kind" | "step"> {
-    id: FieldId
+    id: FieldId | CustomFieldId
     kind: FieldKind
     step: 1 | 2 | 3 | 4
 }
@@ -75,7 +96,7 @@ export const DEFAULT_FORM_OPTIONS: FormOptions = {
     ],
 }
 
-export function campoPorId(campos: FormFieldConfig[] | undefined, id: FieldId): FormFieldConfig | undefined {
+export function campoPorId(campos: FormFieldConfig[] | undefined, id: FormFieldConfig["id"]): FormFieldConfig | undefined {
     return campos?.find((c) => c.id === id)
 }
 
@@ -89,12 +110,34 @@ export function mergeFormOptions(saved?: ApiFormOptions | null): FormOptions {
         return base
     }
 
-    const byId = new Map<FieldId, FormFieldConfig>(base.campos.map((c) => [c.id, c]))
-    const vistos = new Set<FieldId>()
+    const byId = new Map<string, FormFieldConfig>(base.campos.map((c) => [c.id, c]))
+    const vistos = new Set<string>()
     const campos: FormFieldConfig[] = []
 
     for (const s of saved.campos) {
-        const def = byId.get(s.id as FieldId)
+        const def = byId.get(s.id)
+
+        if (!def && esPersonalizado(s) && !vistos.has(s.id)) {
+            const kind = CUSTOM_KINDS.find((k) => k === s.kind)
+            const step = Number(s.step)
+            if (kind && step >= 1 && step <= 4) {
+                vistos.add(s.id)
+                campos.push({
+                    id: s.id as CustomFieldId,
+                    kind,
+                    step: step as 1 | 2 | 3 | 4,
+                    label: s.label,
+                    placeholder: s.placeholder,
+                    placeholderOption: s.placeholderOption,
+                    hint: s.hint,
+                    required: s.required,
+                    visible: s.visible,
+                    span: s.span === 2 ? 2 : 1,
+                    ...(kind === "select" ? { options: s.options ?? [] } : {}),
+                })
+            }
+            continue
+        }
 
         if (!def || vistos.has(def.id)) continue
         vistos.add(def.id)
@@ -133,6 +176,31 @@ export function mergeFormOptions(saved?: ApiFormOptions | null): FormOptions {
     return { campos }
 }
 
-export function opcionesDe(campos: FormFieldConfig[] | undefined, id: FieldId): FormFieldOption[] {
+/**
+ * Respuestas de campos personalizados con su etiqueta actual. Las de campos que
+ * el admin ya eliminó siguen apareciendo (no se pierden datos ya cargados).
+ */
+export function extrasConEtiqueta(
+    campos: FormFieldConfig[] | undefined,
+    extras: Record<string, string> | undefined,
+): { id: string; label: string; value: string }[] {
+    if (!extras) return []
+    const out: { id: string; label: string; value: string }[] = []
+    const vistos = new Set<string>()
+    for (const c of campos ?? []) {
+        const value = extras[c.id]
+        if (esPersonalizado(c) && value) {
+            vistos.add(c.id)
+            const opcion = c.options?.find((o) => o.value === value)
+            out.push({ id: c.id, label: c.label || c.id, value: opcion?.label ?? value })
+        }
+    }
+    for (const [id, value] of Object.entries(extras)) {
+        if (!vistos.has(id) && value) out.push({ id, label: "Campo eliminado", value })
+    }
+    return out
+}
+
+export function opcionesDe(campos: FormFieldConfig[] | undefined, id: FormFieldConfig["id"]): FormFieldOption[] {
     return campoPorId(campos, id)?.options ?? []
 }

@@ -7,6 +7,7 @@ import { getCareerById, useSiteConfig } from "@/siteConfig"
 import { downloadContractFromFormData } from "@/pdf/downloadContract"
 import { compressImage } from "@/lib/compressImage"
 import Stepper, { type StepperStep } from "./form/Stepper"
+import { esPersonalizado } from "./form/formSchema"
 import {
     StepContacto,
     StepDatosPersonales,
@@ -17,6 +18,7 @@ import {
 import {
     validateField,
     validateStep,
+    validateExtra,
     tipoEfectivoDe,
     type FormErrors,
     type InscriptionFormValues,
@@ -64,6 +66,7 @@ const MSG_SIN_CUPO =
     "Gracias por tu tiempo."
 
 const initialForm = (careerId?: string | null): InscriptionFormValues => ({
+    extras: {},
     // Con la carrera ya elegida (detalle) se omite la pregunta: el tipo se
     // deduce del id. Los ids de carreras empiezan con "tec-".
     tipoPropuesta: careerId ? (careerId.startsWith("tec-") ? "carrera" : "curso") : "",
@@ -127,13 +130,39 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
      * orden, con qué etiquetas y si son obligatorios. Sale de la config que
      * edita el admin.
      */
+    const marcarTocado = (name: string) =>
+        setTouched((prev) => {
+            const next = new Set(prev)
+            next.add(name)
+            return next
+        })
+
+    const campoExtra = (id: string) => formOptions.campos.find((c) => c.id === id)
+
+    const handleExtraChange = (id: string, value: string) => {
+        setFormData((prev) => ({ ...prev, extras: { ...prev.extras, [id]: value } }))
+        marcarTocado(id)
+        const campo = campoExtra(id)
+        if (campo && (errors[id] !== undefined || touched.has(id))) {
+            setErrors((prev) => ({ ...prev, [id]: validateExtra(campo, value) }))
+        }
+    }
+
+    const handleExtraBlur = (id: string) => {
+        marcarTocado(id)
+        const campo = campoExtra(id)
+        if (campo) setErrors((prev) => ({ ...prev, [id]: validateExtra(campo, formData.extras[id] ?? "") }))
+    }
+
     const pasoProps = {
         campos: formOptions.campos,
         config,
         tipo: tipoEfectivoDe(formData),
+        onExtraChange: handleExtraChange,
+        onExtraBlur: handleExtraBlur,
     }
 
-    const isTouched = (name: keyof InscriptionFormValues) => touched.has(name)
+    const isTouched = (name: string) => touched.has(name)
 
     const handleFieldChange = (name: keyof InscriptionFormValues, value: string) => {
         setFormData((prev) => {
@@ -266,6 +295,13 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
                 c_pueblo_indigena: formData.c_pueblo_indigena,
                 problematicaIntegrado: formData.problematicaIntegrado,
             }
+            // Solo viajan las respuestas de campos personalizados que siguen visibles.
+            const extras: Record<string, string> = {}
+            for (const c of formOptions.campos) {
+                const v = (formData.extras[c.id] ?? "").trim()
+                if (esPersonalizado(c) && c.visible && v) extras[c.id] = v
+            }
+            if (Object.keys(extras).length) campos.extras = JSON.stringify(extras)
 
             let result: InscripcionResult
             if (formData.fotoDni && formData.fotoCertificado) {

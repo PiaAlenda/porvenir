@@ -1,66 +1,63 @@
-import { GraduationCap, ArrowRight, UserX, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ArrowRight, UserX } from "lucide-react";
+import { useState } from "react";
 import { type Career, type Teacher } from "@/config/careerData";
+import { CareerSection } from "@/components/features/career/CareerDetailAbout";
 
-interface CohortCardProps {
+interface EnrollPanelProps {
     career: Career;
     onEnroll: () => void;
     available?: boolean;
 }
 
-export const CareerCohortCard = ({ career, onEnroll, available = true }: CohortCardProps) => {
+/**
+ * Único bloque "destacado" de la página: resume lo que decide la inscripción
+ * (cuándo, cuánto, cómo y en qué horario). En desktop queda fijo al costado;
+ * en mobile va arriba y el botón vive en la barra inferior.
+ */
+export const CareerEnrollPanel = ({ career, onEnroll, available = true }: EnrollPanelProps) => {
+    const rows: { label: string; value: string }[] = [
+        { label: "Inscripción", value: career.inscriptionFee || "Consultar" },
+        { label: "Modalidad", value: career.modality },
+        ...(career.month ? [{ label: "Inicio", value: career.month }] : []),
+        { label: "Cursada", value: career.schedule },
+    ];
+
     return (
-        <div className="bg-[#4d0706] text-white rounded-2xl p-6 lg:p-8 shadow-xl flex flex-col justify-between h-full border border-white/10 relative overflow-hidden group">
-            {/* Subtle brand color accent background glow */}
-            <div className="absolute -right-16 -top-16 w-32 h-32 bg-[#ffcc00]/10 rounded-full blur-xl group-hover:bg-[#ffcc00]/25 transition-all duration-500" />
-            
-            <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#ffcc00]/90">
-                    Próxima Cohorte – Ciclo Lectivo 2027
-                </span>
-                <h4 className="text-xl lg:text-2xl font-black mt-1 mb-6 text-white leading-tight">
-                    {career.inscriptionDate || "Septiembre 2026"}
-                </h4>
+        <div className="rounded-2xl bg-[#4d0706] p-6 text-white lg:p-7">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#ffcc00]">
+                Próxima cohorte · Ciclo lectivo 2027
+            </p>
+            <p className="mt-2 text-2xl font-black leading-tight">{career.inscriptionDate || "Septiembre 2026"}</p>
 
-                <div className="space-y-4 border-t border-white/10 pt-5">
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-stone-300">Inscripción</span>
-                            <span className="text-sm font-black text-[#ffcc00]">
-                                {career.inscriptionFee ? career.inscriptionFee : "Consultar"}
-                            </span>
-                        </div>
-                    <div className="flex justify-between items-center border-t border-white/5 pt-3">
-                        <span className="text-xs font-bold text-stone-300">Modalidad</span>
-                        <span className="text-sm font-black text-white">{career.modality}</span>
+            <dl className="mt-5 divide-y divide-white/10 border-t border-white/10">
+                {rows.map(({ label, value }) => (
+                    <div key={label} className="flex items-baseline justify-between gap-4 py-3">
+                        <dt className="text-xs font-medium text-stone-300">{label}</dt>
+                        <dd className="text-right text-sm font-bold">{value}</dd>
                     </div>
-                    {career.month && (
-                        <div className="flex justify-between items-center border-t border-white/5 pt-3">
-                            <span className="text-xs font-bold text-stone-300">Mes de inicio</span>
-                            <span className="text-sm font-black text-white">{career.month}</span>
-                        </div>
-                    )}
-                </div>
-            </div>
+                ))}
+            </dl>
 
-            {available ? (
-                <button
-                    onClick={onEnroll}
-                    className="mt-8 w-full py-4 bg-[#ffcc00] text-[#4d0706] font-black uppercase tracking-wider text-xs rounded-xl hover:bg-white hover:text-[#4d0706] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border-none shadow-lg shadow-black/25"
-                >
-                    Iniciar Inscripción
-                    <ArrowRight className="w-4 h-4" />
-                </button>
-            ) : (
-                <div className="mt-8 w-full py-4 bg-stone-700 text-stone-200 font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2">
-                    <UserX className="w-4 h-4" />
-                    Sin cupo
-                </div>
-            )}
+            <div className="hidden lg:block">
+                {available ? (
+                    <button
+                        onClick={onEnroll}
+                        className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-[#ffcc00] py-3.5 text-xs font-black uppercase tracking-wider text-[#4d0706] transition-[transform,background-color] duration-150 ease-out hover:bg-white active:scale-[0.97]"
+                    >
+                        Iniciar inscripción
+                        <ArrowRight className="h-4 w-4" />
+                    </button>
+                ) : (
+                    <div className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 py-3.5 text-xs font-black uppercase tracking-wider text-stone-300">
+                        <UserX className="h-4 w-4" />
+                        Sin cupo
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
 
-// Teacher initials helper
 function getInitials(name: string): string {
     return name
         .split(" ")
@@ -71,105 +68,48 @@ function getInitials(name: string): string {
         .toUpperCase();
 }
 
-interface TeachersListProps {
-    career: Career;
-}
-
 function getProfileSrc(legajo: string): string {
     const normalized = legajo.replace(/[\s/]+/g, "");
     return `/img/profile/${normalized}.webp`;
 }
 
-export const CareerTeachersList = ({ career }: TeachersListProps) => {
-    const [currentPage, setCurrentPage] = useState(1);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+const INITIAL_VISIBLE = 6;
 
-    useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 1024);
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
-
-    const itemsPerPage = isMobile ? 2 : 4;
-    const teacherCount = career.teachers.length;
-    const totalPages = Math.ceil(teacherCount / itemsPerPage);
-
-    /*
-     * La página efectiva se recorta en render en vez de resetear el estado con
-     * un effect. Si el admin saca docentes y la página actual queda fuera de
-     * rango, `currentPage` sigue siendo un número viejo pero lo que se muestra
-     * y lo que dicen los botones usan siempre esta versión acotada. Es además
-     * lo que evita el setState en effect: con 0 docentes `totalPages` es 0 y
-     * el bloque de paginación ni se renderiza.
-     */
-    const safePage = Math.min(currentPage, Math.max(totalPages, 1));
-
-    const paginatedTeachers = career.teachers.slice(
-        (safePage - 1) * itemsPerPage,
-        safePage * itemsPerPage
-    );
-
-    const gridCols =
-        teacherCount === 1
-            ? "grid-cols-1 max-w-sm mx-auto"
-            : "grid-cols-1 lg:grid-cols-2";
+export const CareerTeachersList = ({ career, index = 0 }: { career: Career; index?: number }) => {
+    const [expanded, setExpanded] = useState(false);
+    const teachers = career.teachers;
+    const visible = expanded ? teachers : teachers.slice(0, INITIAL_VISIBLE);
+    const hidden = teachers.length - INITIAL_VISIBLE;
 
     return (
-        <div className="bg-white rounded-2xl border border-stone-200/60 p-6 lg:p-8 shadow-sm w-full">
-            <div className="flex items-center gap-3 mb-6">
-                <GraduationCap className="w-7 h-7 text-[#4d0706]" />
-                <h3 className="text-xl lg:text-2xl font-black text-gray-900">Docentes de la carrera</h3>
-            </div>
-
-            <div className={`grid ${gridCols} gap-5`}>
-                {/*
-                 * La key usa el índice y no el legajo: desde el panel los
-                 * docentes se cargan sin legajo, y dos `undefined` como keys
-                 * hacen que React reutilice la tarjeta equivocada.
-                 */}
-                {paginatedTeachers.map((teacher: Teacher, idx: number) => (
-                    <TeacherCard key={`${teacher.legajo || teacher.name}-${idx}`} teacher={teacher} />
+        <CareerSection title="Docentes" index={index}>
+            <ul className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                {/* Key con índice: los docentes cargados desde el panel pueden no tener legajo. */}
+                {visible.map((teacher, idx) => (
+                    <TeacherItem key={`${teacher.legajo || teacher.name}-${idx}`} teacher={teacher} />
                 ))}
-            </div>
-
-            {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 lg:gap-4 mt-6">
-                    <button
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        disabled={safePage === 1}
-                        className="flex items-center gap-1.5 px-2 lg:px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-sm font-bold text-[#4d0706] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                        <span className="hidden lg:inline">Anterior</span>
-                    </button>
-
-                    <span className="text-xs lg:text-sm font-bold text-stone-500">
-                        Pág. {safePage} de {totalPages}
-                    </span>
-
-                    <button
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={safePage === totalPages}
-                        className="flex items-center gap-1.5 px-2 lg:px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-sm font-bold text-[#4d0706] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
-                    >
-                        <span className="hidden lg:inline">Siguiente</span>
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                </div>
+            </ul>
+            {hidden > 0 && (
+                <button
+                    onClick={() => setExpanded((v) => !v)}
+                    className="mt-6 cursor-pointer border-none bg-transparent p-0 text-sm font-bold text-[#4d0706] underline-offset-4 transition-opacity duration-150 hover:underline active:opacity-70"
+                >
+                    {expanded ? "Ver menos" : `Ver los ${teachers.length} docentes`}
+                </button>
             )}
-        </div>
+        </CareerSection>
     );
 };
 
-function TeacherCard({ teacher }: { teacher: Teacher }) {
+function TeacherItem({ teacher }: { teacher: Teacher }) {
     const [imgError, setImgError] = useState(false);
     const profileSrc = teacher.image || (teacher.legajo ? getProfileSrc(teacher.legajo) : "");
 
     return (
-        <div className="flex items-center gap-3 lg:gap-5 p-3 lg:p-5 rounded-xl border border-stone-100 hover:border-[#4d0706]/20 transition-all duration-300 hover:bg-stone-50/50 hover:scale-[1.02] cursor-default">
-            <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-full flex items-center justify-center shrink-0 shadow-sm overflow-hidden border border-stone-200/60 bg-stone-50">
-                {imgError ? (
-                    <span className="w-full h-full flex items-center justify-center bg-[#4d0706] text-white font-black text-xl">
+        <li className="flex items-center gap-4">
+            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-stone-100 ring-1 ring-stone-200">
+                {imgError || !profileSrc ? (
+                    <span className="flex h-full w-full items-center justify-center bg-[#4d0706] text-base font-black text-white">
                         {getInitials(teacher.name)}
                     </span>
                 ) : (
@@ -177,19 +117,14 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
                         src={profileSrc}
                         alt={teacher.name}
                         onError={() => setImgError(true)}
-                        className="w-full h-full object-cover scale-[1.25] origin-center"
+                        className="h-full w-full origin-center scale-[1.25] object-cover"
                     />
                 )}
             </div>
             <div className="min-w-0">
-                <h4 className="font-black text-gray-900 text-sm lg:text-base leading-tight">{teacher.name}</h4>
-                <p className="text-xs lg:text-sm font-bold text-[#4d0706]/75 mt-1">{teacher.title}</p>
-                {teacher.legajo && (
-                    <p className="text-[10px] lg:text-xs font-semibold text-stone-400 mt-0.5">
-                        Legajo: {teacher.legajo}
-                    </p>
-                )}
+                <p className="text-[15px] font-bold leading-tight text-stone-900">{teacher.name}</p>
+                <p className="mt-0.5 text-sm text-stone-500">{teacher.title}</p>
             </div>
-        </div>
+        </li>
     );
 }

@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { FileEdit, Users } from "lucide-react";
 import { type Career } from "@/config/careerData";
 import CareerDetailHero from "@/components/features/career/CareerDetailHero";
-import { CareerSyllabus, CareerDetailsGrid } from "@/components/features/career/CareerDetailAbout";
-import { CareerCohortCard, CareerTeachersList } from "@/components/features/career/CareerDetailSidebar";
-import CareerMobileQuickInfo from "@/components/features/career/CareerMobileQuickInfo";
+import { CareerSyllabus, CareerOutcomes, CareerRequirements } from "@/components/features/career/CareerDetailAbout";
+import { CareerEnrollPanel, CareerTeachersList } from "@/components/features/career/CareerDetailSidebar";
 import InfoForm from "@/components/features/home/InfoForm";
 import { getCareerById, isAvailableFor, useSiteConfig } from "@/siteConfig";
 
@@ -54,40 +53,25 @@ const CareerDetail = ({ careerId, onBack }: CareerDetailProps) => {
     };
 
     return (
-        <div className="min-h-screen bg-stone-50 pb-24 lg:pb-16 relative">
+        <div className="min-h-screen bg-stone-50 pb-24 lg:pb-0 relative">
             <CareerDetailHero career={career} onBack={onBack} />
 
-                <main className="py-8 lg:py-16">
-                <div className="site-container max-w-7xl mx-auto px-4 lg:px-6 space-y-8 lg:space-y-12">
-                    {/* Mobile: quick info (horario + cohorte grid, duración banner) */}
-                    <div className="lg:hidden">
-                        <CareerMobileQuickInfo career={career} onBack={onBack} />
+            <main className="py-10 lg:py-14">
+                {/*
+                  * Una sola columna de contenido + un panel lateral. El panel va primero en
+                  * el DOM para que en mobile quede arriba; `lg:order-2` lo manda a la derecha.
+                  */}
+                <div className="site-container grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
+                    <aside className="reveal lg:sticky lg:top-6 lg:order-2">
+                        <CareerEnrollPanel career={career} onEnroll={handleEnroll} available={available} />
+                    </aside>
+
+                    <div className="min-w-0 divide-y-2 divide-stone-200">
+                        <CareerSyllabus career={career} index={1} />
+                        <CareerOutcomes career={career} index={2} />
+                        <CareerRequirements career={career} index={3} />
+                        {career.teachers.length > 0 && <CareerTeachersList career={career} index={4} />}
                     </div>
-
-                    {/* Desktop: syllabus + cohort sidebar */}
-                    <div className="hidden lg:grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
-                        <div className="lg:col-span-8 col-span-1">
-                            <CareerSyllabus career={career} />
-                        </div>
-                        <div className="lg:col-span-4 col-span-1 hidden lg:block">
-                            <CareerCohortCard career={career} onEnroll={handleEnroll} available={available} />
-                        </div>
-                    </div>
-
-                    {/* Syllabus - mobile only (on desktop it's rendered next to the cohort card) */}
-                    <div className="lg:hidden">
-                        <CareerSyllabus career={career} />
-                    </div>
-
-                    {/* Details: salida laboral, horario, requisitos */}
-                    <CareerDetailsGrid career={career} />
-
-                    {/* Teachers: full width on mobile after all content, desktop sidebar */}
-                            {career.teachers.length > 0 && (
-                        <div>
-                            <CareerTeachersList career={career} />
-                        </div>
-                    )}
                 </div>
             </main>
 
@@ -102,7 +86,7 @@ const CareerDetail = ({ careerId, onBack }: CareerDetailProps) => {
                 {available ? (
                     <button
                         onClick={handleEnroll}
-                        className="w-full py-3 bg-[#4d0706] text-[#ffcc00] font-black uppercase tracking-widest text-[11px] rounded-xl flex items-center justify-center gap-2 hover:bg-[#300404] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-[#4d0706]/15 cursor-pointer"
+                        className="w-full py-3 bg-[#4d0706] text-[#ffcc00] font-black uppercase tracking-widest text-[11px] rounded-xl flex items-center justify-center gap-2 hover:bg-[#300404] active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out cursor-pointer"
                     >
                         <FileEdit className="w-3.5 h-3.5" />
                         Inscribite Ahora

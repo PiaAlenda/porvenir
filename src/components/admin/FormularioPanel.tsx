@@ -5,7 +5,18 @@ import { createPortal } from "react-dom"
 import { AlertCircle, Check, ChevronDown, GripVertical, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react"
 import { api } from "@/api"
 import { useSiteConfig } from "@/siteConfig"
-import { DEFAULT_FORM_OPTIONS, type FieldId, type FormFieldConfig, type FormFieldOption } from "@/components/features/home/form/formSchema"
+import {
+    CUSTOM_KINDS,
+    CUSTOM_KIND_LABELS,
+    DEFAULT_FORM_OPTIONS,
+    esPersonalizado,
+    nuevoIdPersonalizado,
+    type FieldKind,
+    type FormFieldConfig,
+    type FormFieldOption,
+} from "@/components/features/home/form/formSchema"
+
+type FieldId = FormFieldConfig["id"]
 
 interface Props {
     token: string
@@ -19,6 +30,7 @@ const PASOS: { step: 1 | 2 | 3 | 4; titulo: string; corto: string }[] = [
 ]
 
 const MAX_OPTIONS = 80
+const MAX_CUSTOM = 30
 
 const inputClass =
     "w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50/50 text-sm font-medium " +
@@ -38,8 +50,10 @@ function CampoEditor({
     campo,
     expanded,
     dragging,
+    order,
     onToggle,
     onPatch,
+    onDelete,
     onDragStart,
     onDragMove,
     onDragEnd,
@@ -47,13 +61,18 @@ function CampoEditor({
     campo: FormFieldConfig
     expanded: boolean
     dragging: boolean
+    /** Posición visual: el DOM no se reordena para no cortar el arrastre. */
+    order: number
     onToggle: () => void
     onPatch: (patch: Partial<FormFieldConfig>) => void
+    onDelete: () => void
     onDragStart: (info: DragInfo) => void
     onDragMove: (x: number, y: number) => void
     onDragEnd: () => void
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
+    const [confirmaBorrar, setConfirmaBorrar] = useState(false)
+    const personalizado = esPersonalizado(campo)
     const esSelect = campo.kind === "select"
     const esCareer = campo.kind === "career"
     const esCity = campo.kind === "city"
@@ -77,6 +96,7 @@ function CampoEditor({
         <div
             ref={rootRef}
             data-campo-id={campo.id}
+            style={{ order }}
             className={`border rounded-2xl overflow-hidden ${dragging
                 ? "border-2 border-dashed border-[#4d0706]/50 bg-[#4d0706]/5 [&>*]:opacity-30"
                 : `transition-colors ${campo.visible ? "bg-white border-gray-200" : "border-gray-200 bg-gray-50/40"}`}`}>
@@ -124,7 +144,7 @@ function CampoEditor({
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-gray-900 truncate">{campo.label || campo.id}</p>
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest truncate">
-                        {campo.id} · {campo.kind}
+                        {personalizado ? "personalizado" : campo.id} · {campo.kind}
                         {campo.required && " · obligatorio"}
                     </p>
                 </div>
@@ -159,6 +179,25 @@ function CampoEditor({
                                 onChange={(e) => onPatch({ label: e.target.value })}
                             />
                         </div>
+                        {personalizado && (
+                            <div className="sm:col-span-2">
+                                <label className={labelClass}>Tipo de campo</label>
+                                <select
+                                    className={inputClass}
+                                    value={campo.kind}
+                                    onChange={(e) => {
+                                        const kind = e.target.value as FieldKind
+                                        onPatch({ kind, ...(kind === "select" && !campo.options ? { options: [] } : {}) })
+                                    }}
+                                >
+                                    {CUSTOM_KINDS.map((k) => (
+                                        <option key={k} value={k}>
+                                            {CUSTOM_KIND_LABELS[k]}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         {campo.kind !== "file" && campo.kind !== "career" && (
                             <>
                                 <div>
@@ -282,6 +321,43 @@ function CampoEditor({
                             Este campo muestra las localidades de la provincia que elige la persona, ordenadas alfabéticamente. Las opciones no se editan acá.
                         </p>
                     )}
+
+                    <div className="pt-3 border-t border-gray-100">
+                        {personalizado ? (
+                            confirmaBorrar ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <p className="text-xs font-bold text-red-600">¿Eliminar este campo? Las respuestas ya guardadas no se borran.</p>
+                                    <button
+                                        type="button"
+                                        onClick={onDelete}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-black text-white bg-red-600 hover:bg-red-700 cursor-pointer transition-colors"
+                                    >
+                                        Sí, eliminar
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setConfirmaBorrar(false)}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-black text-gray-600 bg-gray-100 hover:bg-gray-200 cursor-pointer transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => setConfirmaBorrar(true)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black text-red-600 bg-red-50 hover:bg-red-100 cursor-pointer transition-colors"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Eliminar campo
+                                </button>
+                            )
+                        ) : (
+                            <p className="text-[11px] text-gray-400 font-medium">
+                                Este campo es parte del formulario base y no se puede eliminar; si no lo necesitás, desmarcá "Visible".
+                            </p>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
@@ -317,23 +393,72 @@ export default function FormularioPanel({ token }: Props) {
     }
 
     /*
-     * Intercambio: el campo arrastrado y el que está debajo del cursor se cambian de lugar.
-     * Siempre se calcula desde el orden que había al empezar a arrastrar, así volver al
-     * lugar de origen deshace el cambio y el resto de los campos no se mueve.
+     * Arrastre: el campo arrastrado se inserta en el lugar del que está bajo el cursor
+     * (los demás se corren), tanto hacia adelante como hacia atrás o a los costados.
+     *
+     * - `ordenInicial` congela el orden del DOM durante el arrastre (ver `domPaso`).
+     * - `arrastrandoRef` / `punteroRef` se leen en los eventos del puntero, que pueden
+     *   llegar antes de que React haya vuelto a renderizar.
+     * - `esperandoRender` evita decidir con un layout viejo: tras un movimiento no se
+     *   vuelve a evaluar hasta que el cambio esté pintado.
+     * - `ultimoMovimiento` exige que el puntero se mueva un poco antes de reordenar de
+     *   nuevo, así dos tarjetas de distinto tamaño no se turnan sin parar.
      */
     const ordenInicial = useRef<FormFieldConfig[] | null>(null)
+    const camposRef = useRef(campos)
+    camposRef.current = campos
+    const arrastrandoRef = useRef<FieldId | null>(null)
+    const punteroRef = useRef<{ x: number; y: number } | null>(null)
+    const esperandoRender = useRef(false)
+    const ultimoMovimiento = useRef<{ x: number; y: number } | null>(null)
 
     const moverA = (id: FieldId, overId: string) => {
+        const actual = camposRef.current
+        const from = actual.findIndex((c) => c.id === id)
+        const to = actual.findIndex((c) => c.id === overId)
+        if (from < 0 || to < 0 || from === to || actual[from].step !== actual[to].step) return
+        esperandoRender.current = true
+        ultimoMovimiento.current = punteroRef.current
         setCampos((prev) => {
-            const orig = ordenInicial.current ?? prev
-            const from = orig.findIndex((c) => c.id === id)
-            const to = prev.findIndex((c) => c.id === overId)
-            if (from < 0 || to < 0 || orig[from].step !== prev[to].step) return prev
-            const next = [...orig]
-            next[to] = orig[from]
-            next[from] = orig[to]
+            const f = prev.findIndex((c) => c.id === id)
+            const t = prev.findIndex((c) => c.id === overId)
+            if (f < 0 || t < 0 || f === t) return prev
+            const next = [...prev]
+            const [movido] = next.splice(f, 1)
+            next.splice(t, 0, movido)
             return next
         })
+        marcar()
+    }
+
+    const evaluarArrastre = () => {
+        const id = arrastrandoRef.current
+        const p = punteroRef.current
+        if (!id || !p || esperandoRender.current) return
+        const u = ultimoMovimiento.current
+        if (u && Math.hypot(p.x - u.x, p.y - u.y) < 8) return
+        const cercano = tarjetaMasCercana(p.x, p.y)
+        if (cercano && cercano !== id) moverA(id, cercano)
+    }
+
+    const agregarCampo = () => {
+        if (campos.filter(esPersonalizado).length >= MAX_CUSTOM) {
+            setError(`Podés agregar hasta ${MAX_CUSTOM} campos personalizados.`)
+            return
+        }
+        const id = nuevoIdPersonalizado()
+        setCampos((prev) => [
+            ...prev,
+            { id, kind: "text", step: activeStep, label: "Nuevo campo", placeholder: "", required: false, visible: true, span: 1 },
+        ])
+        setExpandedId(id)
+        setError("")
+        marcar()
+    }
+
+    const eliminarCampo = (id: FieldId) => {
+        setCampos((prev) => prev.filter((c) => c.id !== id))
+        setExpandedId((prev) => (prev === id ? null : prev))
         marcar()
     }
 
@@ -385,15 +510,17 @@ export default function FormularioPanel({ token }: Props) {
     useLayoutEffect(() => {
         const section = sectionRef.current
         if (!section) return
-        const base = section.getBoundingClientRect()
+        // El cambio ya está pintado: se puede volver a decidir con el layout nuevo.
+        esperandoRender.current = false
         const orden = `${activeStep}:${campos.map((c) => c.id).join(",")}`
         const animar = orden !== ordenRef.current && ordenRef.current.startsWith(`${activeStep}:`)
         ordenRef.current = orden
         const nuevos = new Map<string, { x: number; y: number }>()
         section.querySelectorAll<HTMLElement>("[data-campo-id]").forEach((el) => {
             const id = el.dataset.campoId as string
-            const r = el.getBoundingClientRect()
-            const pos = { x: r.left - base.left, y: r.top - base.top }
+            // offsetLeft/Top ignoran los transform: una tarjeta a mitad de animación
+            // no falsea la posición de la siguiente.
+            const pos = { x: el.offsetLeft, y: el.offsetTop }
             nuevos.set(id, pos)
             const prev = rectsRef.current.get(id)
             if (animar && prev && (Math.abs(prev.x - pos.x) > 1 || Math.abs(prev.y - pos.y) > 1)) {
@@ -404,15 +531,25 @@ export default function FormularioPanel({ token }: Props) {
             }
         })
         rectsRef.current = nuevos
+        // Si el puntero ya se había movido mientras se pintaba, se reevalúa.
+        if (arrastrandoRef.current) requestAnimationFrame(evaluarArrastre)
     })
 
-    /* Tarjeta más cercana al cursor (en cualquier dirección, incluso en diagonal o sobre los huecos). */
-    const tarjetaMasCercana = (x: number, y: number): string | null => {
+    /*
+     * Tarjeta más cercana al cursor (en cualquier dirección, incluso en diagonal o sobre los huecos).
+     * Usa el layout (offset*) y no getBoundingClientRect, que incluye las animaciones en curso.
+     */
+    const tarjetaMasCercana = (cx: number, cy: number): string | null => {
+        const section = sectionRef.current
+        if (!section) return null
+        const sr = section.getBoundingClientRect()
+        const x = cx - sr.left
+        const y = cy - sr.top
         let mejor: string | null = null
         let mejorBorde = Infinity
         let mejorCentro = Infinity
-        sectionRef.current?.querySelectorAll<HTMLElement>("[data-campo-id]").forEach((el) => {
-            const r = el.getBoundingClientRect()
+        section.querySelectorAll<HTMLElement>("[data-campo-id]").forEach((el) => {
+            const r = { left: el.offsetLeft, top: el.offsetTop, right: el.offsetLeft + el.offsetWidth, bottom: el.offsetTop + el.offsetHeight, width: el.offsetWidth, height: el.offsetHeight }
             const dx = Math.max(r.left - x, 0, x - r.right)
             const dy = Math.max(r.top - y, 0, y - r.bottom)
             const borde = Math.hypot(dx, dy)
@@ -427,6 +564,18 @@ export default function FormularioPanel({ token }: Props) {
     }
 
     const camposPaso = campos.filter((c) => c.step === activeStep)
+    /*
+     * Mientras se arrastra, el DOM conserva el orden de partida y el orden
+     * visual lo da `order`. Si React moviera en el DOM la tarjeta arrastrada
+     * (al ir hacia atrás o a la izquierda), el navegador soltaría el puntero
+     * y el arrastre se cortaría.
+     */
+    const domPaso = ordenInicial.current
+        ? [
+            ...ordenInicial.current.filter((c) => c.step === activeStep).flatMap((c) => campos.filter((k) => k.id === c.id)),
+            ...camposPaso.filter((c) => !ordenInicial.current?.some((o) => o.id === c.id)),
+        ]
+        : camposPaso
     const visiblesPorPaso = (step: 1 | 2 | 3 | 4) => campos.filter((c) => c.step === step && c.visible).length
 
     return (
@@ -453,30 +602,42 @@ export default function FormularioPanel({ token }: Props) {
                 ))}
             </div>
 
-            <section ref={sectionRef} className="grid grid-cols-1 lg:grid-cols-2 gap-2.5 items-start">
-                {camposPaso.map((campo) => (
+            <section ref={sectionRef} className="relative grid grid-cols-1 lg:grid-cols-2 gap-2.5 items-start">
+                {domPaso.map((campo) => (
                     <CampoEditor
                         key={campo.id}
                         campo={campo}
                         expanded={expandedId === campo.id}
                         dragging={draggingId === campo.id}
+                        order={camposPaso.findIndex((c) => c.id === campo.id)}
                         onToggle={() => setExpandedId((prev) => (prev === campo.id ? null : campo.id))}
                         onPatch={(patch) => actualizarCampo(campo.id, patch)}
+                        onDelete={() => eliminarCampo(campo.id)}
                         onDragStart={(info) => {
                             ordenInicial.current = campos
+                            arrastrandoRef.current = campo.id
+                            punteroRef.current = { x: info.x, y: info.y }
+                            ultimoMovimiento.current = null
+                            esperandoRender.current = false
+                            // Una tarjeta abierta distorsiona la grilla mientras se arrastra.
+                            setExpandedId(null)
                             setDraggingId(campo.id)
                             setGhost(info)
                         }}
                         onDragMove={(x, y) => {
+                            if (arrastrandoRef.current !== campo.id) return
+                            punteroRef.current = { x, y }
                             setGhost((g) => (g ? { ...g, x, y } : g))
-                            const cercano = tarjetaMasCercana(x, y)
-                            if (draggingId && cercano) moverA(draggingId, cercano)
+                            evaluarArrastre()
                             // autoscroll cerca de los bordes
                             if (y < 110) window.scrollBy(0, -18)
                             else if (y > window.innerHeight - 120) window.scrollBy(0, 18)
                         }}
                         onDragEnd={() => {
                             ordenInicial.current = null
+                            arrastrandoRef.current = null
+                            punteroRef.current = null
+                            ultimoMovimiento.current = null
                             setDraggingId(null)
                             setGhost(null)
                         }}
@@ -488,6 +649,15 @@ export default function FormularioPanel({ token }: Props) {
                     </p>
                 )}
             </section>
+
+            <button
+                type="button"
+                onClick={agregarCampo}
+                className="inline-flex items-center gap-2 h-11 px-5 rounded-xl text-xs font-black uppercase tracking-widest text-[#4d0706] border-2 border-dashed border-[#4d0706]/30 hover:bg-[#4d0706]/5 cursor-pointer transition-colors"
+            >
+                <Plus className="w-4 h-4" />
+                Agregar campo a este paso
+            </button>
 
             {ghost && draggingId && (() => {
                 const c = campos.find((f) => f.id === draggingId)

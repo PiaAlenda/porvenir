@@ -73,6 +73,8 @@ export interface Alumno {
     cud?: string
     c_pueblo_indigena?: string
     problematicaIntegrado?: string
+    /** Respuestas a los campos personalizados del formulario, por id de campo. */
+    extras?: Record<string, string>
     fotoDni?: string
     fotoCertificado?: string
     createdAt?: string
@@ -152,6 +154,8 @@ export interface InscripcionPayload {
     cud?: string
     c_pueblo_indigena?: string
     problematicaIntegrado?: string
+    /** JSON con las respuestas a los campos personalizados ({ [idCampo]: valor }). */
+    extras?: string
 }
 
 function errorDeRed(): Error {
