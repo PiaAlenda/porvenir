@@ -53,7 +53,7 @@ const CareerDetail = ({ careerId, onBack }: CareerDetailProps) => {
     };
 
     return (
-        <div className="min-h-screen bg-stone-50 pb-24 lg:pb-0 relative">
+        <div className="min-h-screen bg-stone-50 relative">
             <CareerDetailHero career={career} onBack={onBack} />
 
             <main className="py-10 lg:py-14">

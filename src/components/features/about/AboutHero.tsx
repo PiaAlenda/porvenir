@@ -1,39 +1,59 @@
+import { useRef } from "react";
 import { ArrowLeft } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 interface AboutHeroProps {
     onBack?: () => void;
 }
 
+const EASE = [0.23, 1, 0.32, 1] as const;
+const DIGITS = ["1", "9", "1", "5"];
+
 const AboutHero = ({ onBack }: AboutHeroProps) => {
+    const ref = useRef<HTMLElement>(null);
+    const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+    const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+    const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+
     return (
-        <header className="relative py-12 sm:py-24 lg:py-32 overflow-hidden bg-[#4d0706] text-white">
-            <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
+        <header ref={ref} className="relative overflow-hidden bg-[#4d0706] text-white">
+            <div className="max-w-6xl mx-auto px-6 lg:px-12 pt-8 pb-10 sm:pb-16 min-h-[55svh] sm:min-h-[80svh] flex flex-col">
                 <button
                     onClick={onBack}
-                    className="inline-flex items-center gap-2 text-[#ffcc00] font-bold text-xs sm:text-sm uppercase tracking-widest mb-8 sm:mb-12 hover:-translate-x-1 transition-transform bg-transparent border-none cursor-pointer"
+                    className="group self-start inline-flex items-center gap-2 text-[#ffcc00] font-bold text-xs uppercase tracking-widest bg-transparent border-none cursor-pointer p-0 active:scale-[0.97] transition-transform duration-150 ease-out"
                 >
-                    <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <ArrowLeft className="w-4 h-4 transition-transform duration-200 ease-out group-hover:-translate-x-1" />
                     Volver al inicio
                 </button>
 
-                <div className="max-w-3xl">
-                    <span className="inline-block px-3 py-1 rounded-full bg-white/10 text-[#ffcc00] text-[10px] font-bold uppercase tracking-[0.2em] mb-6">
-                        Desde 1915
-                    </span>
-                    <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black leading-none tracking-tighter">
-                        Nuestra <br />
-                        <span className="text-[#ffcc00]">Trayectoria</span>
+                <motion.div style={{ y, opacity }} className="mt-auto pt-16">
+                    <motion.p
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, ease: EASE, delay: 0.1 }}
+                        className="text-[#ffcc00] text-xs font-bold uppercase tracking-[0.2em] mb-2"
+                    >
+                        Nuestra historia
+                    </motion.p>
+
+                    <h1
+                        aria-label="1915"
+                        className="flex font-black leading-[0.85] tracking-normal select-none text-[clamp(6.5rem,39vw,17rem)]"
+                    >
+                        {DIGITS.map((d, i) => (
+                            <span key={i} aria-hidden className="overflow-hidden inline-block pb-[0.08em] pr-[0.03em]">
+                                <motion.span
+                                    initial={{ y: "105%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, ease: EASE, delay: 0.15 + i * 0.07 }}
+                                    className={`inline-block ${i === 3 ? "text-[#ffcc00]" : "text-white"}`}
+                                >
+                                    {d}
+                                </motion.span>
+                            </span>
+                        ))}
                     </h1>
-                    <p className="text-base sm:text-xl text-white/70 mt-6 sm:mt-8 font-medium leading-relaxed max-w-2xl">
-                        100 años formando profesionales con valores sólidos y excelencia académica en toda la región.
-                    </p>
-                </div>
-            </div>
-            <div className="absolute inset-0 opacity-10 z-0 pointer-events-none">
-                <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <path d="M0,50 Q25,30 50,50 T100,50" fill="none" stroke="white" strokeWidth="0.2" />
-                    <path d="M0,70 Q25,50 50,70 T100,70" fill="none" stroke="white" strokeWidth="0.2" />
-                </svg>
+                </motion.div>
             </div>
         </header>
     );

@@ -1,40 +1,55 @@
-import { Award, BookOpen, Users2, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
+
+const EASE = [0.23, 1, 0.32, 1] as const;
+
+const values = [
+    { title: "Excelencia", desc: "Calidad educativa constante." },
+    { title: "Inclusión", desc: "Educación para todos los sectores." },
+    { title: "Integridad", desc: "Honestidad y transparencia." },
+];
 
 const AboutValues = () => {
     return (
-        <aside className="lg:col-span-5">
-            <div className="lg:sticky lg:top-12 space-y-6">
-                <div className="bg-[#4d0706] rounded-[2.5rem] p-8 sm:p-10 text-white shadow-2xl shadow-[#4d0706]/20">
-                    <Award className="w-12 h-12 text-[#ffcc00] mb-8" />
-                    <h3 className="text-2xl sm:text-3xl font-black mb-6">Valores Institucionales</h3>
+        <section className="bg-[#4d0706] text-white">
+            <div className="max-w-6xl mx-auto px-6 lg:px-12 py-20 sm:py-28">
+                <p className="text-[#ffcc00] text-xs font-bold uppercase tracking-[0.2em] mb-12 sm:mb-16">
+                    Valores
+                </p>
 
-                    <ul className="space-y-4 sm:space-y-6">
-                        {[
-                            { icon: BookOpen, title: "Excelencia", desc: "Compromiso con la calidad educativa constante." },
-                            { icon: Users2, title: "Inclusion", desc: "Educación accesible para todos los sectores." },
-                            { icon: CheckCircle2, title: "Integridad", desc: "Actuamos con honestidad y transparencia." }
-                        ].map((v, i) => (
-                            <li key={i} className="flex gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-                                    <v.icon className="w-5 h-5 text-[#ffcc00]" />
-                                </div>
-                                <div>
-                                    <p className="font-black text-sm text-white uppercase tracking-widest">{v.title}</p>
-                                    <p className="text-xs text-white/60 font-medium mt-1">{v.desc}</p>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10">
+                    {values.map((v, i) => (
+                        <motion.div
+                            key={v.title}
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-80px" }}
+                            transition={{ duration: 0.6, ease: EASE, delay: i * 0.08 }}
+                            className="group relative py-8 md:py-0 md:pt-8"
+                        >
+                            <motion.span
+                                aria-hidden
+                                initial={{ scaleX: 0 }}
+                                whileInView={{ scaleX: 1 }}
+                                viewport={{ once: true, margin: "-80px" }}
+                                transition={{ duration: 0.8, ease: EASE, delay: i * 0.08 }}
+                                className="absolute top-0 left-0 h-px w-full origin-left bg-white/30"
+                            />
+                            <span className="block text-sm font-bold tabular-nums text-[#ffcc00]">
+                                {String(i + 1).padStart(2, "0")}
+                            </span>
+                            <h3 className="mt-4 text-4xl sm:text-5xl font-black tracking-tight transition-transform duration-300 ease-out md:group-hover:translate-x-2">
+                                {v.title}
+                            </h3>
+                            <p className="mt-3 text-white/60 font-medium">{v.desc}</p>
+                        </motion.div>
+                    ))}
                 </div>
 
-                <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 text-center">
-                    <p className="text-xs font-black uppercase tracking-widest text-[#4d0706] mb-2">Reconocimiento Oficial</p>
-                    <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                        Nuestros títulos cuentan con validez nacional y respaldo del Ministerio de Educación.
-                    </p>
-                </div>
+                <p className="mt-16 sm:mt-24 text-sm text-white/50 max-w-md leading-relaxed">
+                    Títulos con validez nacional y respaldo del Ministerio de Educación.
+                </p>
             </div>
-        </aside>
+        </section>
     );
 };
 

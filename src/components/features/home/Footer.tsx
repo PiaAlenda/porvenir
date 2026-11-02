@@ -24,6 +24,7 @@ const IconLinkedin = ({ className }: { className?: string }) => (
 
 interface FooterProps {
     onNavigateAbout?: () => void;
+    onNavigateToOffer?: () => void;
 }
 
 const scrollToId = (id: string) => {
@@ -53,7 +54,7 @@ const socialLinks = [
     { icon: IconLinkedin, href: "#", label: "LinkedIn" },
 ];
 
-const Footer = ({ onNavigateAbout }: FooterProps) => {
+const Footer = ({ onNavigateAbout, onNavigateToOffer }: FooterProps) => {
     const footerLinks: { label: string; onClick: (e: React.MouseEvent) => void }[] = [
         {
             label: "Institucional",
@@ -67,7 +68,8 @@ const Footer = ({ onNavigateAbout }: FooterProps) => {
             label: "Carreras",
             onClick: (e) => {
                 e.preventDefault();
-                scrollToId("academic-offer-section");
+                if (onNavigateToOffer) onNavigateToOffer();
+                else scrollToId("academic-offer-section");
             },
         },
         {

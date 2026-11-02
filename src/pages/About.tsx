@@ -22,14 +22,11 @@ const About = ({ onBack }: AboutProps) => {
     }, []);
 
     return (
-        <div className="min-h-screen bg-[#fcfaf7] pb-24 lg:pb-0">
+        <div className="min-h-screen bg-[#fcfaf7] overflow-x-clip">
             <AboutHero onBack={onBack} />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-12 sm:py-20">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
-                    <AboutHistory />
-                    <AboutValues />
-
-                </div>
+            <main>
+                <AboutHistory />
+                <AboutValues />
             </main>
         </div>
     );

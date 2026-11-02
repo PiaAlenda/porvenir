@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-    Briefcase, ChevronDown, Clock, GraduationCap, History,
+    Briefcase, ChevronDown, Clock, GraduationCap, History, MapPin, Menu,
     Search, User, X, type LucideIcon
 } from "lucide-react";
 import { type Career } from "@/config/careerData";
@@ -15,6 +15,7 @@ interface NavbarProps {
     onNavigateToLogin?: () => void;
     onScrollToSection?: (sectionId: string) => void;
     onNavigateToDetail?: (id: string) => void;
+    showSearchBanner?: boolean;
 }
 
 interface MenuItem {
@@ -30,9 +31,11 @@ const Navbar = ({
     onNavigateHome,
     onNavigateToProgram,
     onNavigateToAbout,
+    onNavigateToLocation,
     onNavigateToLogin,
     onScrollToSection,
     onNavigateToDetail,
+    showSearchBanner = true,
 }: NavbarProps) => {
     const { config } = useSiteConfig();
     const headerRef = useRef<HTMLElement | null>(null);
@@ -41,6 +44,8 @@ const Navbar = ({
     const [searchQuery, setSearchQuery] = useState("");
     const [showDesktopResults, setShowDesktopResults] = useState(false);
     const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
     const [imgError, setImgError] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
@@ -64,6 +69,7 @@ const Navbar = ({
                 setOpenMenu(null);
                 setShowDesktopResults(false);
                 setSearchOverlayOpen(false);
+                setMobileMenuOpen(false);
             }
         };
         document.addEventListener("mousedown", onMouseDown);
@@ -73,6 +79,26 @@ const Navbar = ({
             document.removeEventListener("keydown", onKeyDown);
         };
     }, []);
+
+    useEffect(() => {
+        if (!mobileMenuOpen) return;
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        const mq = window.matchMedia("(min-width: 1024px)");
+        const onChange = () => {
+            if (mq.matches) setMobileMenuOpen(false);
+        };
+        mq.addEventListener("change", onChange);
+        return () => {
+            document.body.style.overflow = prev;
+            mq.removeEventListener("change", onChange);
+        };
+    }, [mobileMenuOpen]);
+
+    const closeMobileMenu = () => {
+        setMobileMenuOpen(false);
+        setMobileCategoriesOpen(false);
+    };
 
     const closeMenus = () => {
         setOpenMenu(null);
@@ -143,9 +169,18 @@ const Navbar = ({
                 onNavigateToAbout?.();
             },
         },
+        {
+            label: "Sede",
+            description: "Ubicación y cómo llegar",
+            icon: MapPin,
+            action: () => {
+                closeMenus();
+                onNavigateToLocation?.();
+            },
+        },
     ];
 
-    const renderDropdown = (menu: string, items: MenuItem[]) => (
+    const renderDropdown =(menu: string, items: MenuItem[]) => (
         <AnimatePresence>
             {openMenu === menu && (
                 <motion.div
@@ -279,7 +314,7 @@ const Navbar = ({
                 }`}
             >
                 {/* Top bar with Logo, Navigation Links, Compact Search (when scrolled), and Login Button */}
-                <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 sm:px-8 gap-4">
+                <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-3 sm:px-8 gap-2.5 sm:gap-4">
                     {/* Left side: Logo + School title */}
                     <button
                         type="button"
@@ -353,7 +388,7 @@ const Navbar = ({
 
                     {/* Compact search bar in navbar when scrolled */}
                     <AnimatePresence>
-                        {isScrolled && (
+                        {(isScrolled || !showSearchBanner) && (
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -417,8 +452,8 @@ const Navbar = ({
                         )}
                     </AnimatePresence>
 
-                    {/* Mobile Search Input Trigger (when not scrolled or scrolled on mobile) */}
-                    <div className="flex-1 lg:hidden max-w-xs min-w-0">
+                    {/* Mobile Search Input Trigger */}
+                    <div className="flex-1 lg:hidden min-w-0">
                         {renderMobileSearchTrigger()}
                     </div>
 
@@ -428,14 +463,30 @@ const Navbar = ({
                         onClick={onNavigateToLogin}
                         aria-label="Ingresar"
                         title="Acceso usuarios"
-                        className="bg-[#7a0d0b] hover:bg-[#9a100d] text-white w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all border border-white/10 shadow-sm shrink-0 cursor-pointer flex items-center justify-center"
+                        className="hidden lg:flex bg-[#7a0d0b] hover:bg-[#9a100d] text-white w-10 h-10 rounded-full transition-all border border-white/10 shadow-sm shrink-0 cursor-pointer items-center justify-center"
                     >
-                        <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <User className="w-5 h-5" />
+                    </button>
+
+                    {/* Mobile hamburger */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setOpenMenu(null);
+                            setMobileMenuOpen(true);
+                        }}
+                        aria-label="Abrir menú"
+                        aria-expanded={mobileMenuOpen}
+                        className="lg:hidden w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white shrink-0 cursor-pointer flex items-center justify-center transition-colors"
+                    >
+                        <Menu className="w-5 h-5" />
                     </button>
                 </div>
+
             </header>
 
             {/* Big floating search bar section (outside sticky header, in page flow below header, z-40) */}
+            {showSearchBanner && (
             <div className="hidden lg:block w-full bg-[#1e1e1e] relative z-40 border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-3 pb-4">
                     <h2 className="text-xl xl:text-2xl font-extrabold text-white mb-3 tracking-tight">
@@ -499,6 +550,144 @@ const Navbar = ({
                     </div>
                 </div>
             </div>
+            )}
+
+            {/* Mobile Drawer */}
+            <AnimatePresence>
+                {mobileMenuOpen && (
+                    <motion.div
+                        className="lg:hidden fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={closeMobileMenu}
+                    >
+                        <motion.aside
+                            role="dialog"
+                            aria-label="Menú"
+                            className="absolute right-0 top-0 h-full w-[84%] max-w-sm bg-white shadow-2xl flex flex-col"
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 shrink-0">
+                                <span className="text-sm font-extrabold text-[#4d0706]">Menú</span>
+                                <button
+                                    type="button"
+                                    onClick={closeMobileMenu}
+                                    aria-label="Cerrar menú"
+                                    className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors cursor-pointer"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        closeMobileMenu();
+                                        onNavigateToAbout?.();
+                                    }}
+                                    className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#4d0706]/5 text-left cursor-pointer text-gray-800"
+                                >
+                                    <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#4d0706]/5 text-[#4d0706]">
+                                        <History className="w-4 h-4" />
+                                    </span>
+                                    <span className="text-sm font-bold">Nuestra Historia</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        closeMobileMenu();
+                                        onNavigateToLocation?.();
+                                    }}
+                                    className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#4d0706]/5 text-left cursor-pointer text-gray-800"
+                                >
+                                    <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#4d0706]/5 text-[#4d0706]">
+                                        <MapPin className="w-4 h-4" />
+                                    </span>
+                                    <span className="text-sm font-bold">Sede</span>
+                                </button>
+
+                                <div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setMobileCategoriesOpen((v) => !v)}
+                                        aria-expanded={mobileCategoriesOpen}
+                                        className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-[#4d0706]/5 text-left cursor-pointer text-gray-800"
+                                    >
+                                        <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#4d0706]/5 text-[#4d0706]">
+                                            <GraduationCap className="w-4 h-4" />
+                                        </span>
+                                        <span className="flex-1 text-sm font-bold">Categorías</span>
+                                        <ChevronDown
+                                            className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                                                mobileCategoriesOpen ? "rotate-180" : ""
+                                            }`}
+                                        />
+                                    </button>
+                                    <AnimatePresence initial={false}>
+                                        {mobileCategoriesOpen && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="ml-6 pl-3 border-l-2 border-[#4d0706]/10 py-1 space-y-1">
+                                                    {categoriaItems.map((item) => (
+                                                        <button
+                                                            key={item.label}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                closeMobileMenu();
+                                                                item.action();
+                                                            }}
+                                                            className="flex items-start gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-[#4d0706]/5 text-left cursor-pointer"
+                                                        >
+                                                            <item.icon className="w-4 h-4 mt-0.5 text-[#4d0706] shrink-0" />
+                                                            <span className="min-w-0">
+                                                                <span className="block text-sm font-bold text-gray-800">
+                                                                    {item.label}
+                                                                </span>
+                                                                {item.description && (
+                                                                    <span className="block text-[11px] text-gray-400 font-medium mt-0.5 leading-snug">
+                                                                        {item.description}
+                                                                    </span>
+                                                                )}
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+
+                            <div className="p-4 border-t border-gray-100 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        closeMobileMenu();
+                                        onNavigateToLogin?.();
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 h-11 rounded-full bg-[#7a0d0b] hover:bg-[#9a100d] text-white text-sm font-bold transition-colors cursor-pointer"
+                                >
+                                    <User className="w-4 h-4" />
+                                    Ingresar
+                                </button>
+                            </div>
+                        </motion.aside>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Mobile Fullscreen Search Overlay */}
             <AnimatePresence>

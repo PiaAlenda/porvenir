@@ -44,7 +44,7 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
     const [imgError, setImgError] = useState<Record<string, boolean>>({});
     const [currentPage, setCurrentPage] = useState(1);
     const expandedRef = useRef<HTMLDivElement>(null);
-    
+
     const elementsRef = useRef<(HTMLElement | null)[]>([]);
 
     useEffect(() => {
@@ -171,291 +171,298 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
 
                 {/* Unified dropdown container below the 2 columns */}
                 <AnimatePresence initial={false}>
-                {expandedCard && (
-                    <motion.div
-                        ref={expandedRef}
-                        initial={{ opacity: 0, y: 32, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 16, scale: 0.98 }}
-                        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-                        className="mt-8 sm:mt-12 w-full"
-                    >
-                        {(() => {
-                            const activeCard = cards.find(c => c.id === expandedCard);
-                            if (!activeCard) return null;
+                    {expandedCard && (
+                        <motion.div
+                            ref={expandedRef}
+                            initial={{ opacity: 0, y: 32, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+                            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                            className="mt-8 sm:mt-12 w-full"
+                        >
+                            {(() => {
+                                const activeCard = cards.find(c => c.id === expandedCard);
+                                if (!activeCard) return null;
 
-                            const isCursos = activeCard.id === "bach";
+                                const isCursos = activeCard.id === "bach";
 
-                            const filteredCourses = getCareers(config).filter((career) => {
-                                if (isCursos) {
-                                    return career.category === "curso-presencial" || career.category === "curso-virtual";
-                                }
-                                const matchesCategory = career.id.startsWith("tec");
-                                const matchesModality = career.modality.toLowerCase().includes(selectedModality.toLowerCase());
-                                return matchesCategory && matchesModality;
-                            }).sort((a, b) => {
-                                if (isCursos) {
-                                    const aIsPresencial = a.category === "curso-presencial" ? 0 : 1;
-                                    const bIsPresencial = b.category === "curso-presencial" ? 0 : 1;
-                                    return aIsPresencial - bIsPresencial;
-                                }
-                                return 0;
-                            });
+                                const filteredCourses = getCareers(config).filter((career) => {
+                                    if (isCursos) {
+                                        return career.category === "curso-presencial" || career.category === "curso-virtual";
+                                    }
+                                    const matchesCategory = career.id.startsWith("tec");
+                                    const matchesModality = career.modality.toLowerCase().includes(selectedModality.toLowerCase());
+                                    return matchesCategory && matchesModality;
+                                }).sort((a, b) => {
+                                    if (isCursos) {
+                                        const aIsPresencial = a.category === "curso-presencial" ? 0 : 1;
+                                        const bIsPresencial = b.category === "curso-presencial" ? 0 : 1;
+                                        return aIsPresencial - bIsPresencial;
+                                    }
+                                    return 0;
+                                });
 
-                            const displayTitle = isCursos ? "Cursos" : "Carreras Presenciales";
+                                const displayTitle = isCursos ? "Cursos" : "Carreras Presenciales";
 
-                            const totalPages = Math.ceil(filteredCourses.length / COURSES_PER_PAGE);
-                            const paginatedCourses = filteredCourses.slice(
-                                (currentPage - 1) * COURSES_PER_PAGE,
-                                currentPage * COURSES_PER_PAGE
-                            );
+                                const totalPages = Math.ceil(filteredCourses.length / COURSES_PER_PAGE);
+                                const paginatedCourses = filteredCourses.slice(
+                                    (currentPage - 1) * COURSES_PER_PAGE,
+                                    currentPage * COURSES_PER_PAGE
+                                );
 
-                            return (
-                                <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 p-6 sm:p-12 bg-white rounded-[2rem] border border-gray-100 shadow-md">
-                                    
-                                    {/* Left Info Column */}
-                                    <div className="w-full lg:w-1/3 flex flex-col justify-between">
-                                        <div>
-                                            <span className="inline-block px-3 py-1 rounded-full bg-[#4d0706]/10 text-[#4d0706] text-[10px] font-bold uppercase tracking-[0.2em] mb-2 lg:mb-3">
-                                                Oferta Académica
-                                            </span>
-                                            <h3 className="text-2xl lg:text-4xl font-black text-[#4d0706] mt-2 leading-tight">
-                                                {displayTitle}
-                                            </h3>
-                                            <p className="text-gray-500 mt-3 font-medium leading-relaxed text-sm max-w-md">
-                                                Programas diseñados para brindarte las mejores herramientas profesionales en el mercado actual.
-                                            </p>
+                                return (
+                                    <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 p-6 sm:p-12 bg-white rounded-[2rem] border border-gray-100 shadow-md">
+
+                                        {/* Left Info Column */}
+                                        <div className="w-full lg:w-1/3 flex flex-col justify-between">
+                                            <div>
+                                                <span className="inline-block px-3 py-1 rounded-full bg-[#4d0706]/10 text-[#4d0706] text-[10px] font-bold uppercase tracking-[0.2em] mb-2 lg:mb-3">
+                                                    Oferta Académica
+                                                </span>
+                                                <h3 className="text-2xl lg:text-4xl font-black text-[#4d0706] mt-2 leading-tight">
+                                                    {displayTitle}
+                                                </h3>
+                                                <p className="text-gray-500 mt-3 font-medium leading-relaxed text-sm max-w-md">
+                                                    Programas diseñados para brindarte las mejores herramientas profesionales en el mercado actual.
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    {/* Right Courses Grid */}
-                                    <div className="w-full lg:w-2/3">
-                                        {isCursos ? (
-                                            /* Image Grid for Cursos Presenciales and Online */
-                                            <>
-                                                <AnimatePresence mode="wait">
-                                                    <motion.div
-                                                        key={currentPage}
-                                                        initial={{ opacity: 0, x: 40 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        exit={{ opacity: 0, x: -40 }}
-                                                        transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
-                                                        className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3"
-                                                    >
-                                                    {paginatedCourses.length > 0 ? (
-                                                        paginatedCourses.map((career) => {
-                                                            const avail = isAvailableFor(career.id, config);
-                                                            return (
-                                                            <button
-                                                                key={career.id}
-                                                                type="button"
-                                                                onClick={avail ? () => onViewDetail(career.id) : undefined}
-                                                                disabled={!avail}
-                                                                className={`cursor-pointer group flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 text-center w-full bg-white ${
-                                                                    avail
-                                                                        ? "border-gray-100 hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5"
-                                                                        : "border-gray-200 grayscale opacity-60 cursor-not-allowed"
-                                                                }`}
-                                                            >
-                                                                {/* Course Image */}
-                                                                <div className="relative w-full aspect-[1090/1350] overflow-hidden bg-gray-100">
-                                                                    {!avail && (
-                                                                        <div className="absolute top-3 left-3 z-10 flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-800 text-white text-[10px] font-black uppercase tracking-widest shadow-md">
-                                                                            <UserX className="w-3 h-3" />
-                                                                            Sin cupo
-                                                                        </div>
-                                                                    )}
-                                                                    {imgError[career.id] ? (
-                                                                        <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                                                                            <GraduationCap className="w-10 h-10 text-gray-300" />
-                                                                        </div>
-                                                                    ) : (
-                                                                        <img
-                                                                            src={getImageFor(career.id, config)}
-                                                                            alt={career.title}
-                                                                            onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
-                                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                                        />
-                                                                    )}
-                                                                </div>
-                                                                
-                                                                {/* Course Info */}
-                                                                <div className="flex flex-col items-center gap-1 p-2.5 lg:p-4">
-                                                                    <h3 className="text-[11px] lg:text-sm font-black text-gray-800 group-hover:text-[#4d0706] transition-colors leading-tight">
-                                                                        {career.title}
-                                                                    </h3>
-                                                                    <div className="flex items-center gap-1 text-[#333] font-medium text-[10px] lg:text-xs">
-                                                                        <Clock className="w-2.5 h-2.5 lg:w-3 lg:h-3" />
-                                                                        <span>{career.duration}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </button>
-                                                            );
-                                                        })
-                                                    ) : (
-                                                        <div className="w-full text-center py-10 bg-gray-50/80 rounded-2xl border border-dashed border-gray-200 col-span-full">
-                                                            <span className="text-sm text-gray-500 font-medium">
-                                                                No hay cursos disponibles para esta modalidad actualmente.
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    </motion.div>
-                                                </AnimatePresence>
-
-                                                {/* Pagination */}
-                                                {totalPages > 1 && (
-                                                    <div className="flex items-center justify-center gap-4 mt-6">
-                                                        <button
-                                                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                                            disabled={currentPage === 1}
-                                                            className={`cursor-pointer flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border transition-all duration-200 ${
-                                                                currentPage === 1
-                                                                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                                                                    : "bg-white text-[#4d0706] border-[#4d0706] hover:bg-[#4d0706] hover:text-white"
-                                                            }`}
+                                        {/* Right Courses Grid */}
+                                        <div className="w-full lg:w-2/3">
+                                            {isCursos ? (
+                                                /* Image Grid for Cursos Presenciales and Online */
+                                                <>
+                                                    <AnimatePresence mode="wait">
+                                                        <motion.div
+                                                            key={currentPage}
+                                                            initial={{ opacity: 0, x: 40 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            exit={{ opacity: 0, x: -40 }}
+                                                            transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
+                                                            className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3"
                                                         >
-                                                            <ChevronLeft className="w-4 h-4" />
-                                                            Anterior
-                                                        </button>
-                                                        
-                                                        <span className="text-xs font-bold text-gray-500">
-                                                            Página {currentPage} de {totalPages}
-                                                        </span>
-                                                        
-                                                        <button
-                                                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                                            disabled={currentPage === totalPages}
-                                                            className={`cursor-pointer flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border transition-all duration-200 ${
-                                                                currentPage === totalPages
-                                                                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                                                                    : "bg-[#4d0706] text-white border-[#4d0706] hover:bg-[#3a0504]"
-                                                            }`}
-                                                        >
-                                                            Siguiente
-                                                            <ChevronRight className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </>
-                                        ) : (
-                                            /* Original Icon Grid for Carreras Presenciales */
-                                            <>
-                                                <AnimatePresence mode="wait">
-                                                    <motion.div
-                                                        key={currentPage}
-                                                        initial={{ opacity: 0, x: 40 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        exit={{ opacity: 0, x: -40 }}
-                                                        transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
-                                                    >
-                                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
                                                             {paginatedCourses.length > 0 ? (
                                                                 paginatedCourses.map((career) => {
                                                                     const avail = isAvailableFor(career.id, config);
                                                                     return (
-                                                                    <button
-                                                                        key={career.id}
-                                                                        type="button"
-                                                                        onClick={avail ? () => onViewDetail(career.id) : undefined}
-                                                                        disabled={!avail}
-                                                                        className={`cursor-pointer group relative flex flex-col items-center gap-1.5 lg:gap-2 p-2.5 lg:p-5 rounded-xl lg:rounded-2xl border transition-all duration-300 text-center w-full ${
-                                                                            avail
-                                                                                ? "bg-gray-50/50 border-gray-100 hover:bg-white hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5 lg:bg-white lg:border-gray-200"
-                                                                                : "bg-gray-100/70 border-gray-200 grayscale opacity-60 cursor-not-allowed"
-                                                                        }`}
-                                                                    >
-                                                                        {!avail && (
-                                                                            <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-800 text-white text-[9px] font-black uppercase tracking-widest shadow-md">
-                                                                                <UserX className="w-3 h-3" />
-                                                                                Sin cupo
+                                                                        <button
+                                                                            key={career.id}
+                                                                            type="button"
+                                                                            onClick={avail ? () => onViewDetail(career.id) : undefined}
+                                                                            disabled={!avail}
+                                                                            className={`cursor-pointer group flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 text-center w-full bg-white ${avail
+                                                                                    ? "border-gray-100 hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5"
+                                                                                    : "border-gray-200 grayscale opacity-60 cursor-not-allowed"
+                                                                                }`}
+                                                                        >
+                                                                            {/* Course Image */}
+                                                                            <div className="relative w-full aspect-[1090/1350] overflow-hidden bg-gray-100">
+                                                                                {!avail && (
+                                                                                    <div className="absolute top-3 left-3 z-10 flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-800 text-white text-[10px] font-black uppercase tracking-widest shadow-md">
+                                                                                        <UserX className="w-3 h-3" />
+                                                                                        Sin cupo
+                                                                                    </div>
+                                                                                )}
+                                                                                {imgError[career.id] ? (
+                                                                                    <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                                                                                        <GraduationCap className="w-10 h-10 text-gray-300" />
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <img
+                                                                                        src={getImageFor(career.id, config)}
+                                                                                        alt={career.title}
+                                                                                        onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
+                                                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                                                    />
+                                                                                )}
                                                                             </div>
-                                                                        )}
-                                                                        {/* Icon */}
-                                                                        <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-full bg-white shadow-sm text-[#4d0706] flex items-center justify-center overflow-hidden shrink-0">
-                                                                            {imgError[career.id] ? (
-                                                                                  <GraduationCap className="w-4 h-4 lg:w-6 lg:h-6" />
-                                                                            ) : (
-                                                                                <img
-                                                                                    src={getImageFor(career.id, config)}
-                                                                                    alt={career.title}
-                                                                                    onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
-                                                                                    className="w-full h-full object-cover rounded-full"
-                                                                                />
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="flex flex-col items-center gap-1 lg:gap-1.5">
-                                                                            <h3 className="text-[11px] lg:text-sm font-black text-gray-800 group-hover:text-[#4d0706] transition-colors leading-tight break-words">
-                                                                                {career.title}
-                                                                            </h3>
-                                                                            
-                                                                            {/* Mobile Duration */}
-                                                                            <span className="text-[9px] font-bold text-[#4d0706]/60 bg-[#4d0706]/5 px-2 py-0.5 rounded-full leading-none lg:hidden">
-                                                                                {career.duration}
-                                                                            </span>
-                                                                            
-                                                                            {/* Desktop Duration */}
-                                                                            <div className="hidden lg:flex items-center gap-1.5 text-[#333] font-medium text-[14px]">
-                                                                                <Clock className="w-[18px] h-[18px]" />
-                                                                                <span>{career.duration}</span>
+
+                                                                            {/* Course Info */}
+                                                                            <div className="flex flex-col items-center gap-1 p-2.5 lg:p-4">
+                                                                                <h3 className="text-[11px] lg:text-sm font-black text-gray-800 group-hover:text-[#4d0706] transition-colors leading-tight">
+                                                                                    {career.title}
+                                                                                </h3>
+                                                                                <div className="flex items-center gap-1 text-[#333] font-medium text-[10px] lg:text-xs">
+                                                                                    <Clock className="w-2.5 h-2.5 lg:w-3 lg:h-3" />
+                                                                                    <span>{career.duration}</span>
+                                                                                </div>
                                                                             </div>
-                                                                        </div>
-                                                                    </button>
+                                                                        </button>
                                                                     );
                                                                 })
                                                             ) : (
-                                                                <div className="w-full text-center py-10 bg-gray-50/80 rounded-2xl border border-dashed border-gray-200 col-span-full">
-                                                                    <span className="text-sm text-gray-500 font-medium">
-                                                                        No hay programas disponibles para esta modalidad actualmente.
+                                                                <div className="relative w-full overflow-hidden text-center py-12 px-6 rounded-3xl border border-gray-200 bg-gradient-to-br from-white via-gray-50 to-gray-100 col-span-full">
+                                                                    <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-gray-200/50 blur-3xl" />
+                                                                    <div className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full bg-gray-300/40 blur-3xl" />
+                                                                    <motion.div
+                                                                        animate={{ y: [0, -6, 0] }}
+                                                                        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                                                                        className="relative mx-auto mb-4 w-14 h-14 rounded-2xl bg-white shadow-lg flex items-center justify-center"
+                                                                    >
+                                                                        <GraduationCap className="w-7 h-7 text-gray-700" />
+                                                                    </motion.div>
+                                                                    <span className="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gray-900 text-white text-xs font-bold tracking-[0.25em] uppercase">
+                                                                        <Clock className="w-3.5 h-3.5" />
+                                                                        Próximamente
                                                                     </span>
+                                                                    <p className="relative mt-3 text-sm text-gray-500 font-medium">
+                                                                        Estamos preparando nuevos cursos para esta modalidad.
+                                                                    </p>
                                                                 </div>
                                                             )}
+                                                        </motion.div>
+                                                    </AnimatePresence>
+
+                                                    {/* Pagination */}
+                                                    {totalPages > 1 && (
+                                                        <div className="flex items-center justify-center gap-4 mt-6">
+                                                            <button
+                                                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                                                disabled={currentPage === 1}
+                                                                className={`cursor-pointer flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border transition-all duration-200 ${currentPage === 1
+                                                                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                                                        : "bg-white text-[#4d0706] border-[#4d0706] hover:bg-[#4d0706] hover:text-white"
+                                                                    }`}
+                                                            >
+                                                                <ChevronLeft className="w-4 h-4" />
+                                                                Anterior
+                                                            </button>
+
+                                                            <span className="text-xs font-bold text-gray-500">
+                                                                Página {currentPage} de {totalPages}
+                                                            </span>
+
+                                                            <button
+                                                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                                                disabled={currentPage === totalPages}
+                                                                className={`cursor-pointer flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border transition-all duration-200 ${currentPage === totalPages
+                                                                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                                                        : "bg-[#4d0706] text-white border-[#4d0706] hover:bg-[#3a0504]"
+                                                                    }`}
+                                                            >
+                                                                Siguiente
+                                                                <ChevronRight className="w-4 h-4" />
+                                                            </button>
                                                         </div>
-                                                    </motion.div>
-                                                </AnimatePresence>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                /* Original Icon Grid for Carreras Presenciales */
+                                                <>
+                                                    <AnimatePresence mode="wait">
+                                                        <motion.div
+                                                            key={currentPage}
+                                                            initial={{ opacity: 0, x: 40 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            exit={{ opacity: 0, x: -40 }}
+                                                            transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
+                                                        >
+                                                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
+                                                                {paginatedCourses.length > 0 ? (
+                                                                    paginatedCourses.map((career) => {
+                                                                        const avail = isAvailableFor(career.id, config);
+                                                                        return (
+                                                                            <button
+                                                                                key={career.id}
+                                                                                type="button"
+                                                                                onClick={avail ? () => onViewDetail(career.id) : undefined}
+                                                                                disabled={!avail}
+                                                                                className={`cursor-pointer group relative flex flex-col items-center gap-1.5 lg:gap-2 p-2.5 lg:p-5 rounded-xl lg:rounded-2xl border transition-all duration-300 text-center w-full ${avail
+                                                                                        ? "bg-gray-50/50 border-gray-100 hover:bg-white hover:border-[#4d0706]/30 hover:shadow-lg hover:shadow-[#4d0706]/5 lg:bg-white lg:border-gray-200"
+                                                                                        : "bg-gray-100/70 border-gray-200 grayscale opacity-60 cursor-not-allowed"
+                                                                                    }`}
+                                                                            >
+                                                                                {!avail && (
+                                                                                    <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-800 text-white text-[9px] font-black uppercase tracking-widest shadow-md">
+                                                                                        <UserX className="w-3 h-3" />
+                                                                                        Sin cupo
+                                                                                    </div>
+                                                                                )}
+                                                                                {/* Icon */}
+                                                                                <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-full bg-white shadow-sm text-[#4d0706] flex items-center justify-center overflow-hidden shrink-0">
+                                                                                    {imgError[career.id] ? (
+                                                                                        <GraduationCap className="w-4 h-4 lg:w-6 lg:h-6" />
+                                                                                    ) : (
+                                                                                        <img
+                                                                                            src={getImageFor(career.id, config)}
+                                                                                            alt={career.title}
+                                                                                            onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
+                                                                                            className="w-full h-full object-cover rounded-full"
+                                                                                        />
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="flex flex-col items-center gap-1 lg:gap-1.5">
+                                                                                    <h3 className="text-[11px] lg:text-sm font-black text-gray-800 group-hover:text-[#4d0706] transition-colors leading-tight break-words">
+                                                                                        {career.title}
+                                                                                    </h3>
 
-                                                {/* Pagination */}
-                                                {totalPages > 1 && (
-                                                    <div className="flex items-center justify-center gap-4 mt-6">
-                                                        <button
-                                                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                                            disabled={currentPage === 1}
-                                                            className={`cursor-pointer flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border transition-all duration-200 ${
-                                                                currentPage === 1
-                                                                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                                                                    : "bg-white text-[#4d0706] border-[#4d0706] hover:bg-[#4d0706] hover:text-white"
-                                                            }`}
-                                                        >
-                                                            <ChevronLeft className="w-4 h-4" />
-                                                            Anterior
-                                                        </button>
-                                                        
-                                                        <span className="text-xs font-bold text-gray-500">
-                                                            Página {currentPage} de {totalPages}
-                                                        </span>
-                                                        
-                                                        <button
-                                                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                                            disabled={currentPage === totalPages}
-                                                            className={`cursor-pointer flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border transition-all duration-200 ${
-                                                                currentPage === totalPages
-                                                                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                                                                    : "bg-[#4d0706] text-white border-[#4d0706] hover:bg-[#3a0504]"
-                                                            }`}
-                                                        >
-                                                            Siguiente
-                                                            <ChevronRight className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </>
-                                        )}
+                                                                                    {/* Mobile Duration */}
+                                                                                    <span className="text-[9px] font-bold text-[#4d0706]/60 bg-[#4d0706]/5 px-2 py-0.5 rounded-full leading-none lg:hidden">
+                                                                                        {career.duration}
+                                                                                    </span>
+
+                                                                                    {/* Desktop Duration */}
+                                                                                    <div className="hidden lg:flex items-center gap-1.5 text-[#333] font-medium text-[14px]">
+                                                                                        <Clock className="w-[18px] h-[18px]" />
+                                                                                        <span>{career.duration}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </button>
+                                                                        );
+                                                                    })
+                                                                ) : (
+                                                                    <div className="w-full text-center py-10 bg-gray-50/80 rounded-2xl border border-dashed border-gray-200 col-span-full">
+                                                                        <span className="text-sm text-gray-500 font-medium">
+                                                                            No hay programas disponibles para esta modalidad actualmente.
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </motion.div>
+                                                    </AnimatePresence>
+
+                                                    {/* Pagination */}
+                                                    {totalPages > 1 && (
+                                                        <div className="flex items-center justify-center gap-4 mt-6">
+                                                            <button
+                                                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                                                disabled={currentPage === 1}
+                                                                className={`cursor-pointer flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border transition-all duration-200 ${currentPage === 1
+                                                                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                                                        : "bg-white text-[#4d0706] border-[#4d0706] hover:bg-[#4d0706] hover:text-white"
+                                                                    }`}
+                                                            >
+                                                                <ChevronLeft className="w-4 h-4" />
+                                                                Anterior
+                                                            </button>
+
+                                                            <span className="text-xs font-bold text-gray-500">
+                                                                Página {currentPage} de {totalPages}
+                                                            </span>
+
+                                                            <button
+                                                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                                                disabled={currentPage === totalPages}
+                                                                className={`cursor-pointer flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border transition-all duration-200 ${currentPage === totalPages
+                                                                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                                                        : "bg-[#4d0706] text-white border-[#4d0706] hover:bg-[#3a0504]"
+                                                                    }`}
+                                                            >
+                                                                Siguiente
+                                                                <ChevronRight className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+
                                     </div>
-
-                                </div>
-                            );
-                        })()}
-                    </motion.div>
-                )}
+                                );
+                            })()}
+                        </motion.div>
+                    )}
                 </AnimatePresence>
             </div>
         </section>

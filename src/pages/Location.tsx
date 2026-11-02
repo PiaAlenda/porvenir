@@ -1,79 +1,62 @@
 "use client"
 
 import { useEffect } from "react";
-import { Navigation2 } from "lucide-react";
 import LocationHeader from "@/components/features/location/LocationHeader";
-import LocationCard from "@/components/features/location/LocationCard";
-import LocationSidebar from "@/components/features/location/LocationSidebar";
+import LocationInfo from "@/components/features/location/LocationInfo";
+import LocationFacilities from "@/components/features/location/LocationFacilities";
+import { MotionConfig } from "framer-motion";
 
 interface LocationProps {
     onBack: () => void;
 }
 
-export const locations = [
-    {
-        name: "Sede Central - San Juan",
-        address: "Avenida Alem",
-        city: "San Juan, San Juan",
-        phone: "+54 264 581-5111",
-        hours: "Lunes a Viernes de 18:00 a 22:30 hs",
-        isMain: true,
-        features: ["Biblioteca Central", "Laboratorio de Informática", "Salón de Actos"]
-    },
-    {
-        name: "Anexo Concepción",
-        address: "España 1200",
-        city: "Concepción, Tucumán",
-        phone: "+54 3865 42-5678",
-        hours: "Lunes a Viernes de 18:30 a 22:30 hs",
-        isMain: false,
-        features: ["Centro de Tutoría Virtual", "Secretaría de Alumnos"]
-    },
-    {
-        name: "Anexo Yerba Buena",
-        address: "Av. Aconquija 2100",
-        city: "Yerba Buena, Tucumán",
-        phone: "+54 381 431-9000",
-        hours: "Lunes a Viernes de 18:00 a 22:00 hs",
-        isMain: false,
-        features: ["Sede de Exámenes", "Aula Híbrida"]
-    }
-];
+export const mainLocation = {
+    name: "Sede Central - San Juan",
+    address: "Avenida Alem",
+    city: "San Juan, San Juan",
+    phone: "+54 264 581-5111",
+    phoneHref: "tel:+542645815111",
+    hours: "Lunes a Viernes de 18:00 a 22:30 hs",
+    features: ["Biblioteca Central", "Laboratorio de Informática", "Salón de Actos"],
+};
+
+const query = encodeURIComponent(`${mainLocation.address}, ${mainLocation.city}, Argentina`);
+const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${query}`;
+const embedUrl = `https://maps.google.com/maps?q=${query}&z=15&output=embed`;
 
 const Location = ({ onBack }: LocationProps) => {
     useEffect(() => {
         window.scrollTo(0, 0);
-        document.title = "Sedes - Obreros del Porvenir";
+        document.title = "Sede Central - Obreros del Porvenir";
         return () => {
             document.title = "Obreros del Porvenir - Escuela Técnica de Capacitación Laboral N° 917";
         };
     }, []);
 
+    const fullAddress = `${mainLocation.address}, San Juan`;
+
     return (
-        <div className="min-h-screen bg-[#fcfaf7] pb-24 lg:pb-0">
-            {/* Header */}
-            <LocationHeader onBack={onBack} />
-
-            {/* Main Content: Grid Layout */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-12 sm:py-20">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
-                    {/* Left Column: List of locations */}
-                    <div className="lg:col-span-7 space-y-6 sm:space-y-8">
-                        <div className="flex items-center gap-3 mb-4">
-                            <Navigation2 className="w-6 h-6 text-[#4d0706]" />
-                            <h2 className="text-2xl sm:text-3xl font-black text-gray-900">Centros de Atención</h2>
-                        </div>
-
-                        {locations.map((loc, idx) => (
-                            <LocationCard key={idx} loc={loc} />
-                        ))}
-                    </div>
-
-                    {/* Right Column: General Info Card */}
-                    <LocationSidebar />
-                </div>
-            </main>
-        </div>
+        <MotionConfig reducedMotion="user">
+            <div className="min-h-screen bg-[#fcfaf7] overflow-x-clip">
+                <LocationHeader
+                    onBack={onBack}
+                    address={fullAddress}
+                    mapsUrl={mapsUrl}
+                    phone={mainLocation.phone}
+                    phoneHref={mainLocation.phoneHref}
+                />
+                <main>
+                    <LocationInfo
+                        address={fullAddress}
+                        hours={mainLocation.hours}
+                        phone={mainLocation.phone}
+                        phoneHref={mainLocation.phoneHref}
+                        embedUrl={embedUrl}
+                    />
+                    <LocationFacilities features={mainLocation.features} />
+                </main>
+            </div>
+        </MotionConfig>
     );
 };
 

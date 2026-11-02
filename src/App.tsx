@@ -10,7 +10,8 @@ import Terms from "@/pages/Terms"
 import Accessibility from "@/pages/Accessibility"
 import Contact from "@/pages/Contact"
 import CookieBanner from "@/components/layout/CookieBanner"
-import FloatingNav from "@/components/layout/FloatingNav"
+import Navbar from "@/components/layout/Navbar"
+import Footer from "@/components/features/home/Footer"
 import { SiteConfigProvider } from "@/siteConfig"
 import { hasAdminSession, subscribeAdminSession } from "@/lib/adminSession"
 
@@ -39,7 +40,6 @@ const resolveHashView = (): ViewState => {
 function App() {
   const [view, setView] = useState<ViewState>(resolveHashView);
   const [programSelection, setProgramSelection] = useState<{ id: string; modality: "virtual" | "presencial" } | null>(null);
-  const [activeNavId, setActiveNavId] = useState<string | null>(null);
   const savedScrollY = useRef<number>(0);
 
   useEffect(() => {
@@ -74,13 +74,11 @@ function App() {
   };
 
   const navigateToAbout = () => {
-    setActiveNavId("about");
     setView({ name: "about" });
     window.scrollTo(0, 0);
   };
 
   const navigateToLocation = () => {
-    setActiveNavId("location");
     setView({ name: "location" });
     window.scrollTo(0, 0);
   };
@@ -88,14 +86,12 @@ function App() {
   const navigateHome = () => {
     history.replaceState(null, "", window.location.pathname);
     setProgramSelection(null);
-    setActiveNavId(null);
     setView({ name: "home" });
     window.scrollTo(0, 0);
   };
 
   const navigateToLogin = () => {
     history.replaceState(null, "", "#login");
-    setActiveNavId(null);
     setView({ name: "login" });
     window.scrollTo(0, 0);
   };
@@ -106,12 +102,9 @@ function App() {
     window.scrollTo(0, 0);
   };
 
-  const programNavId = (category: string) => (category === "tec" ? "carrera" : "cursos");
-
   const navigateToPrograms = (careerId: string) => {
     const category = careerId.startsWith("bach") || careerId.includes("adultos") ? "bach" : "tec";
     setProgramSelection({ id: category, modality: "presencial" });
-    setActiveNavId(programNavId(category));
     setView({ name: "home" });
     const scrollTarget = savedScrollY.current;
     savedScrollY.current = 0;
@@ -122,54 +115,46 @@ function App() {
     });
   };
 
-  const handleGlobalNavigate = (viewName: "home" | "about" | "location" | "login") => {
-    if (viewName === "home") navigateHome();
-    else if (viewName === "about") navigateToAbout();
-    else if (viewName === "location") navigateToLocation();
-    else if (viewName === "login") navigateToLogin();
+  const navigateToProgram = (id: string, modality: "virtual" | "presencial") => {
+    setProgramSelection({ id, modality });
+    setView({ name: "home" });
   };
 
-  const handleScrollToSection = (sectionId: string) => {
-    if (sectionId === "inscripciones") setActiveNavId("inscripciones");
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  const handleNavToProgram = (category: string, modality: "virtual" | "presencial") => {
-    setProgramSelection({ id: category, modality });
-    setActiveNavId(programNavId(category));
-    if (view.name !== "home") {
+  const scrollToOffer = () => {
+    const scroll = () =>
+      document.getElementById("academic-offer-section")?.scrollIntoView({ behavior: "smooth" });
+    if (view.name === "home") {
+      scroll();
+    } else {
+      history.replaceState(null, "", window.location.pathname);
       setView({ name: "home" });
+      setTimeout(scroll, 150);
     }
   };
 
-  const showNav = view.name !== "detail" && view.name !== "admin" && view.name !== "login";
+  const showChrome = view.name !== "admin";
 
   return (
     <SiteConfigProvider>
       <div className="App min-h-screen bg-white">
-        {/* Componente de Navegación Global */}
-        {showNav && (
-          <FloatingNav 
-            currentView={view.name === "admin" ? "home" : view.name} 
-            activeNavId={activeNavId}
-            onNavigate={handleGlobalNavigate}
-            onScrollToSection={handleScrollToSection}
-            onNavigateToProgram={handleNavToProgram}
+        {showChrome && (
+          <Navbar
+            showSearchBanner={view.name === "home"}
+            onNavigateHome={navigateHome}
+            onNavigateToProgram={navigateToProgram}
+            onNavigateToAbout={navigateToAbout}
+            onNavigateToLocation={navigateToLocation}
+            onNavigateToLogin={navigateToLogin}
+            onNavigateToDetail={navigateToDetail}
+            onScrollToSection={scrollToOffer}
           />
         )}
 
         {view.name === "home" && (
-          <Home 
-            onNavigateHome={navigateHome} 
-            onNavigateToDetail={navigateToDetail} 
+          <Home
+            onNavigateToDetail={navigateToDetail}
             onNavigateToAbout={navigateToAbout}
-            onNavigateToLocation={navigateToLocation}
-            onNavigateToLogin={navigateToLogin}
             initialSelection={programSelection}
-            onProgramSelectionChange={(id) => setActiveNavId(id ? programNavId(id) : null)}
           />
         )}
         {view.name === "detail" && (
@@ -198,6 +183,9 @@ function App() {
         {view.name === "contact" && <Contact onBack={navigateHome} />}
         {view.name === "login" && (
           <Login onSuccess={handleLoginSuccess} onBack={navigateHome} />
+        )}
+        {showChrome && (
+          <Footer onNavigateAbout={navigateToAbout} onNavigateToOffer={scrollToOffer} />
         )}
         <CookieBanner hidden={view.name === "admin" || view.name === "login"} />
       </div>

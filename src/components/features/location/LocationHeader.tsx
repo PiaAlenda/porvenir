@@ -1,45 +1,77 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Phone } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface LocationHeaderProps {
     onBack?: () => void;
-    onBackHandler?: () => void;
-    onBackHandlerFunction?: () => void;
-    onBackHandlerName?: () => void;
+    address: string;
+    mapsUrl: string;
+    phone: string;
+    phoneHref: string;
 }
 
-const LocationHeader = ({ onBack }: LocationHeaderProps) => {
+const EASE = [0.23, 1, 0.32, 1] as const;
+
+const focusRing =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffcc00] focus-visible:ring-offset-2 focus-visible:ring-offset-[#4d0706]";
+
+const LocationHeader = ({ onBack, address, mapsUrl, phone, phoneHref }: LocationHeaderProps) => {
     return (
-        <header className="relative py-12 sm:py-24 lg:py-32 overflow-hidden bg-[#4d0706] text-white">
-            <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
-                <button
-                    onClick={onBack}
-                    className="inline-flex items-center gap-2 text-[#ffcc00] font-bold text-xs sm:text-sm uppercase tracking-widest mb-8 sm:mb-12 hover:-translate-x-1 transition-transform bg-transparent border-none cursor-pointer"
-                >
-                    <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Volver al inicio
-                </button>
+        <header className="relative overflow-hidden bg-[#4d0706] text-white">
+          <div
+              aria-hidden="true"
+              className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full bg-[#ffcc00]/10 blur-3xl pointer-events-none"
+          />
+          <svg
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full opacity-10 pointer-events-none"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+          >
+              <path d="M0,50 Q25,30 50,50 T100,50" fill="none" stroke="white" strokeWidth="0.2" />
+              <path d="M0,70 Q25,50 50,70 T100,70" fill="none" stroke="white" strokeWidth="0.2" />
+          </svg>
+          <div className="relative z-10 max-w-6xl mx-auto px-6 lg:px-12 pt-8 pb-14 sm:pb-20">
+            <button
+                onClick={onBack}
+                className={`group inline-flex items-center gap-2 -ml-2 px-2 py-2 rounded-lg text-[#ffcc00] font-semibold text-base bg-transparent border-none cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out ${focusRing}`}
+            >
+                <ArrowLeft className="w-5 h-5 transition-transform duration-200 ease-out group-hover:-translate-x-1" aria-hidden />
+                Volver al inicio
+            </button>
 
-                <div className="max-w-3xl">
-                    <span className="inline-block px-3 py-1 rounded-full bg-white/10 text-[#ffcc00] text-[10px] font-bold uppercase tracking-[0.2em] mb-6">
-                        Alcance Regional
-                    </span>
-                    <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black leading-none tracking-tighter">
-                        Presencia <br />
-                        <span className="text-[#ffcc00]">Territorial</span>
-                    </h1>
-                    <p className="text-base sm:text-xl text-white/70 mt-6 sm:mt-8 font-medium leading-relaxed max-w-2xl">
-                        Nuestra red de sedes se extiende para estar más cerca de tu futuro profesional en toda la región.
-                    </p>
+            <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: EASE }}
+                className="mt-10 sm:mt-14"
+            >
+                <h1 className="text-5xl sm:text-7xl font-black tracking-tight leading-[1.02] text-white text-balance">
+                    Sede Central
+                </h1>
+                <p className="mt-5 text-xl sm:text-2xl text-white/80 leading-relaxed">{address}</p>
+
+                <div className="mt-8 flex flex-wrap gap-3">
+                    <a
+                        href={mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-flex items-center gap-2 h-12 px-6 rounded-full bg-[#ffcc00] text-[#4d0706] text-base font-semibold no-underline hover:bg-[#ffd633] active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out ${focusRing}`}
+                    >
+                        Cómo llegar
+                        <ArrowUpRight className="w-5 h-5" aria-hidden />
+                        <span className="sr-only">(se abre en una pestaña nueva)</span>
+                    </a>
+                    <a
+                        href={phoneHref}
+                        className={`inline-flex items-center gap-2 h-12 px-6 rounded-full border-2 border-white/30 text-white text-base font-semibold no-underline hover:border-white active:scale-[0.97] transition-[transform,border-color] duration-150 ease-out ${focusRing}`}
+                    >
+                        <Phone className="w-5 h-5" aria-hidden />
+                        <span className="sr-only">Llamar al </span>
+                        {phone}
+                    </a>
                 </div>
-            </div>
-
-            {/* Elementos Decorativos */}
-            <div className="absolute inset-0 opacity-10 z-0 pointer-events-none">
-                <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <path d="M0,50 Q25,30 50,50 T100,50" fill="none" stroke="white" strokeWidth="0.2" />
-                    <path d="M0,70 Q25,50 50,70 T100,70" fill="none" stroke="white" strokeWidth="0.2" />
-                </svg>
-            </div>
+            </motion.div>
+          </div>
         </header>
     );
 };

@@ -1,41 +1,108 @@
-import { History, Target, Eye } from "lucide-react";
+import { useRef } from "react";
+import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
+import Marquee from "@/components/ui/Marquee";
+
+const EASE = [0.23, 1, 0.32, 1] as const;
+
+const statements = [
+    "Más de 100 años de trayectoria.",
+    "Docentes de primer nivel.",
+    "Talleres a la altura del mercado.",
+    "Egresados que se destacan en su oficio.",
+];
+
+const pillars = [
+    {
+        id: "mision",
+        title: "Misión",
+        text: "Formar profesionales técnicos capaces de liderar procesos administrativos y tecnológicos con ética y responsabilidad social.",
+    },
+    {
+        id: "vision",
+        title: "Visión",
+        text: "Ser la institución referente en formación técnico-comercial, reconocida por su innovación pedagógica y su impacto en la comunidad.",
+    },
+];
+
+const marqueeItems = ["Obreros del Porvenir", "Desde 1915", "Escuela Técnica N° 917"];
+
+/** Línea que se ilumina a medida que se scrollea. */
+const Statement = ({ children }: { children: string }) => {
+    const ref = useRef<HTMLParagraphElement>(null);
+    const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.9", "start 0.45"] });
+    const opacity = useTransform(scrollYProgress, [0, 1], [0.15, 1]);
+    const x = useTransform(scrollYProgress, [0, 1], [24, 0]);
+
+    return (
+        <motion.p
+            ref={ref}
+            style={{ opacity, x }}
+            className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] text-[#4d0706] text-balance"
+        >
+            {children}
+        </motion.p>
+    );
+};
+
+/** Palabra que se ilumina según el progreso del scroll. */
+const Word = ({ word, progress, range }: { word: string; progress: MotionValue<number>; range: [number, number] }) => {
+    const opacity = useTransform(progress, range, [0.18, 1]);
+    return (
+        <motion.span style={{ opacity }} className="inline-block mr-[0.28em]">
+            {word}
+        </motion.span>
+    );
+};
+
+const Pillar = ({ index, title, text }: { index: number; title: string; text: string }) => {
+    const ref = useRef<HTMLDivElement>(null);
+    const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.85", "start 0.3"] });
+    const words = text.split(" ");
+
+    return (
+        <div ref={ref} className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-16 py-12 sm:py-16 border-t border-[#4d0706]/15 first:border-t-0">
+            <div className="lg:col-span-5">
+                <span className="text-sm font-bold tabular-nums text-[#4d0706]/50">0{index + 1}</span>
+                <motion.h2
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-80px" }}
+                    transition={{ duration: 0.6, ease: EASE }}
+                    className="text-6xl sm:text-8xl font-black tracking-tight text-[#4d0706] leading-none"
+                >
+                    {title}
+                </motion.h2>
+            </div>
+            <p className="lg:col-span-7 text-2xl sm:text-3xl font-bold leading-snug text-gray-900 lg:pt-6">
+                {words.map((w, i) => {
+                    const start = (i / words.length) * 0.8;
+                    return <Word key={i} word={w} progress={scrollYProgress} range={[start, start + 0.2]} />;
+                })}
+            </p>
+        </div>
+    );
+};
+
+const Pillars = () => (
+    <section className="max-w-6xl mx-auto px-6 lg:px-12 py-16 sm:py-24">
+        {pillars.map((p, i) => (
+            <Pillar key={p.id} index={i} title={p.title} text={p.text} />
+        ))}
+    </section>
+);
 
 const AboutHistory = () => {
     return (
-        <div className="lg:col-span-7 space-y-8 sm:space-y-12">
-            <section className="space-y-6">
-                <div className="flex items-center gap-3">
-                    <History className="w-6 h-6 text-[#4d0706]" />
-                    <h2 className="text-2xl sm:text-3xl font-black text-gray-900">Nuestra Historia</h2>
-                </div>
-                <div className="prose prose-sm sm:prose-base text-gray-600 font-medium leading-relaxed space-y-4">
-                    <p>
-                        Nuestra institución fue creada en el año 1915. Tenemos más de 100 años de trayectoria en los que siempre se destacó la calidad en la educación y el profesionalismo de nuestro plantel docente. El equipamiento de los talleres hace que los contenidos aprendidos estén a la altura de las demandas del mercado. Así logramos que nuestros egresados se destaquen en el oficio que eligieron aprender.
-                    </p>
-                </div>
+        <>
+            <section className="max-w-6xl mx-auto px-6 lg:px-12 py-24 sm:py-36 space-y-6 sm:space-y-10">
+                {statements.map((s) => (
+                    <Statement key={s}>{s}</Statement>
+                ))}
             </section>
 
-            <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="p-6 sm:p-8 bg-white rounded-[2rem] border border-gray-100 shadow-lg shadow-gray-200/50">
-                    <div className="w-12 h-12 rounded-2xl bg-[#4d0706]/5 flex items-center justify-center mb-6">
-                        <Target className="w-6 h-6 text-[#4d0706]" />
-                    </div>
-                    <h3 className="text-xl font-black text-gray-900 mb-3">Misión</h3>
-                    <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                        Formar profesionales técnicos capaces de liderar procesos administrativos y tecnológicos con ética y responsabilidad social.
-                    </p>
-                </div>
-                <div className="p-6 sm:p-8 bg-white rounded-[2rem] border border-gray-100 shadow-lg shadow-gray-200/50">
-                    <div className="w-12 h-12 rounded-2xl bg-[#4d0706]/5 flex items-center justify-center mb-6">
-                        <Eye className="w-6 h-6 text-[#4d0706]" />
-                    </div>
-                    <h3 className="text-xl font-black text-gray-900 mb-3">Visión</h3>
-                    <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                        Ser la institución referente en formación técnico-comercial, reconocida por su innovación pedagógica y su impacto en la comunidad.
-                    </p>
-                </div>
-            </section>
-        </div>
+            <Marquee items={marqueeItems} />
+            <Pillars />
+        </>
     );
 };
 
