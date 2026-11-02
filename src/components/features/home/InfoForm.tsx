@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Printer } from "lucide-react"
 import { api, type InscripcionPayload, type InscripcionResult } from "@/api"
-import { getCareerById, useSiteConfig } from "@/siteConfig"
+import { getCareerById, getCareers, useSiteConfig } from "@/siteConfig"
 import { downloadContractFromFormData } from "@/pdf/downloadContract"
 import { compressImage } from "@/lib/compressImage"
 import Stepper, { type StepperStep } from "./form/Stepper"
@@ -118,7 +118,11 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
      * `grupo` identifica qué validar en el paso actual: "tipo" o bien
      * 1 datos / 2 contacto / 3 inscripción / 4 documentación.
      */
-    const mostrarPasoTipo = !careerId
+    // Mientras no haya ningún curso cargado (los ids de carreras empiezan con
+    // "tec-"), la categoría no se pregunta y todo es carrera. Al cargar un
+    // curso, el paso vuelve a aparecer solo.
+    const hayCursos = getCareers(config).some((c) => !c.id.startsWith("tec-"))
+    const mostrarPasoTipo = !careerId && hayCursos
     const steps = mostrarPasoTipo ? STEPS_WITH_TIPO : STEPS_BASE
     const totalSteps = steps.length
     const grupoDelPaso = (s: number): "tipo" | 1 | 2 | 3 | 4 =>
@@ -157,7 +161,7 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
     const pasoProps = {
         campos: formOptions.campos,
         config,
-        tipo: tipoEfectivoDe(formData),
+        tipo: !careerId && !hayCursos ? ("carrera" as const) : tipoEfectivoDe(formData),
         onExtraChange: handleExtraChange,
         onExtraBlur: handleExtraBlur,
     }
