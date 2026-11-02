@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
-import Footer from "@/components/features/home/Footer";
 import { LegalMobileToc, LegalSidebarToc } from "./LegalToc";
 import { useScrollSpy } from "./useScrollSpy";
 
@@ -152,10 +151,6 @@ const LegalLayout = ({ title, highlight, eyebrow, intro, updated, docTitle, sect
                     children
                 )}
             </main>
-
-            <div className="bg-[#1a1a1a] pb-20 lg:pb-0">
-                <Footer />
-            </div>
         </div>
     );
 };
