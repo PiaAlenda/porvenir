@@ -34,11 +34,7 @@ import { CAREER_DATA, type Career } from "@/config/careerData"
 import { CAREER_VIDEOS } from "@/config/careerVideos"
 import { getImageFor, useSiteConfig } from "@/siteConfig"
 import { MAX_CUPO_TITULARES, MIN_CUPO_TITULARES } from "@/lib/titulares"
-import {
-    REQUISITOS_GENERALES,
-    REQUISITOS_GENERALES_TEXTO,
-    sonRequisitosGenerales,
-} from "@/lib/requisitos"
+import { parseRequisitos, REQUISITOS_GENERALES } from "@/lib/requisitos"
 import { arancelParaInput, formatearImporteConPuntos, mostrarSignoArancel, normalizarArancel } from "@/lib/precio"
 import { esMes, MESES, mesActual } from "@/lib/meses"
 import { limpiarArancel, limpiarLegajo, limpiarTexto, soloDigitos } from "@/lib/input"
@@ -73,6 +69,9 @@ const textareaClass =
 const labelClass = "text-xs font-black text-gray-500 uppercase tracking-widest block mb-1.5"
 /* Mismo peso visual que los títulos de sección (Salida laboral, Perfil, etc.). */
 const sectionLabelClass = "text-sm font-black text-gray-900 block mb-1.5"
+/* El servidor guarda hasta 300 caracteres de requisitos: 5 ítems de 50 entran justo. */
+const REQUISITO_MAX_LEN = 50
+const REQUISITOS_MAX = 5
 const hintClass = "text-[11px] text-gray-400 font-medium mt-1.5"
 const errorClass = "text-[11px] text-red-600 font-bold mt-1.5"
 
@@ -260,25 +259,13 @@ export default function CursoModal({ token, section, existingIds, curso, onClose
         el.style.height = `${el.scrollHeight}px`
     }, [perfil, step])
     /*
-     * Requisitos: por defecto se usan los generales (DNI, CUIL, analítico).
-     * Solo se abre la edición libre si la carrera ya tenía requisitos propios.
+     * Requisitos: una fila por ítem. Arranca con lo guardado (o con DNI, Copia de
+     * CUIL y Analítico si no hay nada) y se guarda como un requisito por línea.
      */
-    const [docsMode, setDocsMode] = useState<"generales" | "personalizados">(() => {
-        const guardados = view?.inscriptionDocs?.trim()
-        return guardados && !sonRequisitosGenerales(guardados) ? "personalizados" : "generales"
-    })
-    const [inscriptionDocs, setInscriptionDocs] = useState(() => {
-        const guardados = view?.inscriptionDocs?.trim()
-        if (!guardados || sonRequisitosGenerales(guardados)) return REQUISITOS_GENERALES_TEXTO
-        return guardados
-    })
+    const [requisitos, setRequisitos] = useState<string[]>(() => parseRequisitos(view?.inscriptionDocs))
+    const inscriptionDocs = requisitos.map((r) => r.trim()).filter(Boolean).join("\n")
     // El arancel se guarda tal cual se escribe; los importes numéricos llevan "$".
     const [inscriptionFee, setInscriptionFee] = useState(view?.inscriptionFee || "")
-    /* Conserva lo que el admin escribió si vuelve a los requisitos generales. */
-    const customDocsRef = useRef(
-        view?.inscriptionDocs && !sonRequisitosGenerales(view.inscriptionDocs) ? view.inscriptionDocs : "",
-    )
-
     const [teachers, setTeachers] = useState<TeacherDraft[]>(() => {
         if (view?.teachers?.length) {
             return view.teachers.map((t) => ({
@@ -1207,85 +1194,57 @@ export default function CursoModal({ token, section, existingIds, curso, onClose
 
                                 <div className="space-y-6 lg:col-span-5">
                                     <div>
-                                        <label className={sectionLabelClass} htmlFor="curso-docs">
+                                        <span className={sectionLabelClass}>
                                             Requisitos de inscripción <RequiredMark />
-                                        </label>
-                                        <div className="mb-2 flex flex-wrap gap-2">
+                                        </span>
+                                        <ul className="space-y-2">
+                                            {requisitos.map((req, idx) => (
+                                                <li key={idx} className="flex items-center gap-2">
+                                                    <input
+                                                        className={`${inputClass} flex-1`}
+                                                        value={req}
+                                                        maxLength={REQUISITO_MAX_LEN}
+                                                        aria-label={`Requisito ${idx + 1}`}
+                                                        placeholder="Ej: DNI"
+                                                        onChange={(e) => {
+                                                            const value = limpiarTexto(e.target.value)
+                                                            setRequisitos((prev) => prev.map((r, i) => (i === idx ? value : r)))
+                                                        }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setRequisitos((prev) => prev.filter((_, i) => i !== idx))}
+                                                        aria-label={`Quitar requisito ${idx + 1}`}
+                                                        title="Quitar"
+                                                        className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-gray-50/50 text-gray-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            {requisitos.length < REQUISITOS_MAX && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setRequisitos((prev) => [...prev, ""])}
+                                                    className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-gray-100 px-3 text-[11px] font-black text-gray-600 transition-colors hover:bg-gray-200"
+                                                >
+                                                    <Plus className="h-3.5 w-3.5" />
+                                                    Agregar requisito
+                                                </button>
+                                            )}
                                             <button
                                                 type="button"
-                                                onClick={() => {
-                                                    if (docsMode === "personalizados") {
-                                                        customDocsRef.current = inscriptionDocs
-                                                    }
-                                                    setDocsMode("generales")
-                                                    setInscriptionDocs(REQUISITOS_GENERALES_TEXTO)
-                                                }}
-                                                aria-pressed={docsMode === "generales"}
-                                                className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-[11px] font-black transition-colors cursor-pointer ${docsMode === "generales"
-                                                    ? "bg-[#4d0706] text-[#ffcc00]"
-                                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                                    }`}
+                                                onClick={() => setRequisitos([...REQUISITOS_GENERALES])}
+                                                title={REQUISITOS_GENERALES.join(", ")}
+                                                className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-gray-100 px-3 text-[11px] font-black text-gray-600 transition-colors hover:bg-gray-200"
                                             >
-                                                <Check className="w-3.5 h-3.5" />
-                                                Dejar requisitos generales
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setDocsMode("personalizados")
-                                                    setInscriptionDocs(
-                                                        customDocsRef.current ||
-                                                        inscriptionDocs.trim() ||
-                                                        REQUISITOS_GENERALES_TEXTO,
-                                                    )
-                                                }}
-                                                aria-pressed={docsMode === "personalizados"}
-                                                className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-[11px] font-black transition-colors cursor-pointer ${docsMode === "personalizados"
-                                                    ? "bg-[#4d0706] text-[#ffcc00]"
-                                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                                    }`}
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                                Crear mis requisitos
+                                                <Check className="h-3.5 w-3.5" />
+                                                Usar requisitos generales
                                             </button>
                                         </div>
-
-                                        {docsMode === "generales" ? (
-                                            <div
-                                                id="curso-docs"
-                                                className="flex flex-wrap gap-1.5 rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2.5"
-                                            >
-                                                {REQUISITOS_GENERALES.map((req) => (
-                                                    <span
-                                                        key={req}
-                                                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-bold text-gray-600"
-                                                    >
-                                                        <Check className="w-3 h-3 text-[#4d0706]" />
-                                                        {req}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <textarea
-                                                id="curso-docs"
-                                                rows={3}
-                                                className={textareaClass}
-                                                value={inscriptionDocs}
-                                                onChange={(e) => {
-                                                    const value = limpiarTexto(e.target.value)
-                                                    customDocsRef.current = value
-                                                    setInscriptionDocs(value)
-                                                }}
-                                                placeholder={"DNI\nCopia de CUIL\nAnalítico"}
-                                                maxLength={300}
-                                                required
-                                            />
-                                        )}
-                                        <p className={hintClass}>
-                                            {docsMode === "generales"
-                                                ? "Se publican los requisitos generales. Si querés otros, tocá «Crear mis requisitos»."
-                                                : null}
-                                        </p>
+                                        <p className={hintClass}>Los generales son: {REQUISITOS_GENERALES.join(", ")}. Cada ítem se muestra por separado en la página.</p>
                                     </div>
                                     <div>
                                         <label className={sectionLabelClass} htmlFor="curso-arancel">

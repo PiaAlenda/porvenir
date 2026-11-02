@@ -193,7 +193,7 @@ export const CareerRequirements = ({ career, index = 0 }: { career: Career; inde
     const requisitos = useMemo(() => parseRequisitos(career.inscriptionDocs), [career.inscriptionDocs]);
     return (
         <CareerSection title="Requisitos" index={index}>
-            <ul className="grid gap-3 sm:grid-cols-2">
+            <ul className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))]">
                 {requisitos.map((item, idx) => {
                     const Icon = requisitoIcon(item);
                     return (
