@@ -46,6 +46,8 @@ const MAX_SUBJECTS_PER_ENTRY = 30
  * saca del mapa de cursos y `getFormOptions` las devuelve aparte.
  */
 export const FORM_OPTIONS_KEY = "__formulario__"
+/** Contrato personalizado subido por el admin. Mismo criterio: no es un curso. */
+export const CONTRACT_KEY = "__contrato__"
 export const DEFAULT_ANIOS_DIVISIONES = ["1 año"]
 const MAX_FORM_ITEMS = 40
 const MAX_FORM_ITEM_LENGTH = 60
@@ -433,6 +435,7 @@ function buildConfig(stored) {
   // Las opciones del formulario no son un curso: se devuelven aparte para que
   // no se filtren como si fueran una carrera en el cliente.
   delete merged[FORM_OPTIONS_KEY]
+  delete merged[CONTRACT_KEY]
   return merged
 }
 
@@ -482,6 +485,63 @@ export async function updateFormOptions(patch) {
   }
   const saved = await updateItem(FORM_OPTIONS_KEY, { campos })
   return { campos: normalizeCampos(saved?.campos) }
+}
+
+/* ---------- contrato personalizado ---------- */
+
+const MAX_CONTRACT_CLAUSES = 60
+const MAX_CONTRACT_ITEMS = 60
+const MAX_CONTRACT_TEXT = 6000
+
+const clip = (value, max = MAX_CONTRACT_TEXT) => String(value ?? "").replace(/\r/g, "").trim().slice(0, max)
+
+/**
+ * Valida el contrato que armó el panel a partir del .docx. Se normaliza acá
+ * (y no se confía en el cliente) porque lo lee la API pública y lo dibuja el
+ * generador de PDF: tiene que tener siempre la forma esperada.
+ */
+export function normalizeContract(raw) {
+  if (!raw || typeof raw !== "object") return null
+  const header = Array.isArray(raw.header) ? raw.header.slice(0, 3).map((h) => clip(h, 200)) : []
+  while (header.length < 3) header.push("")
+  const intro = clip(raw.intro)
+  const clauses = (Array.isArray(raw.clauses) ? raw.clauses : [])
+    .slice(0, MAX_CONTRACT_CLAUSES)
+    .map((c) => {
+      const clause = { heading: clip(c?.heading) }
+      const items = (Array.isArray(c?.items) ? c.items : []).slice(0, MAX_CONTRACT_ITEMS).map((i) => clip(i)).filter(Boolean)
+      if (items.length) clause.items = items
+      const body = clip(c?.body, MAX_CONTRACT_TEXT * 2)
+      if (body) clause.body = body
+      return clause
+    })
+    .filter((c) => c.heading || c.items || c.body)
+  if (!intro && !clauses.length) return null
+  const firmaLines = (Array.isArray(raw.firmaLines) ? raw.firmaLines : []).slice(0, 6).map((l) => clip(l, 120)).filter(Boolean)
+  const out = { header, intro, clauses, firmaLines }
+  const fileName = clip(raw.fileName, 200)
+  if (fileName) out.fileName = fileName
+  return out
+}
+
+/** Contrato subido por el admin, o null si se usa el que viene en el código. */
+export async function getContract() {
+  const stored = (await readStored())[CONTRACT_KEY]
+  return normalizeContract(stored?.content)
+}
+
+export async function updateContract(raw) {
+  const content = normalizeContract(raw)
+  if (!content) throw new PublicError("El contrato no tiene contenido para guardar.", 400)
+  const saved = await updateItem(CONTRACT_KEY, { content, updatedAt: new Date().toISOString() })
+  return normalizeContract(saved?.content)
+}
+
+/** Vuelve al contrato por defecto. */
+export async function resetContract() {
+  const stored = await readStored()
+  if (!stored[CONTRACT_KEY]) return
+  await removeStored(CONTRACT_KEY)
 }
 
 /**

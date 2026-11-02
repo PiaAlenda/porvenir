@@ -5,6 +5,8 @@ import {
     updateAdminSession,
 } from "@/lib/adminSession"
 
+import type { ContractContent } from "@/pdf/contractContent"
+
 const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "")
 
 /**
@@ -495,7 +497,21 @@ export const api = {
     },
 
     async getConfig() {
-        return request<{ cursos: SiteConfigMap; formOptions: FormOptions }>("/api/config")
+        return request<{ cursos: SiteConfigMap; formOptions: FormOptions; contract?: ContractContent | null }>("/api/config")
+    },
+
+    /** Reemplaza el contrato por el que se armó a partir de un .docx. */
+    async saveContract(token: string, contract: ContractContent) {
+        return authedRequest<{ contract: ContractContent }>("/api/contract", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", ...auth(token) },
+            body: JSON.stringify(contract),
+        })
+    },
+
+    /** Vuelve al contrato original de la escuela. */
+    async resetContract(token: string) {
+        return authedRequest<{ ok: boolean }>("/api/contract", { method: "DELETE", headers: auth(token) })
     },
 
     async updateFormOptions(token: string, campos: FormFieldConfig[]) {

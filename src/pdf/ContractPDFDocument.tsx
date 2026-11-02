@@ -1,10 +1,12 @@
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer"
-import { CONTRACT_CONTENT } from "./contractContent"
+import { getContractContent, type ContractContent } from "./contractContent"
 import { LOGO_OBREROS_PORVENIR, LOGO_SOCORROS_MUTUOS, FIRMA_REPRESENTANTE_LEGAL } from "./contractAssets"
 
 export interface ContractPDFProps {
     fullName: string
     dni: string
+    cuil?: string
+    edad?: string
     address: string
     departamento?: string
     celular?: string
@@ -12,6 +14,8 @@ export interface ContractPDFProps {
     email: string
     courseName: string
     currentDate: string
+    /** Contrato a dibujar. Si falta, se usa el vigente (el subido por el admin o el de fábrica). */
+    content?: ContractContent
 }
 
 const styles = StyleSheet.create({
@@ -161,6 +165,8 @@ function valuesFor(data: ContractPDFProps): Record<string, string> {
     return {
         ALUMNO: data.fullName || "________________________",
         DNI: data.dni || "__________",
+        EDAD: data.edad || "______",
+        CUIL: data.cuil || "______________",
         DOMICILIO: data.address || "________________________",
         DEPARTAMENTO: data.departamento || "__________",
         CELULAR: data.celular || "__________",
@@ -170,9 +176,9 @@ function valuesFor(data: ContractPDFProps): Record<string, string> {
     }
 }
 
-function introSegments(data: ContractPDFProps): IntroSegment[] {
+function introSegments(data: ContractPDFProps, content: ContractContent): IntroSegment[] {
     const values = valuesFor(data)
-    return CONTRACT_CONTENT.intro
+    return content.intro
         .split(/(<[A-Z_]+>)/)
         .filter((token) => token.length > 0)
         .map((token) => {
@@ -183,10 +189,10 @@ function introSegments(data: ContractPDFProps): IntroSegment[] {
         })
 }
 
-function IntroParagraph({ data }: { data: ContractPDFProps }) {
+function IntroParagraph({ data, content }: { data: ContractPDFProps; content: ContractContent }) {
     return (
         <Text style={styles.paragraph}>
-            {introSegments(data).map((segment, index) =>
+            {introSegments(data, content).map((segment, index) =>
                 segment.isVariable ? (
                     <Text key={index} style={styles.value}>
                         {segment.text}
@@ -200,6 +206,7 @@ function IntroParagraph({ data }: { data: ContractPDFProps }) {
 }
 
 export default function ContractPDFDocument(data: ContractPDFProps) {
+    const content = data.content ?? getContractContent()
     return (
         <Document
             title={`Contrato de Servicio - ${data.fullName || "Alumno"}`}
@@ -212,22 +219,22 @@ export default function ContractPDFDocument(data: ContractPDFProps) {
                 <View style={styles.headerRow}>
                     <Image src={LOGO_OBREROS_PORVENIR} style={styles.headerLogoLeft} />
                     <View style={styles.headerCenter}>
-                        <Text style={styles.headerSchool}>{CONTRACT_CONTENT.header[0]}</Text>
-                        <Text style={styles.headerAddress}>{CONTRACT_CONTENT.header[1]}</Text>
-                        <Text style={styles.headerTitle}>{CONTRACT_CONTENT.header[2]}</Text>
+                        <Text style={styles.headerSchool}>{content.header[0]}</Text>
+                        <Text style={styles.headerAddress}>{content.header[1]}</Text>
+                        <Text style={styles.headerTitle}>{content.header[2]}</Text>
                     </View>
                     <Image src={LOGO_SOCORROS_MUTUOS} style={styles.headerLogoRight} />
                 </View>
 
-                <IntroParagraph data={data} />
+                <IntroParagraph data={data} content={content} />
 
                 <View style={styles.fechaRow}>
                     <Text style={styles.fechaText}>FECHA: {data.currentDate}</Text>
                 </View>
 
-                {CONTRACT_CONTENT.clauses.map((clause, index) => (
+                {content.clauses.map((clause, index) => (
                     <View key={index} style={styles.clause}>
-                        <Text style={styles.clauseHeading}>{clause.heading}</Text>
+                        {clause.heading ? <Text style={styles.clauseHeading}>{clause.heading}</Text> : null}
                         {clause.items?.map((item, itemIndex) => (
                             <Text key={itemIndex} style={styles.clauseItem}>
                                 {"\u00A0 \u2022 "}

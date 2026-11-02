@@ -13,6 +13,18 @@ function formatDate(iso?: string): string {
     return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`
 }
 
+function calcAge(iso?: string): string {
+    if (!iso) return ""
+    const birth = new Date(iso.length === 10 ? `${iso}T12:00:00` : iso)
+    if (Number.isNaN(birth.getTime())) return ""
+    const now = new Date()
+    let age = now.getFullYear() - birth.getFullYear()
+    const beforeBirthday =
+        now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())
+    if (beforeBirthday) age -= 1
+    return age >= 0 && age < 130 ? String(age) : ""
+}
+
 function todayFormatted(): string {
     const date = new Date()
     return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`
@@ -22,6 +34,8 @@ export function mapAlumnoToContractProps(alumno: Alumno): ContractPDFProps {
     return {
         fullName: `${alumno.apellido} ${alumno.nombre}`.trim(),
         dni: alumno.numeroDocumento || "",
+        cuil: alumno.cuil || "",
+        edad: calcAge(alumno.fechaNacimiento),
         address: alumno.domicilio || "",
         departamento: alumno.departamento || "",
         celular: alumno.celular || "",
@@ -39,6 +53,8 @@ export function mapFormValuesToContractProps(
     return {
         fullName: `${values.apellido || ""} ${values.nombre || ""}`.trim(),
         dni: values.numeroDocumento || "",
+        cuil: values.cuil || "",
+        edad: calcAge(values.fechaNacimiento),
         address: values.address || "",
         departamento: values.departamento || "",
         celular: values.celular || "",

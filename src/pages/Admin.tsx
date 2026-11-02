@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react"
-import { Briefcase, ChevronLeft, ChevronRight, ClipboardList, GraduationCap, LogOut, Settings, UserRound, Users } from "lucide-react"
+import { Briefcase, ChevronLeft, ClipboardList, FileText, GraduationCap, LogOut, Settings, UserRound, Users } from "lucide-react"
 import { api } from "@/api"
 import AlumnosPanel from "@/components/admin/AlumnosPanel"
 import AdminMobileNav from "@/components/admin/AdminMobileNav"
 import CursosPanel from "@/components/admin/CursosPanel"
+import ContratoPanel from "@/components/admin/ContratoPanel"
 import AjustesPanel from "@/components/admin/AjustesPanel"
 import FormularioPanel from "@/components/admin/FormularioPanel"
 import { activeIds, useSiteConfig } from "@/siteConfig"
@@ -14,7 +15,7 @@ interface AdminProps {
     onExit: () => void
 }
 
-type TabId = "alumnos" | "cursos" | "carreras" | "formulario" | "ajustes"
+type TabId = "alumnos" | "cursos" | "carreras" | "formulario" | "contrato" | "ajustes"
 
 const tabs = {
     alumnos: {
@@ -35,7 +36,12 @@ const tabs = {
     formulario: {
         label: "Formulario",
         icon: ClipboardList,
-        description: "Configure las propiedades, visibilidad y orden de los campos del formulario principal. Seleccione un elemento para editarlo o use las flechas para cambiar su posición.",
+        description: "Configure las propiedades, visibilidad y orden de los campos del formulario principal. Seleccione un elemento para editarlo o arrastre el ícono de la izquierda para cambiar su posición.",
+    },
+    contrato: {
+        label: "Contrato",
+        icon: FileText,
+        description: "Subí el contrato en Word que se imprime y se completa con los datos de cada alumno.",
     },
     ajustes: {
         label: "Ajustes",
@@ -44,7 +50,7 @@ const tabs = {
     },
 } as const
 
-const navOrder: TabId[] = ["alumnos", "cursos", "carreras", "formulario"]
+const navOrder: TabId[] = ["alumnos", "cursos", "carreras", "formulario", "contrato"]
 
 export default function Admin({ onExit }: AdminProps) {
     const [token, setToken] = useState(() => getAdminToken())
@@ -87,6 +93,7 @@ export default function Admin({ onExit }: AdminProps) {
         cursos: cursosCount,
         carreras: carrerasCount,
         formulario: 0,
+        contrato: 0,
         ajustes: 0,
     }
 
@@ -102,29 +109,32 @@ export default function Admin({ onExit }: AdminProps) {
 
     if (!token) return null
 
-    const ActiveIcon = tabs[tab].icon
-
     return (
         <div className="min-h-screen bg-[#fcfaf7]">
             <div className="lg:flex min-h-screen">
                 <aside className={`hidden lg:flex flex-col bg-[#4d0706] text-white h-screen sticky top-0 shrink-0 transition-all duration-300 ${sidebarOpen ? "w-64" : "w-20"}`}>
-                    <div className="flex items-center gap-3 h-16 border-b border-white/10 px-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-white/15">
+                    <div className="relative flex items-center gap-3 h-16 border-b border-white/10 px-3">
+                        <div
+                            onClick={() => { if (!sidebarOpen) toggleSidebar() }}
+                            title={sidebarOpen ? undefined : "Expandir menú"}
+                            className={`w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-white/15 ${sidebarOpen ? "" : "cursor-pointer hover:bg-white/20"}`}
+                        >
                             <img src="/icons/escuela.png" alt="Escuela" className="w-6 h-6 object-contain" />
                         </div>
                         {sidebarOpen && (
                             <div className="min-w-0 leading-tight flex-1">
-                                <p className="text-sm font-black truncate">Obreros del Porvenir</p>
-                                <p className="text-xs text-white/60 font-semibold">Panel de gestión</p>
+                                <p className="text-sm font-black truncate">Panel de gestión</p>
                             </div>
                         )}
-                        <button
-                            onClick={toggleSidebar}
-                            title={sidebarOpen ? "Contraer menú" : "Expandir menú"}
-                            className={`flex items-center justify-center w-8 h-8 rounded-lg text-white/70 hover:bg-white/10 hover:text-white cursor-pointer ${sidebarOpen ? "ml-auto" : "ml-auto"}`}
-                        >
-                            {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                        </button>
+                        {sidebarOpen && (
+                            <button
+                                onClick={toggleSidebar}
+                                title="Contraer menú"
+                                className="flex items-center justify-center w-8 h-8 rounded-lg text-white/70 hover:bg-white/10 hover:text-white cursor-pointer ml-auto"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
 
                     <nav className="flex-1 px-2 py-4 space-y-1.5 overflow-y-auto">
@@ -176,7 +186,7 @@ export default function Admin({ onExit }: AdminProps) {
                         <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6">
                             <div className="flex items-center justify-between gap-3 py-3">
                                 <div className="min-w-0">
-                                    <h1 className="text-sm sm:text-lg font-black leading-none truncate">Panel de Gestión</h1>
+                                    <h1 className="text-sm sm:text-base font-black leading-none truncate">Obreros del Porvenir</h1>
                                 </div>
 
                                 <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -227,14 +237,9 @@ export default function Admin({ onExit }: AdminProps) {
                     </header>
 
                     <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 py-5 sm:py-6 pb-28 lg:pb-6">
-                        <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[#4d0706]/5 text-[#4d0706] flex items-center justify-center shrink-0">
-                                <ActiveIcon className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-black text-gray-900 leading-tight">{tabs[tab].label}</h2>
-                                <p className="text-xs text-gray-500 font-medium mt-0.5">{tabs[tab].description}</p>
-                            </div>
+                        <div>
+                            <h2 className="inline-block px-3 py-1 rounded-lg bg-[#ffcc00] text-[#4d0706] text-lg font-black uppercase tracking-wide leading-tight">{tabs[tab].label}</h2>
+                            <p className="text-xs text-gray-500 font-medium mt-1.5">{tabs[tab].description}</p>
                         </div>
 
                         <div className="mt-5">
@@ -242,6 +247,8 @@ export default function Admin({ onExit }: AdminProps) {
                                 <AlumnosPanel token={token} />
                             ) : tab === "formulario" ? (
                                 <FormularioPanel token={token} />
+                            ) : tab === "contrato" ? (
+                                <ContratoPanel token={token} />
                             ) : tab === "ajustes" ? (
                                 <AjustesPanel token={token} />
                             ) : (

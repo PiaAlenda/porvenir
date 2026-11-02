@@ -551,7 +551,7 @@ export default function AlumnosPanel({ token }: Props) {
                     </p>
                 </div>
             ) : (
-                <div className="bg-white border border-gray-200 rounded-2xl shadow-[0_1px_3px_rgba(77,7,6,0.06)] divide-y divide-gray-100">
+                <div className="divide-y divide-gray-100">
                     {filtered.map(renderRow)}
                 </div>
             )}

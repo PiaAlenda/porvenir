@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, AlertCircle, Check, ChevronDown, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react"
+import { useLayoutEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
+import { AlertCircle, Check, ChevronDown, GripVertical, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react"
 import { api } from "@/api"
 import { useSiteConfig } from "@/siteConfig"
 import { DEFAULT_FORM_OPTIONS, type FieldId, type FormFieldConfig, type FormFieldOption } from "@/components/features/home/form/formSchema"
@@ -25,23 +26,34 @@ const inputClass =
 
 const labelClass = "text-[11px] font-black uppercase tracking-widest text-gray-500 block mb-1.5"
 
+interface DragInfo {
+    x: number
+    y: number
+    gx: number
+    gy: number
+    w: number
+}
+
 function CampoEditor({
     campo,
     expanded,
-    puedeSubir,
-    puedeBajar,
+    dragging,
     onToggle,
     onPatch,
-    onMover,
+    onDragStart,
+    onDragMove,
+    onDragEnd,
 }: {
     campo: FormFieldConfig
     expanded: boolean
-    puedeSubir: boolean
-    puedeBajar: boolean
+    dragging: boolean
     onToggle: () => void
     onPatch: (patch: Partial<FormFieldConfig>) => void
-    onMover: (dir: -1 | 1) => void
+    onDragStart: (info: DragInfo) => void
+    onDragMove: (x: number, y: number) => void
+    onDragEnd: () => void
 }) {
+    const rootRef = useRef<HTMLDivElement>(null)
     const esSelect = campo.kind === "select"
     const esCareer = campo.kind === "career"
     const esCity = campo.kind === "city"
@@ -62,7 +74,12 @@ function CampoEditor({
     }
 
     return (
-        <div className={`bg-white border rounded-2xl overflow-hidden transition-colors ${campo.visible ? "border-gray-200" : "border-gray-200 bg-gray-50/40"}`}>
+        <div
+            ref={rootRef}
+            data-campo-id={campo.id}
+            className={`border rounded-2xl overflow-hidden ${dragging
+                ? "border-2 border-dashed border-[#4d0706]/50 bg-[#4d0706]/5 [&>*]:opacity-30"
+                : `transition-colors ${campo.visible ? "bg-white border-gray-200" : "border-gray-200 bg-gray-50/40"}`}`}>
             <div
                 role="button"
                 tabIndex={0}
@@ -76,30 +93,33 @@ function CampoEditor({
                 }}
                 className={`flex items-center gap-2 px-3 sm:px-4 py-3 cursor-pointer transition-colors ${expanded ? "bg-[#4d0706]/[0.03]" : "hover:bg-gray-50"} ${!campo.visible ? "opacity-60" : ""}`}
             >
-                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <button
-                        type="button"
-                        onClick={() => onMover(-1)}
-                        disabled={!puedeSubir}
-                        title="Mover antes"
-                        aria-label="Mover antes"
-                        className="w-7 h-7 grid place-items-center rounded-lg text-gray-500 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-colors"
-                    >
-                        <ArrowUp aria-hidden="true" className="w-3.5 h-3.5 lg:hidden" />
-                        <ArrowLeft aria-hidden="true" className="hidden lg:block w-3.5 h-3.5" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => onMover(1)}
-                        disabled={!puedeBajar}
-                        title="Mover después"
-                        aria-label="Mover después"
-                        className="w-7 h-7 grid place-items-center rounded-lg text-gray-500 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-colors"
-                    >
-                        <ArrowDown aria-hidden="true" className="w-3.5 h-3.5 lg:hidden" />
-                        <ArrowRight aria-hidden="true" className="hidden lg:block w-3.5 h-3.5" />
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    title="Arrastrar para reordenar"
+                    aria-label="Arrastrar para reordenar"
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => {
+                        e.preventDefault()
+                        e.currentTarget.setPointerCapture(e.pointerId)
+                        const r = rootRef.current?.getBoundingClientRect()
+                        onDragStart({ x: e.clientX, y: e.clientY, gx: e.clientX - (r?.left ?? 0), gy: e.clientY - (r?.top ?? 0), w: r?.width ?? 300 })
+                    }}
+                    onPointerMove={(e) => {
+                        if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
+                        if (e.pointerType === "mouse" && e.buttons === 0) {
+                            onDragEnd()
+                            return
+                        }
+                        onDragMove(e.clientX, e.clientY)
+                    }}
+                    onPointerUp={onDragEnd}
+                    onPointerCancel={onDragEnd}
+                    onLostPointerCapture={onDragEnd}
+                    style={{ touchAction: "none" }}
+                    className="w-7 h-9 shrink-0 grid place-items-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-grab active:cursor-grabbing transition-colors"
+                >
+                    <GripVertical aria-hidden="true" className="w-4 h-4" />
+                </button>
 
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-gray-900 truncate">{campo.label || campo.id}</p>
@@ -278,6 +298,8 @@ export default function FormularioPanel({ token }: Props) {
     const [success, setSuccess] = useState("")
     const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(1)
     const [expandedId, setExpandedId] = useState<FieldId | null>(null)
+    const [draggingId, setDraggingId] = useState<FieldId | null>(null)
+    const [ghost, setGhost] = useState<DragInfo | null>(null)
 
     if (!dirty && formOptions !== fuente) {
         setFuente(formOptions)
@@ -294,19 +316,22 @@ export default function FormularioPanel({ token }: Props) {
         marcar()
     }
 
-    const mover = (id: FieldId, dir: -1 | 1) => {
+    /*
+     * Intercambio: el campo arrastrado y el que está debajo del cursor se cambian de lugar.
+     * Siempre se calcula desde el orden que había al empezar a arrastrar, así volver al
+     * lugar de origen deshace el cambio y el resto de los campos no se mueve.
+     */
+    const ordenInicial = useRef<FormFieldConfig[] | null>(null)
+
+    const moverA = (id: FieldId, overId: string) => {
         setCampos((prev) => {
-            const idx = prev.findIndex((c) => c.id === id)
-            if (idx < 0) return prev
-            const step = prev[idx].step
-            const indices = prev.map((c, i) => (c.step === step ? i : -1)).filter((i) => i >= 0)
-            const pos = indices.indexOf(idx)
-            const targetPos = pos + dir
-            if (targetPos < 0 || targetPos >= indices.length) return prev
-            const targetIdx = indices[targetPos]
-            const next = [...prev]
-            next[idx] = prev[targetIdx]
-            next[targetIdx] = prev[idx]
+            const orig = ordenInicial.current ?? prev
+            const from = orig.findIndex((c) => c.id === id)
+            const to = prev.findIndex((c) => c.id === overId)
+            if (from < 0 || to < 0 || orig[from].step !== prev[to].step) return prev
+            const next = [...orig]
+            next[to] = orig[from]
+            next[from] = orig[to]
             return next
         })
         marcar()
@@ -350,6 +375,57 @@ export default function FormularioPanel({ token }: Props) {
         }
     }
 
+    /*
+     * FLIP: cuando cambia el orden, cada tarjeta se desliza desde donde estaba
+     * hasta donde quedó, así se ve claramente qué se movió y adónde.
+     */
+    const sectionRef = useRef<HTMLElement>(null)
+    const rectsRef = useRef(new Map<string, { x: number; y: number }>())
+    const ordenRef = useRef("")
+    useLayoutEffect(() => {
+        const section = sectionRef.current
+        if (!section) return
+        const base = section.getBoundingClientRect()
+        const orden = `${activeStep}:${campos.map((c) => c.id).join(",")}`
+        const animar = orden !== ordenRef.current && ordenRef.current.startsWith(`${activeStep}:`)
+        ordenRef.current = orden
+        const nuevos = new Map<string, { x: number; y: number }>()
+        section.querySelectorAll<HTMLElement>("[data-campo-id]").forEach((el) => {
+            const id = el.dataset.campoId as string
+            const r = el.getBoundingClientRect()
+            const pos = { x: r.left - base.left, y: r.top - base.top }
+            nuevos.set(id, pos)
+            const prev = rectsRef.current.get(id)
+            if (animar && prev && (Math.abs(prev.x - pos.x) > 1 || Math.abs(prev.y - pos.y) > 1)) {
+                el.animate(
+                    [{ transform: `translate(${prev.x - pos.x}px, ${prev.y - pos.y}px)` }, { transform: "translate(0, 0)" }],
+                    { duration: 260, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+                )
+            }
+        })
+        rectsRef.current = nuevos
+    })
+
+    /* Tarjeta más cercana al cursor (en cualquier dirección, incluso en diagonal o sobre los huecos). */
+    const tarjetaMasCercana = (x: number, y: number): string | null => {
+        let mejor: string | null = null
+        let mejorBorde = Infinity
+        let mejorCentro = Infinity
+        sectionRef.current?.querySelectorAll<HTMLElement>("[data-campo-id]").forEach((el) => {
+            const r = el.getBoundingClientRect()
+            const dx = Math.max(r.left - x, 0, x - r.right)
+            const dy = Math.max(r.top - y, 0, y - r.bottom)
+            const borde = Math.hypot(dx, dy)
+            const centro = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2))
+            if (borde < mejorBorde - 0.5 || (Math.abs(borde - mejorBorde) <= 0.5 && centro < mejorCentro)) {
+                mejor = el.dataset.campoId ?? null
+                mejorBorde = borde
+                mejorCentro = centro
+            }
+        })
+        return mejor
+    }
+
     const camposPaso = campos.filter((c) => c.step === activeStep)
     const visiblesPorPaso = (step: 1 | 2 | 3 | 4) => campos.filter((c) => c.step === step && c.visible).length
 
@@ -377,17 +453,33 @@ export default function FormularioPanel({ token }: Props) {
                 ))}
             </div>
 
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-2.5 items-start">
-                {camposPaso.map((campo, index) => (
+            <section ref={sectionRef} className="grid grid-cols-1 lg:grid-cols-2 gap-2.5 items-start">
+                {camposPaso.map((campo) => (
                     <CampoEditor
                         key={campo.id}
                         campo={campo}
                         expanded={expandedId === campo.id}
-                        puedeSubir={index > 0}
-                        puedeBajar={index < camposPaso.length - 1}
+                        dragging={draggingId === campo.id}
                         onToggle={() => setExpandedId((prev) => (prev === campo.id ? null : campo.id))}
                         onPatch={(patch) => actualizarCampo(campo.id, patch)}
-                        onMover={(dir) => mover(campo.id, dir)}
+                        onDragStart={(info) => {
+                            ordenInicial.current = campos
+                            setDraggingId(campo.id)
+                            setGhost(info)
+                        }}
+                        onDragMove={(x, y) => {
+                            setGhost((g) => (g ? { ...g, x, y } : g))
+                            const cercano = tarjetaMasCercana(x, y)
+                            if (draggingId && cercano) moverA(draggingId, cercano)
+                            // autoscroll cerca de los bordes
+                            if (y < 110) window.scrollBy(0, -18)
+                            else if (y > window.innerHeight - 120) window.scrollBy(0, 18)
+                        }}
+                        onDragEnd={() => {
+                            ordenInicial.current = null
+                            setDraggingId(null)
+                            setGhost(null)
+                        }}
                     />
                 ))}
                 {camposPaso.length === 0 && (
@@ -396,6 +488,24 @@ export default function FormularioPanel({ token }: Props) {
                     </p>
                 )}
             </section>
+
+            {ghost && draggingId && (() => {
+                const c = campos.find((f) => f.id === draggingId)
+                if (!c) return null
+                return createPortal(
+                    <div
+                        style={{ position: "fixed", left: 0, top: 0, width: ghost.w, transform: `translate(${ghost.x - ghost.gx}px, ${ghost.y - ghost.gy}px) rotate(1.5deg)`, pointerEvents: "none", zIndex: 9999 }}
+                        className="bg-white border border-[#4d0706]/30 rounded-2xl shadow-2xl ring-2 ring-[#4d0706]/30 px-4 py-3 flex items-center gap-2 cursor-grabbing"
+                    >
+                        <GripVertical aria-hidden="true" className="w-4 h-4 text-[#4d0706] shrink-0" />
+                        <div className="min-w-0">
+                            <p className="text-sm font-black text-gray-900 truncate">{c.label || c.id}</p>
+                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest truncate">{c.id} · {c.kind}</p>
+                        </div>
+                    </div>,
+                    document.body,
+                )
+            })()}
 
             {error && (
                 <div className="flex items-start gap-2.5 text-sm text-red-600 font-medium bg-red-50 border border-red-200 rounded-2xl px-4 py-3">

@@ -30,6 +30,9 @@ import {
   normalizeTeachers,
   TEXT_LIMITS,
   VALID_CATEGORIES,
+  getContract,
+  updateContract,
+  resetContract,
 } from "./site-config.mjs"
 import {
   authenticate,
@@ -641,8 +644,36 @@ app.get("/api/inscripciones/:id/ficha", requireAdmin, async (req, res) => {
 /* ---------- config de cursos ---------- */
 
 app.get("/api/config", async (_req, res) => {
-  const [cursos, formOptions] = await Promise.all([getPublicConfig(), getFormOptions()])
-  res.json({ cursos, formOptions })
+  const [cursos, formOptions, contract] = await Promise.all([getPublicConfig(), getFormOptions(), getContract()])
+  res.json({ cursos, formOptions, contract })
+})
+
+/**
+ * Contrato personalizado. Lo lee cualquiera (llega en `GET /api/config`, lo
+ * necesita el form público para imprimirlo); subirlo o quitarlo es del admin.
+ */
+app.put("/api/contract", requireAdmin, async (req, res) => {
+  try {
+    const contract = await updateContract(req.body || {})
+    res.json({ contract })
+  } catch (err) {
+    if (err instanceof PublicError) {
+      return res.status(err.status || 400).json({ error: err.message })
+    }
+    throw err
+  }
+})
+
+app.delete("/api/contract", requireAdmin, async (_req, res) => {
+  try {
+    await resetContract()
+    res.json({ ok: true })
+  } catch (err) {
+    if (err instanceof PublicError) {
+      return res.status(err.status || 400).json({ error: err.message })
+    }
+    throw err
+  }
 })
 
 /**
