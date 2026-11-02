@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect, type ReactNode } from "react";
-import { Check, FileText, GraduationCap, IdCard, Play, X } from "lucide-react";
+import { Check, CircleCheck, FileText, GraduationCap, IdCard, Play, X } from "lucide-react";
 import { type Career } from "@/config/careerData";
-import { parseRequisitos } from "@/lib/requisitos";
+import { parseRequisitos, REQUISITOS_GENERALES } from "@/lib/requisitos";
 
 // Detailed mapping of subject descriptions to make the syllabus look complete and professional
 const SUBJECT_DESCRIPTIONS: Record<string, string> = {
@@ -181,32 +181,58 @@ export const CareerOutcomes = ({ career, index = 0 }: { career: Career; index?: 
     );
 };
 
+const ICON_CLASS = "h-6 w-6 shrink-0 text-[#4d0706]";
+
 const requisitoIcon = (item: string) => {
     const t = item.toLowerCase();
-    if (t.includes("dni")) return IdCard;
-    if (t.includes("anal")) return GraduationCap;
-    return FileText;
+    if (t.includes("dni")) return <IdCard className={ICON_CLASS} aria-hidden="true" />;
+    if (t.includes("anal")) return <GraduationCap className={ICON_CLASS} aria-hidden="true" />;
+    if (t.includes("cuil")) return <FileText className={ICON_CLASS} aria-hidden="true" />;
+    /* Requisitos agregados por el cliente: círculo bordó con tilde, sin relleno. */
+    return <CircleCheck className={ICON_CLASS} strokeWidth={1.75} aria-hidden="true" />;
+};
+
+const RequisitoItem = ({ item }: { item: string }) => {
+    return (
+        <li className="flex items-center gap-3 border-l-4 border-[#ffcc00] bg-white py-3 pl-4 pr-3">
+            {requisitoIcon(item)}
+            <span className="text-[15px] font-extrabold text-stone-900">{item}</span>
+        </li>
+    );
 };
 
 export const CareerRequirements = ({ career, index = 0 }: { career: Career; index?: number }) => {
     /* Los requisitos salen de lo que se cargó en el panel (uno por línea). */
     const requisitos = useMemo(() => parseRequisitos(career.inscriptionDocs), [career.inscriptionDocs]);
+    /*
+     * Si están los 3 generales (DNI, CUIL, analítico) van juntos en una fila, aunque
+     * se hayan agregado otros: esos quedan abajo, uno debajo del otro. Si falta
+     * alguno de los generales, todo va uno debajo del otro.
+     */
+    const generales = REQUISITOS_GENERALES.map((r) => r.toLowerCase());
+    const enFila = requisitos.filter((r) => generales.includes(r.toLowerCase()));
+    const completos = enFila.length === generales.length;
+    const fila = completos ? enFila : [];
+    const apilados = completos ? requisitos.filter((r) => !enFila.includes(r)) : requisitos;
+
     return (
         <CareerSection title="Requisitos" index={index}>
-            <ul className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))]">
-                {requisitos.map((item, idx) => {
-                    const Icon = requisitoIcon(item);
-                    return (
-                        <li
-                            key={idx}
-                            className="flex items-center gap-3 border-l-4 border-[#ffcc00] bg-white py-3 pl-4 pr-3"
-                        >
-                            <Icon className="h-6 w-6 shrink-0 text-[#4d0706]" aria-hidden="true" />
-                            <span className="text-[15px] font-extrabold text-stone-900">{item}</span>
-                        </li>
-                    );
-                })}
-            </ul>
+            <div className="space-y-3">
+                {fila.length > 0 && (
+                    <ul className="grid gap-3 sm:grid-cols-3">
+                        {fila.map((item) => (
+                            <RequisitoItem key={item} item={item} />
+                        ))}
+                    </ul>
+                )}
+                {apilados.length > 0 && (
+                    <ul className="grid gap-3">
+                        {apilados.map((item, idx) => (
+                            <RequisitoItem key={`${item}-${idx}`} item={item} />
+                        ))}
+                    </ul>
+                )}
+            </div>
         </CareerSection>
     );
 };
