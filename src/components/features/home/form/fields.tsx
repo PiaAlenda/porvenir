@@ -148,68 +148,6 @@ export interface SelectOption {
     group?: string
 }
 
-export interface SelectInputProps {
-    label: string
-    name: string
-    value: string
-    options: SelectOption[]
-    placeholderOption?: string
-    hint?: string
-    error?: string
-    valid?: boolean
-    required?: boolean
-    onChange?: (e: ChangeEvent<HTMLSelectElement>) => void
-    onBlur?: () => void
-}
-
-export function SelectInput({
-    label,
-    name,
-    value,
-    options,
-    placeholderOption,
-    hint,
-    error,
-    valid,
-    required,
-    onChange,
-    onBlur,
-}: SelectInputProps) {
-    const autoId = useId()
-    const fieldId = `${name}-${autoId.replace(/:/g, "")}`
-    const hasError = Boolean(error)
-    const cls = `${inputBase} appearance-none cursor-pointer pr-12 ${inputState(hasError ? "error" : valid ? "valid" : "normal")}`
-
-    return (
-        <FieldShell id={fieldId} label={label} required={required} error={error} hint={hint}>
-            <div className="relative">
-                <select
-                    id={fieldId}
-                    name={name}
-                    value={value}
-                    required={required}
-                    aria-required={required || undefined}
-                    aria-invalid={hasError || undefined}
-                    aria-describedby={hasError ? `${fieldId}-error` : undefined}
-                    onChange={onChange}
-                    onBlur={onBlur}
-                    className={cls}
-                >
-                    {placeholderOption && (
-                        <option value="" disabled>{placeholderOption}</option>
-                    )}
-                    {options.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                </select>
-                <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400">
-                    <ChevronDown className="h-4 w-4" />
-                </span>
-            </div>
-        </FieldShell>
-    )
-}
-
 export interface SearchableSelectProps {
     label: string
     name: string

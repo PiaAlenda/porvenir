@@ -616,15 +616,4 @@ export async function deleteItem(id) {
   return true
 }
 
-/** Ids que el admin eliminó y que por eso no se ofrecen más. */
-export async function getRemovedIds() {
-  const stored = await readStored()
-  return Object.keys(stored).filter((id) => stored[id]?.removed)
-}
-
 export { normalizeList, normalizeSyllabus, normalizeTeachers, normalizeAniosDivisiones, normalizeCampos, TEXT_LIMITS, VALID_CATEGORIES }
-
-export function resetCache() {
-  cache = null
-  invalidateRemoteCache()
-}

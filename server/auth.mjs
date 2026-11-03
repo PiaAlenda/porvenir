@@ -262,7 +262,3 @@ function issueLocalToken() {
   tokens.set(token, Date.now() + TOKEN_TTL_MS)
   return token
 }
-
-export function isValidPassword() {
-  return !isDefaultPassword()
-}

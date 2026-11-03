@@ -90,7 +90,6 @@ export const STEP4_FIELDS: (keyof InscriptionFormValues)[] = [
 
 const NAME_RE = /^[a-zA-ZÁÉÍÓÚÜÑáéíóúüñ' .-]{2,60}$/
 const EMAIL_BASE_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const EMAIL_GMAIL_RE = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i
 const TIPOS_PROPUESTA = ["curso", "carrera"]
 
 /**
@@ -251,9 +250,8 @@ export function validateField(
             if (!v) return req ? requiredMsg("la nacionalidad") : undefined
             return undefined
         case "email": {
-            if (!v) return req ? requiredMsg("el correo electrónico") : undefined
+            if (!v) return req ? "Completá el correo electrónico" : undefined
             if (!EMAIL_BASE_RE.test(v)) return "Ingresá un correo válido"
-            if (!EMAIL_GMAIL_RE.test(v)) return "El correo debe ser @gmail.com"
             return undefined
         }
         case "celular":

@@ -27,13 +27,3 @@ export function parseRequisitos(value?: string): string[] {
     const unicos = [...new Set(items)]
     return unicos.length ? unicos : [...REQUISITOS_GENERALES]
 }
-
-/** true si el texto guardado coincide con el listado general (sin importar el orden). */
-export function sonRequisitosGenerales(value?: string): boolean {
-    const items = (value || "")
-        .split(/\r?\n|;/)
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean)
-    const generales = REQUISITOS_GENERALES.map((r) => r.toLowerCase())
-    return items.length === generales.length && generales.every((r) => items.includes(r))
-}

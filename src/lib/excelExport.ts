@@ -1,7 +1,7 @@
 /**
  * Exportación administrativa de inscripciones a XLSX.
  *
- * Reemplaza al CSV de `src/lib/csv.ts`, que volcaba una fila plana con los
+ * Reemplaza a la antigua exportación CSV, que volcaba una fila plana con los
  * nombres de campo de la base de datos. Acá el trabajo no es "ponerle color":
  * es decidir qué ve una persona administrativa al abrir el archivo.
  *

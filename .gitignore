@@ -7,3 +7,6 @@ server/data/
 # Build y logs de desarrollo
 dist/
 dev.log
+
+.playwright-mcp/
+*.log

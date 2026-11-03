@@ -124,11 +124,6 @@ export async function ensureBuckets() {
     }
 }
 
-/** Arma la clave que se persiste en la base: "<bucket>/<archivo>". */
-export function storageKey(bucket, filename) {
-    return `${bucket}/${filename}`
-}
-
 /**
  * Separa una clave persistida en { bucket, path }.
  * Acepta también URLs completas por si quedara alguna de una versión anterior.

@@ -154,17 +154,6 @@ export function flagEmoji(iso: string): string {
         .replace(/./g, (ch) => String.fromCodePoint(127397 + ch.charCodeAt(0)))
 }
 
-export function detectCountry(): string {
-    try {
-        const parts = (navigator.language || "es-AR").toUpperCase().replace(/_/g, "-").split("-")
-        const iso = parts[parts.length - 1]
-        if (/^[A-Z]{2}$/.test(iso) && COUNTRIES.some((c) => c.iso === iso)) return iso
-    } catch {
-        // fallback
-    }
-    return "AR"
-}
-
 const maxLengthCache = new Map<string, number>()
 
 export function maxNationalDigits(iso: string): number {

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { type Career } from "@/config/careerData";
 import { getImageFor, getCareers, useSiteConfig } from "@/siteConfig";
+import { searchCareers } from "@/lib/search";
 
 interface NavbarProps {
     onNavigateHome?: () => void;
@@ -110,17 +111,10 @@ const Navbar = ({
         setShowDesktopResults(false);
     };
 
-    const results = useMemo<Career[]>(() => {
-        const q = searchQuery.trim().toLowerCase();
-        if (!q) return [];
-        return getCareers(config)
-            .filter(
-                (c) =>
-                    c.title.toLowerCase().includes(q) ||
-                    c.description.toLowerCase().includes(q)
-            )
-            .slice(0, 6);
-    }, [searchQuery, config]);
+    const results = useMemo<Career[]>(
+        () => searchCareers(getCareers(config), searchQuery),
+        [searchQuery, config]
+    );
 
     const selectCareer = (id: string) => {
         setSearchQuery("");
@@ -180,7 +174,7 @@ const Navbar = ({
         },
     ];
 
-    const renderDropdown =(menu: string, items: MenuItem[]) => (
+    const renderDropdown = (menu: string, items: MenuItem[]) => (
         <AnimatePresence>
             {openMenu === menu && (
                 <motion.div
@@ -274,11 +268,10 @@ const Navbar = ({
                             </span>
                         </span>
                         <span
-                            className={`shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${
-                                c.id.startsWith("tec")
+                            className={`shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${c.id.startsWith("tec")
                                     ? "bg-[#4d0706]/10 text-[#7a0d0b]"
                                     : "bg-amber-100 text-amber-800"
-                            }`}
+                                }`}
                         >
                             {c.id.startsWith("tec") ? "Carrera" : "Curso"}
                         </span>
@@ -299,7 +292,7 @@ const Navbar = ({
         >
             <Search className="w-4 h-4 flex-shrink-0 text-gray-300" />
             <span className="text-xs truncate">
-                {searchQuery || "Buscar por tema o palabra clave"}
+                {searchQuery || "¿Qué carrera buscás?"}
             </span>
         </button>
     );
@@ -309,9 +302,8 @@ const Navbar = ({
             {/* Sticky Header Navbar */}
             <header
                 ref={headerRef}
-                className={`sticky top-0 z-50 bg-[#1e1e1e] text-white transition-[background-color,box-shadow] duration-300 ${
-                    isScrolled ? "shadow-xl border-b border-white/10 bg-[#242426] lg:bg-[#242426]/95 lg:backdrop-blur-md" : ""
-                }`}
+                className={`sticky top-0 z-50 bg-[#1e1e1e] text-white transition-[background-color,box-shadow] duration-300 ${isScrolled ? "shadow-xl border-b border-white/10 bg-[#242426] lg:bg-[#242426]/95 lg:backdrop-blur-md" : ""
+                    }`}
             >
                 {/* Top bar with Logo, Navigation Links, Compact Search (when scrolled), and Login Button */}
                 <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-3 sm:px-8 gap-2.5 sm:gap-4">
@@ -348,17 +340,15 @@ const Navbar = ({
                                 type="button"
                                 onClick={() => toggleMenu("categorias")}
                                 aria-expanded={openMenu === "categorias"}
-                                className={`flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
-                                    openMenu === "categorias"
+                                className={`flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${openMenu === "categorias"
                                         ? "text-white bg-white/15"
                                         : "text-gray-200 hover:text-white hover:bg-white/10"
-                                }`}
+                                    }`}
                             >
                                 Categorías
                                 <ChevronDown
-                                    className={`w-4 h-4 transition-transform duration-200 opacity-80 ${
-                                        openMenu === "categorias" ? "rotate-180" : ""
-                                    }`}
+                                    className={`w-4 h-4 transition-transform duration-200 opacity-80 ${openMenu === "categorias" ? "rotate-180" : ""
+                                        }`}
                                 />
                             </button>
                             {renderDropdown("categorias", categoriaItems)}
@@ -369,17 +359,15 @@ const Navbar = ({
                                 type="button"
                                 onClick={() => toggleMenu("institucional")}
                                 aria-expanded={openMenu === "institucional"}
-                                className={`flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${
-                                    openMenu === "institucional"
+                                className={`flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs xl:text-sm font-semibold transition-colors cursor-pointer ${openMenu === "institucional"
                                         ? "text-white bg-white/15"
                                         : "text-gray-200 hover:text-white hover:bg-white/10"
-                                }`}
+                                    }`}
                             >
                                 Institucional
                                 <ChevronDown
-                                    className={`w-4 h-4 transition-transform duration-200 opacity-80 ${
-                                        openMenu === "institucional" ? "rotate-180" : ""
-                                    }`}
+                                    className={`w-4 h-4 transition-transform duration-200 opacity-80 ${openMenu === "institucional" ? "rotate-180" : ""
+                                        }`}
                                 />
                             </button>
                             {renderDropdown("institucional", institucionalItems)}
@@ -405,7 +393,7 @@ const Navbar = ({
                                             setShowDesktopResults(true);
                                         }}
                                         onFocus={() => setShowDesktopResults(true)}
-                                        placeholder="Buscar por tema o palabra clave"
+                                        placeholder="¿Qué carrera buscás?"
                                         className="w-full bg-transparent text-white placeholder:text-gray-300 text-xs xl:text-sm outline-none font-normal"
                                     />
                                     {searchQuery && (
@@ -487,69 +475,69 @@ const Navbar = ({
 
             {/* Big floating search bar section (outside sticky header, in page flow below header, z-40) */}
             {showSearchBanner && (
-            <div className="hidden lg:block w-full bg-[#1e1e1e] relative z-40 border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-3 pb-4">
-                    <h2 className="text-xl xl:text-2xl font-extrabold text-white mb-3 tracking-tight">
-                        ¿Qué quieres estudiar?
-                    </h2>
-                    
-                    <div className="relative">
-                        <div className="w-full bg-white rounded-full shadow-2xl py-1.5 pl-6 pr-1.5 flex items-center gap-3 border border-white/20">
-                            <Search className="w-5 h-5 text-red-600 shrink-0" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => {
-                                    setSearchQuery(e.target.value);
-                                    setShowDesktopResults(true);
-                                }}
-                                onFocus={() => setShowDesktopResults(true)}
-                                placeholder="Buscar por tema o palabra clave"
-                                className="w-full bg-transparent text-gray-800 placeholder:text-gray-400 text-sm xl:text-base font-medium outline-none"
-                            />
-                            {searchQuery && (
+                <div className="hidden lg:block w-full bg-[#1e1e1e] relative z-40 border-b border-white/5">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-3 pb-4">
+                        <h2 className="text-xl xl:text-2xl font-extrabold text-white mb-3 tracking-tight">
+                            ¿Qué quieres estudiar?
+                        </h2>
+
+                        <div className="relative">
+                            <div className="w-full bg-white rounded-full shadow-2xl py-1.5 pl-6 pr-1.5 flex items-center gap-3 border border-white/20">
+                                <Search className="w-5 h-5 text-red-600 shrink-0" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        setShowDesktopResults(true);
+                                    }}
+                                    onFocus={() => setShowDesktopResults(true)}
+                                    placeholder="¿Qué carrera buscás?"
+                                    className="w-full bg-transparent text-gray-800 placeholder:text-gray-400 text-sm xl:text-base font-medium outline-none"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchQuery("");
+                                            setShowDesktopResults(false);
+                                        }}
+                                        aria-label="Limpiar búsqueda"
+                                        className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
+                                <div className="h-7 w-px bg-gray-200 shrink-0 hidden sm:block" />
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setSearchQuery("");
-                                        setShowDesktopResults(false);
-                                    }}
-                                    aria-label="Limpiar búsqueda"
-                                    className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+                                    onClick={goToOffer}
+                                    className="shrink-0 bg-gray-400 hover:bg-gray-500 text-white font-bold text-xs xl:text-sm px-6 py-2 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
                                 >
-                                    <X className="w-4 h-4" />
+                                    Buscar formación →
                                 </button>
-                            )}
-                            <div className="h-7 w-px bg-gray-200 shrink-0 hidden sm:block" />
-                            <button
-                                type="button"
-                                onClick={goToOffer}
-                                className="shrink-0 bg-gray-400 hover:bg-gray-500 text-white font-bold text-xs xl:text-sm px-6 py-2 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
-                            >
-                                Buscar formación →
-                            </button>
-                        </div>
-
-                        {/* Dropdown search results for big search field */}
-                        {showDesktopResults && !isScrolled && (
-                            <div className="absolute left-0 right-0 top-full mt-3 z-50">
-                                <div className="rounded-2xl bg-white text-gray-800 shadow-[0_20px_50px_rgba(0,0,0,0.25)] border border-gray-100 p-2">
-                                    {renderResultsList()}
-                                    {results.length > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={goToOffer}
-                                            className="w-full mt-1 px-3 py-2.5 rounded-xl text-center text-xs font-bold text-[#7a0d0b] hover:bg-[#4d0706]/5 transition-colors cursor-pointer"
-                                        >
-                                            Ver toda la oferta académica
-                                        </button>
-                                    )}
-                                </div>
                             </div>
-                        )}
+
+                            {/* Dropdown search results for big search field */}
+                            {showDesktopResults && !isScrolled && (
+                                <div className="absolute left-0 right-0 top-full mt-3 z-50">
+                                    <div className="rounded-2xl bg-white text-gray-800 shadow-[0_20px_50px_rgba(0,0,0,0.25)] border border-gray-100 p-2">
+                                        {renderResultsList()}
+                                        {results.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={goToOffer}
+                                                className="w-full mt-1 px-3 py-2.5 rounded-xl text-center text-xs font-bold text-[#7a0d0b] hover:bg-[#4d0706]/5 transition-colors cursor-pointer"
+                                            >
+                                                Ver toda la oferta académica
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
             )}
 
             {/* Mobile Drawer */}
@@ -626,9 +614,8 @@ const Navbar = ({
                                         </span>
                                         <span className="flex-1 text-sm font-bold">Categorías</span>
                                         <ChevronDown
-                                            className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-                                                mobileCategoriesOpen ? "rotate-180" : ""
-                                            }`}
+                                            className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${mobileCategoriesOpen ? "rotate-180" : ""
+                                                }`}
                                         />
                                     </button>
                                     <AnimatePresence initial={false}>
@@ -716,7 +703,7 @@ const Navbar = ({
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Buscar por tema o palabra clave"
+                                        placeholder="¿Qué carrera buscás?"
                                         className="w-full h-11 pl-9 pr-9 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:border-[#7a0d0b] focus:bg-white focus:ring-2 focus:ring-[#7a0d0b]/10 transition-all"
                                     />
                                     {searchQuery && (

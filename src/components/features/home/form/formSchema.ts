@@ -107,7 +107,7 @@ export const DEFAULT_FORM_OPTIONS: FormOptions = {
         { id: "lugar_nacimiento", kind: "city", step: 1, label: "Ciudad de nacimiento", placeholder: "Ej.: Capital, Caucete, Jáchal...", required: true, visible: true, span: 1 },
 
         // ── Paso 2 · Contacto ──
-        { id: "email", kind: "email", step: 2, label: "Correo electrónico (Gmail)", placeholder: "nombre@gmail.com", hint: "Usá tu cuenta de Gmail: nombre@gmail.com", required: true, visible: true, span: 2 },
+        { id: "email", kind: "email", step: 2, label: "Correo electrónico", placeholder: "nombre@correo.com", hint: "Ingresá un correo válido (Gmail, Hotmail, Yahoo, etc.)", required: true, visible: true, span: 2 },
         { id: "celular", kind: "phone", step: 2, label: "Celular particular", hint: "Mínimo 8 dígitos", required: true, visible: true, span: 1 },
         { id: "celularUrgencia", kind: "phone", step: 2, label: "Celular de urgencia", hint: "Contacto ante emergencias", required: true, visible: true, span: 1 },
         { id: "domicilio", kind: "text", step: 2, label: "Domicilio (calle y número)", placeholder: "Ej.: Av. Libertador 250, Piso 2", required: true, visible: true, span: 2 },
