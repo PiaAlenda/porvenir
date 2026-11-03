@@ -75,7 +75,7 @@ export const LegalMobileToc = ({ items, activeId, onSelect }: TocProps) => {
     return (
         <nav
             aria-label="Índice de la página"
-            className="lg:hidden sticky top-0 z-30 bg-[#fcfaf7]/90 backdrop-blur-md border-b border-black/5"
+            className="lg:hidden sticky top-0 z-30 bg-[#fcfaf7] border-b border-black/5"
         >
             <div ref={scroller} className="flex gap-1 overflow-x-auto px-4 sm:px-6 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {items.map((item, i) => {

@@ -2,15 +2,38 @@
 
 import { useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { AlertCircle, Check, ChevronDown, GripVertical, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react"
+import {
+    AlertCircle,
+    AlignLeft,
+    ArrowDown,
+    ArrowUp,
+    CalendarDays,
+    Check,
+    ChevronDown,
+    CircleDot,
+    GripVertical,
+    List,
+    ListChecks,
+    Loader2,
+    Plus,
+    RotateCcw,
+    Save,
+    Trash2,
+    Type,
+    X,
+    type LucideIcon,
+} from "lucide-react"
 import { api } from "@/api"
 import { useSiteConfig } from "@/siteConfig"
 import {
     CUSTOM_KINDS,
+    CUSTOM_KIND_DESCRIPTIONS,
     CUSTOM_KIND_LABELS,
     DEFAULT_FORM_OPTIONS,
     esPersonalizado,
     nuevoIdPersonalizado,
+    tieneOpciones,
+    type CustomKind,
     type FieldKind,
     type FormFieldConfig,
     type FormFieldOption,
@@ -37,6 +60,26 @@ const inputClass =
     "focus:outline-none focus:ring-4 focus:ring-[#4d0706]/5 focus:border-[#4d0706] focus:bg-white transition-all"
 
 const labelClass = "text-[11px] font-black uppercase tracking-widest text-gray-500 block mb-1.5"
+
+const KIND_ICONS: Record<CustomKind, LucideIcon> = {
+    text: Type,
+    textarea: AlignLeft,
+    select: List,
+    radio: CircleDot,
+    checkbox: ListChecks,
+    date: CalendarDays,
+}
+
+/** Opciones con las que arranca un campo nuevo de tipo lista, para no empezar vacío. */
+const opcionesIniciales = (): FormFieldOption[] => [
+    { value: "Opción 1", label: "Opción 1" },
+    { value: "Opción 2", label: "Opción 2" },
+]
+
+/** En los campos personalizados el valor guardado es el mismo texto que se ve ("|" separa respuestas múltiples). */
+const limpiarTextoOpcion = (t: string) => t.replace(/\|/g, "")
+
+const nombreTipo = (kind: FieldKind) => CUSTOM_KIND_LABELS[kind as CustomKind] ?? kind
 
 interface DragInfo {
     x: number
@@ -74,6 +117,8 @@ function CampoEditor({
     const [confirmaBorrar, setConfirmaBorrar] = useState(false)
     const personalizado = esPersonalizado(campo)
     const esSelect = campo.kind === "select"
+    const conOpciones = tieneOpciones(campo.kind)
+    const sinPlaceholder = ["file", "career", "radio", "checkbox", "date"].includes(campo.kind)
     const esCareer = campo.kind === "career"
     const esCity = campo.kind === "city"
 
@@ -85,6 +130,16 @@ function CampoEditor({
 
     const agregarOpcion = () => {
         const options = [...(campo.options ?? []), { value: "", label: "" }]
+        onPatch({ options })
+    }
+
+    const moverOpcion = (index: number, delta: -1 | 1) => {
+        const options = [...(campo.options ?? [])]
+        const destino = index + delta
+        if (destino < 0 || destino >= options.length) return
+        const tmp = options[index]
+        options[index] = options[destino]
+        options[destino] = tmp
         onPatch({ options })
     }
 
@@ -144,7 +199,8 @@ function CampoEditor({
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-gray-900 truncate">{campo.label || campo.id}</p>
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest truncate">
-                        {personalizado ? "personalizado" : campo.id} · {campo.kind}
+                        {personalizado ? `personalizado · ${nombreTipo(campo.kind)}` : `${campo.id} · ${campo.kind}`}
+                        {conOpciones && ` · ${campo.options?.length ?? 0} opciones`}
                         {campo.required && " · obligatorio"}
                     </p>
                 </div>
@@ -187,12 +243,12 @@ function CampoEditor({
                                     value={campo.kind}
                                     onChange={(e) => {
                                         const kind = e.target.value as FieldKind
-                                        onPatch({ kind, ...(kind === "select" && !campo.options ? { options: [] } : {}) })
+                                        onPatch({ kind, ...(tieneOpciones(kind) && !campo.options?.length ? { options: opcionesIniciales() } : {}) })
                                     }}
                                 >
                                     {CUSTOM_KINDS.map((k) => (
                                         <option key={k} value={k}>
-                                            {CUSTOM_KIND_LABELS[k]}
+                                            {CUSTOM_KIND_LABELS[k]} — {CUSTOM_KIND_DESCRIPTIONS[k]}
                                         </option>
                                     ))}
                                 </select>
@@ -200,7 +256,7 @@ function CampoEditor({
                         )}
                         {campo.kind !== "file" && campo.kind !== "career" && (
                             <>
-                                <div>
+                                {!sinPlaceholder && <div>
                                     <label className={labelClass}>Texto de ejemplo (placeholder)</label>
                                     <input
                                         className={inputClass}
@@ -208,8 +264,8 @@ function CampoEditor({
                                         maxLength={160}
                                         onChange={(e) => onPatch({ placeholder: e.target.value })}
                                     />
-                                </div>
-                                <div>
+                                </div>}
+                                <div className={sinPlaceholder ? "sm:col-span-2" : ""}>
                                     <label className={labelClass}>Ayuda debajo del campo</label>
                                     <input
                                         className={inputClass}
@@ -254,7 +310,7 @@ function CampoEditor({
                         </label>
                     </div>
 
-                    {esSelect && (
+                    {conOpciones && (
                         <div className="pt-3 border-t border-gray-100 space-y-2">
                             <div className="flex items-center justify-between gap-2">
                                 <p className="text-[11px] font-black uppercase tracking-widest text-gray-500">
@@ -270,27 +326,74 @@ function CampoEditor({
                                     Agregar
                                 </button>
                             </div>
-                            <p className="text-[11px] text-gray-400 font-medium">
-                                El <span className="font-bold">valor</span> es lo que se guarda; el{" "}
-                                <span className="font-bold">texto</span> es lo que ve la persona. En la mayoría de los campos son iguales.
-                            </p>
+                            {personalizado ? (
+                                <p className="text-[11px] text-gray-400 font-medium">
+                                    {campo.kind === "checkbox"
+                                        ? "La persona puede marcar varias de estas opciones."
+                                        : campo.kind === "radio"
+                                            ? "Se muestran todas a la vista y la persona elige una."
+                                            : "Se muestran en una lista desplegable y la persona elige una."}{" "}
+                                    Usá las flechas para cambiar el orden.
+                                </p>
+                            ) : (
+                                <p className="text-[11px] text-gray-400 font-medium">
+                                    El <span className="font-bold">valor</span> es lo que se guarda; el{" "}
+                                    <span className="font-bold">texto</span> es lo que ve la persona. En la mayoría de los campos son iguales.
+                                </p>
+                            )}
                             <div className="max-h-72 overflow-y-auto pr-1 space-y-2">
                                 {(campo.options ?? []).map((opt, index) => (
                                     <div key={index} className="flex flex-col sm:flex-row gap-2">
-                                        <input
-                                            className={`${inputClass} sm:w-40`}
-                                            value={opt.value}
-                                            placeholder="Valor"
-                                            maxLength={80}
-                                            onChange={(e) => actualizarOpcion(index, { value: e.target.value })}
-                                        />
-                                        <input
-                                            className={`${inputClass} flex-1 min-w-0`}
-                                            value={opt.label}
-                                            placeholder="Texto visible"
-                                            maxLength={120}
-                                            onChange={(e) => actualizarOpcion(index, { label: e.target.value })}
-                                        />
+                                        {personalizado ? (
+                                            <input
+                                                className={`${inputClass} flex-1 min-w-0`}
+                                                value={opt.label}
+                                                placeholder={`Opción ${index + 1}`}
+                                                maxLength={80}
+                                                onChange={(e) => {
+                                                    const texto = limpiarTextoOpcion(e.target.value)
+                                                    actualizarOpcion(index, { value: texto, label: texto })
+                                                }}
+                                            />
+                                        ) : (
+                                            <>
+                                                <input
+                                                    className={`${inputClass} sm:w-40`}
+                                                    value={opt.value}
+                                                    placeholder="Valor"
+                                                    maxLength={80}
+                                                    onChange={(e) => actualizarOpcion(index, { value: e.target.value })}
+                                                />
+                                                <input
+                                                    className={`${inputClass} flex-1 min-w-0`}
+                                                    value={opt.label}
+                                                    placeholder="Texto visible"
+                                                    maxLength={120}
+                                                    onChange={(e) => actualizarOpcion(index, { label: e.target.value })}
+                                                />
+                                            </>
+                                        )}
+                                        <div className="flex gap-2 shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => moverOpcion(index, -1)}
+                                            disabled={index === 0}
+                                            title="Subir"
+                                            aria-label="Subir opción"
+                                            className="w-11 h-11 grid place-items-center rounded-xl text-gray-500 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 cursor-pointer transition-colors"
+                                        >
+                                            <ArrowUp className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => moverOpcion(index, 1)}
+                                            disabled={index === (campo.options?.length ?? 0) - 1}
+                                            title="Bajar"
+                                            aria-label="Bajar opción"
+                                            className="w-11 h-11 grid place-items-center rounded-xl text-gray-500 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 cursor-pointer transition-colors"
+                                        >
+                                            <ArrowDown className="w-4 h-4" />
+                                        </button>
                                         <button
                                             type="button"
                                             onClick={() => quitarOpcion(index)}
@@ -299,6 +402,7 @@ function CampoEditor({
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
+                                        </div>
                                     </div>
                                 ))}
                                 {(campo.options?.length ?? 0) === 0 && (
@@ -376,6 +480,7 @@ export default function FormularioPanel({ token }: Props) {
     const [expandedId, setExpandedId] = useState<FieldId | null>(null)
     const [draggingId, setDraggingId] = useState<FieldId | null>(null)
     const [ghost, setGhost] = useState<DragInfo | null>(null)
+    const [eligiendoTipo, setEligiendoTipo] = useState(false)
 
     if (!dirty && formOptions !== fuente) {
         setFuente(formOptions)
@@ -441,17 +546,35 @@ export default function FormularioPanel({ token }: Props) {
         if (cercano && cercano !== id) moverA(id, cercano)
     }
 
-    const agregarCampo = () => {
+    const abrirSelectorTipo = () => {
         if (campos.filter(esPersonalizado).length >= MAX_CUSTOM) {
             setError(`Podés agregar hasta ${MAX_CUSTOM} campos personalizados.`)
             return
         }
+        setError("")
+        setEligiendoTipo(true)
+    }
+
+    const agregarCampo = (kind: CustomKind) => {
         const id = nuevoIdPersonalizado()
+        const conOpciones = tieneOpciones(kind)
         setCampos((prev) => [
             ...prev,
-            { id, kind: "text", step: activeStep, label: "Nuevo campo", placeholder: "", required: false, visible: true, span: 1 },
+            {
+                id,
+                kind,
+                step: activeStep,
+                label: "Nuevo campo",
+                placeholder: "",
+                required: false,
+                visible: true,
+                span: conOpciones && kind !== "select" ? 2 : 1,
+                ...(conOpciones ? { options: opcionesIniciales() } : {}),
+                ...(kind === "select" ? { placeholderOption: "Seleccioná una opción" } : {}),
+            },
         ])
         setExpandedId(id)
+        setEligiendoTipo(false)
         setError("")
         marcar()
     }
@@ -480,9 +603,23 @@ export default function FormularioPanel({ token }: Props) {
             setError(`Hay campos visibles sin etiqueta: ${sinEtiqueta.map((c) => c.id).join(", ")}.`)
             return
         }
-        const selectsSinOpciones = visibles.filter((c) => c.kind === "select" && !(c.options ?? []).length)
-        if (selectsSinOpciones.length) {
-            setError(`Los desplegables visibles necesitan al menos una opción: ${selectsSinOpciones.map((c) => c.id).join(", ")}.`)
+        const conOpciones = visibles.filter((c) => tieneOpciones(c.kind))
+        const sinOpciones = conOpciones.filter((c) => !(c.options ?? []).length)
+        if (sinOpciones.length) {
+            setError(`Los campos con opciones necesitan al menos una: ${sinOpciones.map((c) => c.label || c.id).join(", ")}.`)
+            return
+        }
+        const opcionVacia = conOpciones.filter((c) => (c.options ?? []).some((o) => !o.value.trim() || !o.label.trim()))
+        if (opcionVacia.length) {
+            setError(`Hay opciones sin texto en: ${opcionVacia.map((c) => c.label || c.id).join(", ")}. Completalas o quitalas.`)
+            return
+        }
+        const repetidas = conOpciones.filter((c) => {
+            const valores = (c.options ?? []).map((o) => o.value.trim().toLowerCase())
+            return new Set(valores).size !== valores.length
+        })
+        if (repetidas.length) {
+            setError(`Hay opciones repetidas en: ${repetidas.map((c) => c.label || c.id).join(", ")}.`)
             return
         }
         setSaving(true)
@@ -650,14 +787,52 @@ export default function FormularioPanel({ token }: Props) {
                 )}
             </section>
 
-            <button
-                type="button"
-                onClick={agregarCampo}
-                className="inline-flex items-center gap-2 h-11 px-5 rounded-xl text-xs font-black uppercase tracking-widest text-[#4d0706] border-2 border-dashed border-[#4d0706]/30 hover:bg-[#4d0706]/5 cursor-pointer transition-colors"
-            >
-                <Plus className="w-4 h-4" />
-                Agregar campo a este paso
-            </button>
+            {eligiendoTipo ? (
+                <div className="rounded-2xl border-2 border-dashed border-[#4d0706]/30 p-3 sm:p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-500">¿Qué tipo de campo querés agregar?</p>
+                        <button
+                            type="button"
+                            onClick={() => setEligiendoTipo(false)}
+                            title="Cancelar"
+                            aria-label="Cancelar"
+                            className="w-8 h-8 grid place-items-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-pointer transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {CUSTOM_KINDS.map((k) => {
+                            const Icon = KIND_ICONS[k]
+                            return (
+                                <button
+                                    key={k}
+                                    type="button"
+                                    onClick={() => agregarCampo(k)}
+                                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white text-left hover:border-[#4d0706]/40 hover:bg-[#4d0706]/[0.03] cursor-pointer transition-colors"
+                                >
+                                    <span className="w-9 h-9 shrink-0 grid place-items-center rounded-lg bg-[#4d0706]/5 text-[#4d0706]">
+                                        <Icon className="w-4 h-4" />
+                                    </span>
+                                    <span className="min-w-0">
+                                        <span className="block text-sm font-black text-gray-900">{CUSTOM_KIND_LABELS[k]}</span>
+                                        <span className="block text-[11px] font-medium text-gray-400">{CUSTOM_KIND_DESCRIPTIONS[k]}</span>
+                                    </span>
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            ) : (
+                <button
+                    type="button"
+                    onClick={abrirSelectorTipo}
+                    className="inline-flex items-center gap-2 h-11 px-5 rounded-xl text-xs font-black uppercase tracking-widest text-[#4d0706] border-2 border-dashed border-[#4d0706]/30 hover:bg-[#4d0706]/5 cursor-pointer transition-colors"
+                >
+                    <Plus className="w-4 h-4" />
+                    Agregar campo a este paso
+                </button>
+            )}
 
             {ghost && draggingId && (() => {
                 const c = campos.find((f) => f.id === draggingId)

@@ -4,6 +4,7 @@ import { CalendarDays, ChevronDown, FileText, FileSpreadsheet, Mail, MoreVertica
 import { api, type Alumno } from "@/api"
 import { sexoLabel } from "@/components/features/home/form/options"
 import { extrasConEtiqueta } from "@/components/features/home/form/formSchema"
+import { ETIQUETAS_CORTAS, PREGUNTAS_FICHA, textoRespuesta } from "@/components/features/home/form/fichaMedica"
 import AlumnoEditModal from "./AlumnoEditModal"
 import { downloadContractPdf } from "@/pdf/downloadContract"
 import { downloadInscripcionXlsx } from "@/lib/excelExport"
@@ -743,6 +744,20 @@ export default function AlumnosPanel({ token }: Props) {
                                         </div>
                                     ))}
                                 </div>
+
+                                {detailAlumno.fichaMedica && Object.keys(detailAlumno.fichaMedica).length > 0 && (
+                                    <div className="mt-4 border border-gray-200 rounded-xl p-3">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-[#4d0706] mb-2">Ficha médica (DDJJ)</p>
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                                            {PREGUNTAS_FICHA.filter((p) => detailAlumno.fichaMedica?.[p.id]).map((p) => (
+                                                <div key={p.id} className="min-w-0">
+                                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">{ETIQUETAS_CORTAS[p.id] ?? p.id}</p>
+                                                    <p className="text-sm font-bold text-gray-800 mt-0.5 break-words whitespace-pre-wrap">{textoRespuesta(p.id, detailAlumno.fichaMedica?.[p.id])}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="border border-gray-200 rounded-xl p-3 bg-gray-50/50">

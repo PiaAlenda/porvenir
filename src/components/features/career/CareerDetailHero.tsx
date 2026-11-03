@@ -68,11 +68,11 @@ const CareerDetailHero = ({ career, onBack }: CareerDetailHeroProps) => {
                         </p>
 
                         <div className="flex flex-wrap gap-3 mt-6">
-                            <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/15">
+                            <div className="flex items-center gap-2.5 bg-white/10 lg:backdrop-blur-md px-4 py-2 rounded-xl border border-white/15">
                                 <Clock className="w-4 h-4 text-[#ffcc00]" />
                                 <span className="text-white font-bold text-xs">{career.duration}</span>
                             </div>
-                            <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/15">
+                            <div className="flex items-center gap-2.5 bg-white/10 lg:backdrop-blur-md px-4 py-2 rounded-xl border border-white/15">
                                 <MapPin className="w-4 h-4 text-[#ffcc00]" />
                                 <span className="text-white font-bold text-xs">Modalidad {career.modality}</span>
                             </div>

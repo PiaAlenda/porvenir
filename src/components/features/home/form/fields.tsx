@@ -1,5 +1,5 @@
 import { useId, useState, useRef, useEffect, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from "react"
-import { AlertCircle, CheckCircle2, ChevronDown, Search } from "lucide-react"
+import { AlertCircle, Calendar, CheckCircle2, ChevronDown, Search } from "lucide-react"
 
 const inputShell =
     "block w-full h-12 sm:h-14 rounded-2xl border bg-white text-sm text-gray-900 font-medium " +
@@ -98,7 +98,15 @@ export function TextInput({
     const fieldId = `${name}-${autoId.replace(/:/g, "")}`
     const hasError = Boolean(error)
     const showCheck = Boolean(valid) && !hasError
-    const cls = `${inputBase} ${inputState(hasError ? "error" : valid ? "valid" : "normal")} ${showCheck ? "pr-12" : ""}`
+    /*
+     * En la fecha, el calendario va pegado a la derecha y el tilde a su
+     * izquierda, como la flecha de los selects. El indicador nativo queda
+     * invisible encima del ícono propio (ver .date-input en App.css), así
+     * tocarlo sigue abriendo el selector.
+     */
+    const isDate = type === "date"
+    const padding = isDate ? (showCheck ? "pr-20" : "pr-12") : showCheck ? "pr-12" : ""
+    const cls = `${inputBase} ${inputState(hasError ? "error" : valid ? "valid" : "normal")} ${padding} ${isDate ? "date-input" : ""}`
 
     return (
         <FieldShell id={fieldId} label={label} required={required} error={error} hint={hint}>
@@ -123,7 +131,12 @@ export function TextInput({
                     onBlur={onBlur}
                     className={cls}
                 />
-                {showCheck && <ValidIcon className="right-4" />}
+                {showCheck && <ValidIcon className={isDate ? "right-11" : "right-4"} />}
+                {isDate && (
+                    <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400">
+                        <Calendar className="h-4 w-4" />
+                    </span>
+                )}
             </div>
         </FieldShell>
     )

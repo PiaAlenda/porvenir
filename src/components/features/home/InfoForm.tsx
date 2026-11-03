@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from "react"
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Printer } from "lucide-react"
-import { api, type InscripcionPayload, type InscripcionResult } from "@/api"
+import { api, HttpError, type InscripcionPayload, type InscripcionResult } from "@/api"
 import { getCareerById, getCareers, useSiteConfig } from "@/siteConfig"
 import { downloadContractFromFormData } from "@/pdf/downloadContract"
 import { compressImage } from "@/lib/compressImage"
 import Stepper, { type StepperStep } from "./form/Stepper"
+import StepFichaMedica from "./form/StepFichaMedica"
+import { claveError, fichaParaEnviar, validarFicha, validarPregunta, PREGUNTAS_FICHA, type FichaMedicaValues } from "./form/fichaMedica"
 import { esPersonalizado } from "./form/formSchema"
 import {
     StepContacto,
@@ -35,7 +37,11 @@ const STEPS_BASE: StepperStep[] = [
     { title: "Contacto" },
     { title: "Inscripción" },
     { title: "Documentación y datos complementarios" },
+    { title: "Ficha médica (DDJJ)" },
 ]
+
+const DNI_INSCRIPTO_MSG =
+    "Este DNI ya está inscripto. No hace falta que te inscribas de nuevo; si necesitás cambiar algún dato, comunicate con la administración de la escuela."
 
 const STEPS_WITH_TIPO: StepperStep[] = [{ title: "Categoría" }, ...STEPS_BASE]
 
@@ -95,14 +101,18 @@ const initialForm = (careerId?: string | null): InscriptionFormValues => ({
     fotoCertificado: null,
 })
 
+type Grupo = "tipo" | 1 | 2 | 3 | 4 | "medica"
+
 const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
     const { config, formOptions } = useSiteConfig()
     const [formData, setFormData] = useState<InscriptionFormValues>(() => initialForm(careerId))
+    const [ficha, setFicha] = useState<FichaMedicaValues>({})
     const [errors, setErrors] = useState<FormErrors>({})
     const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set())
     const [step, setStep] = useState(1)
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
     const [errorMsg, setErrorMsg] = useState("")
+    const [verificandoDni, setVerificandoDni] = useState(false)
     const [registeredName, setRegisteredName] = useState("")
     const [submittedData, setSubmittedData] = useState<InscriptionFormValues | null>(null)
     const [errorDescarga, setErrorDescarga] = useState("")
@@ -116,7 +126,7 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
      * Sin carrera preseleccionada se pregunta primero si es curso o carrera;
      * con ella fija (detalle) el tipo ya se dedujo del id y ese paso no existe.
      * `grupo` identifica qué validar en el paso actual: "tipo" o bien
-     * 1 datos / 2 contacto / 3 inscripción / 4 documentación.
+     * 1 datos / 2 contacto / 3 inscripción / 4 documentación / "medica" ficha médica.
      */
     // Mientras no haya ningún curso cargado (los ids de carreras empiezan con
     // "tec-"), la categoría no se pregunta y todo es carrera. Al cargar un
@@ -125,8 +135,12 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
     const mostrarPasoTipo = !careerId && hayCursos
     const steps = mostrarPasoTipo ? STEPS_WITH_TIPO : STEPS_BASE
     const totalSteps = steps.length
-    const grupoDelPaso = (s: number): "tipo" | 1 | 2 | 3 | 4 =>
-        mostrarPasoTipo ? (s === 1 ? "tipo" : ((s - 1) as 1 | 2 | 3 | 4)) : (s as 1 | 2 | 3 | 4)
+    const grupoDelPaso = (s: number): Grupo => {
+        const n = mostrarPasoTipo ? s - 1 : s
+        if (n === 0) return "tipo"
+        if (n === 5) return "medica"
+        return n as 1 | 2 | 3 | 4
+    }
     const grupo = grupoDelPaso(step)
 
     /*
@@ -156,6 +170,25 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
         marcarTocado(id)
         const campo = campoExtra(id)
         if (campo) setErrors((prev) => ({ ...prev, [id]: validateExtra(campo, formData.extras[id] ?? "") }))
+    }
+
+    const preguntaFicha = (id: string) => PREGUNTAS_FICHA.find((p) => p.id === id)
+
+    const handleFichaChange = (id: string, value: string) => {
+        const next = { ...ficha, [id]: value }
+        setFicha(next)
+        marcarTocado(claveError(id))
+        const p = preguntaFicha(id)
+        const key = claveError(id)
+        if (p && (errors[key] !== undefined || touched.has(key) || ["sino", "unica", "multi", "acepto"].includes(p.tipo))) {
+            setErrors((prev) => ({ ...prev, [key]: validarPregunta(p, next) }))
+        }
+    }
+
+    const handleFichaBlur = (id: string) => {
+        marcarTocado(claveError(id))
+        const p = preguntaFicha(id)
+        if (p) setErrors((prev) => ({ ...prev, [claveError(id)]: validarPregunta(p, ficha) }))
     }
 
     const pasoProps = {
@@ -229,7 +262,22 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
         setErrors((prev) => ({ ...prev, [name]: validateField(name, value, formData, formOptions.campos) }))
     }
 
-    const runStepValidation = (grupo: "tipo" | 1 | 2 | 3 | 4): boolean => {
+    const runStepValidation = (grupo: Grupo): boolean => {
+        if (grupo === "medica") {
+            const nextErrors = validarFicha(ficha)
+            // Se limpian los errores viejos de la ficha (preguntas que ya se ocultaron).
+            setErrors((prev) => {
+                const limpio: FormErrors = {}
+                for (const [k, v] of Object.entries(prev)) if (!k.startsWith("med_")) limpio[k] = v
+                return { ...limpio, ...nextErrors }
+            })
+            setTouched((prev) => {
+                const merged = new Set(prev)
+                Object.keys(nextErrors).forEach((f) => merged.add(f))
+                return merged
+            })
+            return Object.keys(nextErrors).length === 0
+        }
         if (grupo === "tipo") {
             const err = validateField("tipoPropuesta", formData.tipoPropuesta, formData, formOptions.campos)
             setErrors((prev) => ({ ...prev, tipoPropuesta: err }))
@@ -250,8 +298,45 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
         return Object.keys(nextErrors).length === 0
     }
 
-    const goNext = () => {
+    /*
+     * Al salir del paso del DNI se pregunta si ya está inscripto, para avisarlo
+     * ahí y no después de completar todo el formulario. Si la consulta falla
+     * (red, API vieja) se deja seguir: el envío final vuelve a chequearlo.
+     */
+    const dniYaInscripto = async (): Promise<boolean> => {
+        const dni = formData.numeroDocumento.trim()
+        if (grupoDelPaso(step) !== 1 || !dni) return false
+        setVerificandoDni(true)
+        try {
+            const { inscripto } = await api.verificarDocumento(dni)
+            if (inscripto) {
+                marcarTocado("numeroDocumento")
+                setErrors((prev) => ({ ...prev, numeroDocumento: DNI_INSCRIPTO_MSG }))
+            }
+            return inscripto
+        } catch {
+            return false
+        } finally {
+            setVerificandoDni(false)
+        }
+    }
+
+    const goNext = async () => {
+        if (verificandoDni) return
         if (step < totalSteps && runStepValidation(grupoDelPaso(step))) {
+            if (await dniYaInscripto()) return
+            // Al entrar a la ficha médica se precargan las respuestas que ya
+            // se dieron en Documentación (discapacidad y N° de CUD).
+            if (grupoDelPaso(step + 1) === "medica") {
+                setFicha((prev) => ({
+                    ...prev,
+                    ...(!prev.discapacidad && (formData.c_discapacidad === "Sí" || formData.c_discapacidad === "No")
+                        ? { discapacidad: formData.c_discapacidad }
+                        : {}),
+                    ...(!prev.tieneCud && formData.cud.trim() ? { tieneCud: "Sí" } : {}),
+                    ...(!prev.cudNumero && formData.cud.trim() ? { cudNumero: formData.cud.trim() } : {}),
+                }))
+            }
             setStep((prev) => prev + 1)
         }
     }
@@ -267,7 +352,7 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
         // El `disabled` del botón depende de un re-render: dos clics muy
         // seguidos entran los dos antes de que llegue. El ref corta en seco.
         if (enviandoRef.current) return
-        if (!runStepValidation(4)) return
+        if (!runStepValidation(grupoDelPaso(step))) return
 
         enviandoRef.current = true
         setStatus("loading")
@@ -306,6 +391,7 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
                 if (esPersonalizado(c) && c.visible && v) extras[c.id] = v
             }
             if (Object.keys(extras).length) campos.extras = JSON.stringify(extras)
+            campos.fichaMedica = JSON.stringify(fichaParaEnviar(ficha))
 
             let result: InscripcionResult
             if (formData.fotoDni && formData.fotoCertificado) {
@@ -334,7 +420,11 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
             setStatus("success")
         } catch (err) {
             let msg = "No se pudo registrar la inscripción. Por favor, comprobá tus datos e intentá de nuevo."
-            if (err instanceof Error && err.message) {
+            if (err instanceof HttpError && err.status === 409) {
+                // DNI repetido: se marca el campo y se avisa con claridad.
+                msg = DNI_INSCRIPTO_MSG
+                setErrors((prev) => ({ ...prev, numeroDocumento: DNI_INSCRIPTO_MSG }))
+            } else if (err instanceof Error && err.message) {
                 const lower = err.message.toLowerCase()
                 if (lower.includes("fetch") || lower.includes("network") || lower.includes("conectar") || lower.includes("servidor")) {
                     msg = "No se pudo conectar con el servidor. Por favor, comprobá tu conexión a internet e intentá de nuevo."
@@ -562,6 +652,14 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
                                             onBlur={handleBlur}
                                         />
                                     )}
+                                    {grupo === "medica" && (
+                                        <StepFichaMedica
+                                            ficha={ficha}
+                                            errors={errors}
+                                            onChange={handleFichaChange}
+                                            onBlur={handleFichaBlur}
+                                        />
+                                    )}
                                 </div>
 
                                 {status === "error" && (
@@ -584,11 +682,20 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
                                             onClick={goNext}
                                             // En el paso de categoría no se avanza sin elegir:
                                             // se deshabilita el botón en vez de mostrar un error.
-                                            disabled={grupo === "tipo" && !formData.tipoPropuesta}
+                                            disabled={(grupo === "tipo" && !formData.tipoPropuesta) || verificandoDni}
                                             className={btnPrimary}
                                         >
-                                            Continuar
-                                            <ArrowRight className="w-4 h-4" />
+                                            {verificandoDni ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Verificando DNI...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Continuar
+                                                    <ArrowRight className="w-4 h-4" />
+                                                </>
+                                            )}
                                         </button>
                                     ) : (
                                         <button

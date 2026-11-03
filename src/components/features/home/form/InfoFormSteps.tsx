@@ -5,8 +5,8 @@ import { getCareers } from "@/siteConfig"
 import CuilInput from "./CuilInput"
 import DocInput from "./DocInput"
 import { PhoneInput } from "./PhoneInput"
-import { SearchableSelect, TextInput, TextAreaInput } from "./fields"
-import { campoPorId, esPersonalizado, type FieldId, type FormFieldConfig } from "./formSchema"
+import { FieldShell, SearchableSelect, TextInput, TextAreaInput } from "./fields"
+import { campoPorId, esPersonalizado, separarMultiple, unirMultiple, type FieldId, type FormFieldConfig } from "./formSchema"
 import { localidadesDeProvincia } from "./localidades"
 import type { FormErrors, InscriptionFormValues } from "./validation"
 
@@ -79,6 +79,66 @@ function FileField({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps }) 
     )
 }
 
+/** Opción única (botones) o selección múltiple (casillas), siempre a la vista. */
+export function CampoOpciones({ campo, value, error, onChange, onBlur, enLinea }: {
+    campo: FormFieldConfig
+    value: string
+    error?: string
+    /** Opciones lado a lado también en mobile (p. ej. Sí / No). */
+    enLinea?: boolean
+    onChange: (v: string) => void
+    onBlur: () => void
+}) {
+    const multiple = campo.kind === "checkbox"
+    const elegidas = multiple ? separarMultiple(value) : [value]
+    const fieldId = `field-${campo.id}`
+    const toggle = (v: string) => {
+        if (!multiple) return onChange(v)
+        const set = new Set(elegidas)
+        if (set.has(v)) set.delete(v)
+        else set.add(v)
+        // Se respeta el orden de las opciones, no el de los clics.
+        onChange(unirMultiple((campo.options ?? []).map((o) => o.value).filter((o) => set.has(o))))
+    }
+
+    return (
+        <FieldShell id={fieldId} label={campo.label} required={campo.required} error={error} hint={campo.hint}>
+            <div
+                id={fieldId}
+                role={multiple ? "group" : "radiogroup"}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? `${fieldId}-error` : undefined}
+                onBlur={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onBlur()
+                }}
+                className={`grid ${enLinea ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"} gap-2`}
+            >
+                {(campo.options ?? []).map((opt) => {
+                    const checked = elegidas.includes(opt.value)
+                    return (
+                        <label
+                            key={opt.value}
+                            className={`flex items-center gap-3 min-h-12 px-4 py-2.5 rounded-2xl border bg-white text-sm font-medium cursor-pointer transition-colors ${checked
+                                ? "border-[#4d0706] bg-[#4d0706]/[0.04] text-gray-900"
+                                : error ? "border-red-300 text-gray-700 hover:border-red-400" : "border-gray-200 text-gray-700 hover:border-gray-300"}`}
+                        >
+                            <input
+                                type={multiple ? "checkbox" : "radio"}
+                                name={campo.id}
+                                value={opt.value}
+                                checked={checked}
+                                onChange={() => toggle(opt.value)}
+                                className="w-4 h-4 shrink-0 accent-[#4d0706] cursor-pointer"
+                            />
+                            <span>{opt.label}</span>
+                        </label>
+                    )
+                })}
+            </div>
+        </FieldShell>
+    )
+}
+
 /** Campo agregado por el admin: su respuesta vive en `values.extras`. */
 function CampoExtra({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps }) {
     const str = ctx.values.extras[campo.id] ?? ""
@@ -101,6 +161,8 @@ function CampoExtra({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps })
                     onChange={(e) => onChange(e.target.value)}
                     onBlur={onBlur}
                 />
+            ) : campo.kind === "radio" || campo.kind === "checkbox" ? (
+                <CampoOpciones campo={campo} value={str} error={error} onChange={onChange} onBlur={onBlur} />
             ) : campo.kind === "select" ? (
                 <SearchableSelect
                     label={campo.label}

@@ -317,6 +317,8 @@ export const ExpandableVideo = ({ src, center }: { src: string; center?: boolean
                         <div className="relative">
                             <video
                                 ref={fullRef}
+                                preload="none"
+                                playsInline
                                 controls
                                 className="w-full rounded-xl shadow-2xl max-h-[70vh]"
                             >

@@ -1,5 +1,5 @@
 import { parsePhoneNumber } from "libphonenumber-js"
-import { esPersonalizado, type FormFieldConfig } from "./formSchema"
+import { esPersonalizado, separarMultiple, type FormFieldConfig } from "./formSchema"
 
 export interface InscriptionFormValues {
     /** Respuestas de los campos que agregó el admin, indexadas por el id del campo. */
@@ -39,13 +39,21 @@ export function validateExtra(campo: FormFieldConfig, value: string): string | u
     const v = value.trim()
     if (!v) return campo.required ? `Completá el campo ${campo.label}` : undefined
     if (v.length > MAX_EXTRA_LENGTH) return `Máximo ${MAX_EXTRA_LENGTH} caracteres`
-    if (campo.kind === "select" && !(campo.options ?? []).some((o) => o.value === v)) return "Opción inválida"
+    if (campo.kind === "checkbox") {
+        const elegidas = separarMultiple(v)
+        if (!elegidas.length) return campo.required ? `Elegí al menos una opción en ${campo.label}` : undefined
+        if (elegidas.some((e) => !(campo.options ?? []).some((o) => o.value === e))) return "Opción inválida"
+        return undefined
+    }
+    if ((campo.kind === "select" || campo.kind === "radio") && !(campo.options ?? []).some((o) => o.value === v)) return "Opción inválida"
     if (campo.kind === "date" && !isValidDate(v)) return "Fecha inválida"
     return undefined
 }
 
+// `tipoPropuesta` no va acá: se valida en su propio paso ("Categoría"), que
+// solo existe cuando hay cursos cargados. Si estuviera, sin ese paso el
+// formulario quedaba trabado en el paso 1 con un error que no se ve.
 export const STEP1_FIELDS: (keyof InscriptionFormValues)[] = [
-    "tipoPropuesta",
     "apellido",
     "nombre",
     "numeroDocumento",

@@ -21,6 +21,8 @@ export type FieldKind =
     | "cuil"
     | "phone"
     | "select"
+    | "radio"
+    | "checkbox"
     | "career"
     | "city"
     | "file"
@@ -33,14 +35,43 @@ export type FieldId = keyof InscriptionFormValues
  */
 export type CustomFieldId = `x_${string}`
 
-export const CUSTOM_KINDS = ["text", "textarea", "select", "date"] as const satisfies readonly FieldKind[]
+export const CUSTOM_KINDS = ["text", "textarea", "select", "radio", "checkbox", "date"] as const satisfies readonly FieldKind[]
 
-export const CUSTOM_KIND_LABELS: Record<(typeof CUSTOM_KINDS)[number], string> = {
+export type CustomKind = (typeof CUSTOM_KINDS)[number]
+
+export const CUSTOM_KIND_LABELS: Record<CustomKind, string> = {
     text: "Texto corto",
     textarea: "Texto largo",
     select: "Desplegable",
+    radio: "Opción única",
+    checkbox: "Selección múltiple",
     date: "Fecha",
 }
+
+export const CUSTOM_KIND_DESCRIPTIONS: Record<CustomKind, string> = {
+    text: "Una línea de texto libre",
+    textarea: "Un párrafo de texto libre",
+    select: "Lista desplegable, se elige una",
+    radio: "Botones a la vista, se elige una",
+    checkbox: "Casillas, se pueden elegir varias",
+    date: "Selector de fecha",
+}
+
+/** Tipos cuyo valor sale de una lista de opciones cargada por el admin. */
+export const KINDS_CON_OPCIONES: readonly FieldKind[] = ["select", "radio", "checkbox"]
+
+export const tieneOpciones = (kind: FieldKind): boolean => KINDS_CON_OPCIONES.includes(kind)
+
+/**
+ * Las respuestas de selección múltiple se guardan como un solo texto, con los
+ * valores elegidos separados por este separador (las opciones no pueden contenerlo).
+ */
+export const MULTI_SEPARATOR = " | "
+
+export const separarMultiple = (value: string): string[] =>
+    value.split("|").map((v) => v.trim()).filter(Boolean)
+
+export const unirMultiple = (values: string[]): string => values.join(MULTI_SEPARATOR)
 
 export const esPersonalizado = (c: { id: string }): boolean => c.id.startsWith("x_")
 
@@ -133,7 +164,7 @@ export function mergeFormOptions(saved?: ApiFormOptions | null): FormOptions {
                     required: s.required,
                     visible: s.visible,
                     span: s.span === 2 ? 2 : 1,
-                    ...(kind === "select" ? { options: s.options ?? [] } : {}),
+                    ...(tieneOpciones(kind) ? { options: s.options ?? [] } : {}),
                 })
             }
             continue
@@ -191,8 +222,9 @@ export function extrasConEtiqueta(
         const value = extras[c.id]
         if (esPersonalizado(c) && value) {
             vistos.add(c.id)
-            const opcion = c.options?.find((o) => o.value === value)
-            out.push({ id: c.id, label: c.label || c.id, value: opcion?.label ?? value })
+            const etiqueta = (v: string) => c.options?.find((o) => o.value === v)?.label ?? v
+            const texto = c.kind === "checkbox" ? separarMultiple(value).map(etiqueta).join(", ") : etiqueta(value)
+            out.push({ id: c.id, label: c.label || c.id, value: texto })
         }
     }
     for (const [id, value] of Object.entries(extras)) {

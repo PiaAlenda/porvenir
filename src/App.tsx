@@ -1,14 +1,14 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, lazy, Suspense } from "react"
 import Home from "@/pages/Home"
-import CareerDetail from "@/pages/CareerDetail"
-import About from "@/pages/About"
-import Location from "@/pages/Location"
-import Admin from "@/pages/Admin"
-import Login from "@/pages/Login"
-import Privacy from "@/pages/Privacy"
-import Terms from "@/pages/Terms"
-import Accessibility from "@/pages/Accessibility"
-import Contact from "@/pages/Contact"
+const CareerDetail = lazy(() => import("@/pages/CareerDetail"))
+const About = lazy(() => import("@/pages/About"))
+const Location = lazy(() => import("@/pages/Location"))
+const Admin = lazy(() => import("@/pages/Admin"))
+const Login = lazy(() => import("@/pages/Login"))
+const Privacy = lazy(() => import("@/pages/Privacy"))
+const Terms = lazy(() => import("@/pages/Terms"))
+const Accessibility = lazy(() => import("@/pages/Accessibility"))
+const Contact = lazy(() => import("@/pages/Contact"))
 import CookieBanner from "@/components/layout/CookieBanner"
 import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/features/home/Footer"
@@ -157,6 +157,7 @@ function App() {
             initialSelection={programSelection}
           />
         )}
+        <Suspense fallback={<div className="min-h-[60vh]" />}>
         {view.name === "detail" && (
           <CareerDetail 
             careerId={view.params!.id} 
@@ -184,6 +185,7 @@ function App() {
         {view.name === "login" && (
           <Login onSuccess={handleLoginSuccess} onBack={navigateHome} />
         )}
+        </Suspense>
         {showChrome && (
           <Footer onNavigateAbout={navigateToAbout} onNavigateToOffer={scrollToOffer} />
         )}

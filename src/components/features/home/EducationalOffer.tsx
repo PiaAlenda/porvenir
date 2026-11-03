@@ -271,6 +271,8 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                                                                 ) : (
                                                                                     <img
                                                                                         src={getImageFor(career.id, config)}
+                                                                                        loading="lazy"
+                                                                                        decoding="async"
                                                                                         alt={career.title}
                                                                                         onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
                                                                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -386,6 +388,8 @@ const EducationalOffer = ({ onViewDetail, activeSelection, onSelectProgram }: Ed
                                                                                     ) : (
                                                                                         <img
                                                                                             src={getImageFor(career.id, config)}
+                                                                                            loading="lazy"
+                                                                                            decoding="async"
                                                                                             alt={career.title}
                                                                                             onError={() => setImgError(prev => ({ ...prev, [career.id]: true }))}
                                                                                             className="w-full h-full object-cover rounded-full"

@@ -33,6 +33,7 @@
 import { parsePhoneNumber } from "libphonenumber-js"
 import type { Cell, Worksheet } from "exceljs"
 import { sexoLabel } from "@/components/features/home/form/options"
+import { ETIQUETAS_CORTAS, PREGUNTAS_FICHA, textoRespuesta } from "@/components/features/home/form/fichaMedica"
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Identidad visual
@@ -105,6 +106,8 @@ export interface RegistroExportable {
     problematicaIntegrado?: ValorExportable
     /** Respuestas a los campos personalizados del formulario ("Etiqueta: valor; …"). */
     datosAdicionales?: ValorExportable
+    /** Respuestas de la ficha médica (DDJJ), por id de pregunta. */
+    fichaMedica?: Record<string, string> | null
     fotoDni?: ValorExportable
     fotoCertificado?: ValorExportable
     fechaInscripcion?: ValorExportable
@@ -351,6 +354,7 @@ const GRUPOS = {
     contacto: "DATOS DE CONTACTO",
     academicos: "DATOS ACADÉMICOS",
     adicional: "INFORMACIÓN ADICIONAL",
+    medica: "FICHA MÉDICA (DDJJ)",
     documentacion: "DOCUMENTACIÓN",
     inscripcion: "INSCRIPCIÓN",
 } as const
@@ -414,6 +418,21 @@ const COLUMNAS: Columna[] = [
         wrap: true,
         valor: (r) => texto(r.datosAdicionales),
     },
+
+    // ── Ficha médica: una columna por pregunta, en el orden del formulario ──
+    ...PREGUNTAS_FICHA.map((p): Columna => {
+        const largo = p.tipo === "textarea" || p.tipo === "multi" || p.tipo === "texto"
+        return {
+            campo: `fichaMedica.${p.id}`,
+            titulo: ETIQUETAS_CORTAS[p.id] ?? p.id,
+            grupo: GRUPOS.medica,
+            ancho: largo ? 30 : 14,
+            alineacion: largo ? "left" : "center",
+            wrap: largo,
+            formato: "@",
+            valor: (r) => texto(textoRespuesta(p.id, r.fichaMedica?.[p.id])),
+        }
+    }),
 
     // ── Documentación ──
     {
@@ -499,6 +518,7 @@ const COLUMNAS_TECNICAS: ColumnaTecnica[] = [
     { campo: "c_pueblo_indigena", titulo: "c_pueblo_indigena", ancho: 20 },
     { campo: "problematicaIntegrado", titulo: "problematicaIntegrado", ancho: 34 },
     { campo: "datosAdicionales", titulo: "datosAdicionales", ancho: 40 },
+    { campo: "fichaMedica", titulo: "fichaMedica (JSON)", ancho: 60 },
     { campo: "fotoDni", titulo: "fotoDni (URL / archivo)", ancho: 52 },
     { campo: "fotoCertificado", titulo: "fotoCertificado (URL / archivo)", ancho: 52 },
     { campo: "fechaInscripcion", titulo: "fechaInscripcion (ISO)", ancho: 26 },
@@ -923,7 +943,7 @@ function escribirDatosTecnicos(wb: ExcelWorkbook, registros: RegistroExportable[
 }
 
 /** Los valores técnicos van como los guardó el sistema, sin maquetar. */
-function valorTecnico(value: ValorExportable): string {
+function valorTecnico(value: ValorExportable | Record<string, string>): string {
     if (value === null || value === undefined) return SIN_DATO
     // El `typeof` evita el `ReferenceError` de `File` si este módulo se llegara
     // a evaluar fuera del navegador.
@@ -934,6 +954,7 @@ function valorTecnico(value: ValorExportable): string {
         return limpio && !/^(null|undefined|NaN)$/i.test(limpio) ? limpio : SIN_DATO
     }
     if (typeof value === "number") return Number.isFinite(value) ? String(value) : SIN_DATO
+    if (typeof value === "object" && Object.keys(value).length) return JSON.stringify(value)
     return SIN_DATO
 }
 

@@ -1,6 +1,7 @@
 import path from "node:path"
 import { createRequire } from "node:module"
 import pdfMake from "pdfmake"
+import { filasFichaMedica } from "./ficha-medica.mjs"
 
 const require = createRequire(import.meta.url)
 
@@ -61,7 +62,64 @@ const MINISTRY_FIELDS = [
   { label: "Problemática integrado:", value: (a) => a.problematicaIntegrado || "" },
 ]
 
-export async function generarFichaPdf(alumno) {
+/**
+ * Respuestas de los campos que agregó el admin desde el panel (ids `x_...`),
+ * en el orden del formulario y con la etiqueta actual. Las de campos que ya
+ * se eliminaron se muestran igual, para no perder datos cargados.
+ */
+function datosAdicionales(alumno, campos = []) {
+  let extras = alumno.extras
+  if (typeof extras === "string") {
+    try {
+      extras = JSON.parse(extras)
+    } catch {
+      extras = {}
+    }
+  }
+  if (!extras || typeof extras !== "object" || Array.isArray(extras)) return []
+
+  const out = []
+  const vistos = new Set()
+  for (const campo of campos) {
+    if (!campo.id?.startsWith("x_")) continue
+    const valor = String(extras[campo.id] ?? "").trim()
+    if (!valor) continue
+    vistos.add(campo.id)
+    const etiqueta = (v) => (campo.options ?? []).find((o) => o.value === v)?.label ?? v
+    const texto =
+      campo.kind === "checkbox"
+        ? valor.split("|").map((v) => v.trim()).filter(Boolean).map(etiqueta).join(", ")
+        : campo.kind === "date"
+          ? formatFecha(valor)
+          : etiqueta(valor)
+    out.push({ label: `${campo.label || "Campo"}:`, value: texto })
+  }
+  for (const [id, valor] of Object.entries(extras)) {
+    const v = String(valor ?? "").trim()
+    if (!vistos.has(id) && v) out.push({ label: "Campo eliminado:", value: v })
+  }
+  return out
+}
+
+const filaTabla = (label, value) => [
+  { text: label, bold: true, fontSize: 10, color: "#2d2d2d" },
+  { text: value || "", fontSize: 10, color: "#1f2937" },
+]
+
+const tablaLayout = (rows) => ({
+  hLineWidth: (i) => (i === 0 || i === rows.length ? 0.8 : 0.4),
+  hLineColor: () => "#bfbfbf",
+  vLineWidth: () => 0,
+  paddingTop: () => 6,
+  paddingBottom: () => 6,
+  paddingLeft: () => 4,
+  paddingRight: () => 4,
+})
+
+/** `campos`: esquema del formulario, para los datos de los campos personalizados. */
+export async function generarFichaPdf(alumno, campos = []) {
+  const extraRows = datosAdicionales(alumno, campos).map((d) => filaTabla(d.label, d.value))
+  const medicaRows = filasFichaMedica(alumno.fichaMedica).map((d) => filaTabla(d.label, d.value))
   const rows = MINISTRY_FIELDS.filter((f) => {
     const val = f.value(alumno)
     return val !== undefined && val !== null && val !== ""
@@ -99,16 +157,26 @@ export async function generarFichaPdf(alumno) {
           widths: ["auto", "*"],
           body: rows,
         },
-        layout: {
-          hLineWidth: (i) => (i === 0 || i === rows.length ? 0.8 : 0.4),
-          hLineColor: () => "#bfbfbf",
-          vLineWidth: () => 0,
-          paddingTop: () => 6,
-          paddingBottom: () => 6,
-          paddingLeft: () => 4,
-          paddingRight: () => 4,
-        },
+        layout: tablaLayout(rows),
       },
+      ...(extraRows.length
+        ? [
+            { text: "DATOS ADICIONALES", bold: true, fontSize: 11, margin: [0, 16, 0, 6] },
+            {
+              table: { widths: ["auto", "*"], body: extraRows },
+              layout: tablaLayout(extraRows),
+            },
+          ]
+        : []),
+      ...(medicaRows.length
+        ? [
+            { text: "FICHA MÉDICA (DDJJ)", bold: true, fontSize: 11, margin: [0, 16, 0, 6] },
+            {
+              table: { widths: ["auto", "*"], body: medicaRows },
+              layout: tablaLayout(medicaRows),
+            },
+          ]
+        : []),
       { text: `FECHA: ${todayFormatted()}`, bold: true, fontSize: 10, margin: [0, 14, 0, 0] },
     ],
   }

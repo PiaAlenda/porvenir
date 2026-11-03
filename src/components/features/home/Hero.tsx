@@ -17,8 +17,10 @@ interface CarouselSlide {
     videoSrc?: string;
 }
 
-/* Video del instructivo de inscripción (en public/videos/). Se muestra al tocar el botón del slide. */
-const INSTRUCTIVO_VIDEO_SRC = "/videos/Video explicativo formulario inscripcion subtitulos.mp4";
+/* Video del instructivo de inscripción (en public/videos/). Se muestra al tocar el botón del slide.
+ * WebM a 720p (6.5 MB); el MP4 original queda de respaldo para navegadores sin VP9. */
+const INSTRUCTIVO_VIDEO_SRC = "/videos/instructivo-inscripcion.webm";
+const INSTRUCTIVO_VIDEO_FALLBACK = "/videos/Video explicativo formulario inscripcion subtitulos.mp4";
 
 const carouselSlides: CarouselSlide[] = [
     {
@@ -55,20 +57,22 @@ const carouselSlides: CarouselSlide[] = [
     }
 ];
 
-const bgImage = "/img/fondo final 1 .jpg.jpeg";
+const bgImage = "/img/hero-fondo.webp";
 
 const Hero = ({ onNavigateAbout }: HeroProps) => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [videoOpen, setVideoOpen] = useState(false);
 
-    /* El carrusel se pausa mientras el video está abierto. */
+    /* El carrusel se pausa mientras el video está abierto. El temporizador se
+     * reinicia en cada cambio de slide, así tocar un punto no hace que el
+     * siguiente pase enseguida. */
     useEffect(() => {
         if (videoOpen) return;
-        const interval = setInterval(() => {
+        const timeout = setTimeout(() => {
             setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
-        }, 8000);
-        return () => clearInterval(interval);
-    }, [videoOpen]);
+        }, 4000);
+        return () => clearTimeout(timeout);
+    }, [videoOpen, currentSlide]);
 
     /* Al cambiar de slide se cierra el video para que no quede reproduciéndose. */
     useEffect(() => {
@@ -79,16 +83,16 @@ const Hero = ({ onNavigateAbout }: HeroProps) => {
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
-            transition: { staggerChildren: 0.1, delayChildren: 0.2 }
+            transition: { staggerChildren: 0.04 }
         }
     };
 
     const itemVariants: Variants = {
-        hidden: { y: 15, opacity: 0 },
+        hidden: { y: 10, opacity: 0 },
         visible: {
             y: 0,
             opacity: 1,
-            transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
+            transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
         }
     };
 
@@ -105,7 +109,7 @@ const Hero = ({ onNavigateAbout }: HeroProps) => {
     return (
         <div className="relative w-full bg-[#050505] overflow-hidden">
             <div className="absolute inset-0 z-0">
-                <img src={bgImage} alt="" className="w-full h-full object-[74%_center] object-cover brightness-[0.8]" />
+                <img src={bgImage} alt="" fetchPriority="high" decoding="async" className="w-full h-full object-[74%_center] object-cover brightness-[0.8]" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/10 to-black/40" />
             </div>
 
@@ -140,13 +144,15 @@ const Hero = ({ onNavigateAbout }: HeroProps) => {
                     <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto pt-4 px-4 sm:px-0">
                         {carouselSlides[currentSlide].videoSrc && videoOpen ? (
                             <video
-                                src={carouselSlides[currentSlide].videoSrc}
                                 controls
                                 autoPlay
                                 playsInline
                                 preload="metadata"
                                 className="w-full sm:w-[480px] max-w-full aspect-video rounded-lg shadow-2xl bg-black"
-                            />
+                            >
+                                <source src={carouselSlides[currentSlide].videoSrc} type="video/webm" />
+                                <source src={INSTRUCTIVO_VIDEO_FALLBACK} type="video/mp4" />
+                            </video>
                         ) : carouselSlides[currentSlide].videoSrc ? (
                             <button
                                 type="button"

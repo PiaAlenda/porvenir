@@ -75,6 +75,8 @@ export interface Alumno {
     problematicaIntegrado?: string
     /** Respuestas a los campos personalizados del formulario, por id de campo. */
     extras?: Record<string, string>
+    /** Respuestas de la ficha médica (DDJJ), indexadas por id de pregunta. */
+    fichaMedica?: Record<string, string>
     fotoDni?: string
     fotoCertificado?: string
     createdAt?: string
@@ -156,6 +158,8 @@ export interface InscripcionPayload {
     problematicaIntegrado?: string
     /** JSON con las respuestas a los campos personalizados ({ [idCampo]: valor }). */
     extras?: string
+    /** JSON con las respuestas de la ficha médica ({ [idPregunta]: valor }). */
+    fichaMedica?: string
 }
 
 function errorDeRed(): Error {
@@ -441,6 +445,15 @@ export const api = {
         })
     },
 
+
+    /** ¿Ya hay una inscripción con este DNI? Se consulta al terminar el primer paso. */
+    async verificarDocumento(numeroDocumento: string) {
+        return request<{ inscripto: boolean }>("/api/inscripciones/verificar-documento", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ numeroDocumento }),
+        })
+    },
 
     async postInscripcion(data: FormData | InscripcionPayload) {
         if (data instanceof FormData) {

@@ -309,8 +309,8 @@ const Navbar = ({
             {/* Sticky Header Navbar */}
             <header
                 ref={headerRef}
-                className={`sticky top-0 z-50 bg-[#1e1e1e] text-white transition-all duration-300 ${
-                    isScrolled ? "shadow-xl border-b border-white/10 bg-[#242426]/95 backdrop-blur-md" : ""
+                className={`sticky top-0 z-50 bg-[#1e1e1e] text-white transition-[background-color,box-shadow] duration-300 ${
+                    isScrolled ? "shadow-xl border-b border-white/10 bg-[#242426] lg:bg-[#242426]/95 lg:backdrop-blur-md" : ""
                 }`}
             >
                 {/* Top bar with Logo, Navigation Links, Compact Search (when scrolled), and Login Button */}
@@ -556,7 +556,7 @@ const Navbar = ({
             <AnimatePresence>
                 {mobileMenuOpen && (
                     <motion.div
-                        className="lg:hidden fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm"
+                        className="lg:hidden fixed inset-0 z-[120] bg-black/60"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -693,7 +693,7 @@ const Navbar = ({
             <AnimatePresence>
                 {searchOverlayOpen && (
                     <motion.div
-                        className="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm flex flex-col"
+                        className="fixed inset-0 z-[110] bg-black/60 lg:bg-black/50 lg:backdrop-blur-sm flex flex-col"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}

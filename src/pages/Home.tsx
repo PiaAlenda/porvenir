@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import Hero from "@/components/features/home/Hero";
 import EducationalOffer from "@/components/features/home/EducationalOffer";
-import InfoForm from "@/components/features/home/InfoForm";
+// El formulario queda debajo del pliegue y trae libphonenumber: se baja aparte.
+const InfoForm = lazy(() => import("@/components/features/home/InfoForm"));
 
 interface HomeProps {
   onNavigateToDetail: (id: string) => void;
@@ -45,7 +46,9 @@ const Home = ({ onNavigateToDetail, onNavigateToAbout, initialSelection }: HomeP
         />
       </div>
 
-      <InfoForm />
+      <Suspense fallback={<section id="inscripciones" className="min-h-[80vh] bg-white" />}>
+        <InfoForm />
+      </Suspense>
     </div>
   );
 };

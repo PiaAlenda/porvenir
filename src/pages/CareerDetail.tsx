@@ -82,7 +82,7 @@ const CareerDetail = ({ careerId, onBack }: CareerDetailProps) => {
                 </div>
             )}
 
-            <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/80 backdrop-blur-md border-t border-stone-200/80 z-50">
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-stone-200/80 z-50">
                 {available ? (
                     <button
                         onClick={handleEnroll}

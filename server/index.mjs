@@ -58,6 +58,7 @@ import {
 import { ensureBuckets, supabaseEnabled, cleanupPendingUploads } from "./supabase.mjs"
 import { generarFichaPdf } from "./pdf.mjs"
 import { PublicError } from "./errors.mjs"
+import { resolverFichaMedica } from "./ficha-medica.mjs"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const UPLOADS_DIR = path.join(__dirname, "data", "uploads")
@@ -369,7 +370,12 @@ async function resolverExtras(raw) {
   for (const campo of campos) {
     if (!campo.id.startsWith("x_") || !campo.visible) continue
     let valor = String(parsed[campo.id] ?? "").trim().slice(0, 500)
-    if (valor && campo.kind === "select" && !(campo.options ?? []).some((o) => o.value === valor)) valor = ""
+    const valida = (v) => (campo.options ?? []).some((o) => o.value === v)
+    if (valor && (campo.kind === "select" || campo.kind === "radio") && !valida(valor)) valor = ""
+    if (valor && campo.kind === "checkbox") {
+      // Selección múltiple: valores separados por "|"; se descartan los que no son opciones.
+      valor = [...new Set(valor.split("|").map((v) => v.trim()).filter((v) => v && valida(v)))].join(" | ")
+    }
     if (!valor) {
       if (campo.required) return { error: `Completá el campo ${campo.label}.` }
       continue
@@ -456,6 +462,27 @@ app.post("/api/contacto", contactLimiter, async (req, res) => {
   res.status(201).json({ ok: true })
 })
 
+/*
+ * El formulario pregunta si el DNI ya está inscripto al terminar el primer
+ * paso, para avisarlo ahí y no después de completar todo y subir las fotos.
+ * Solo responde sí/no (ningún dato de la inscripción). El tope por IP frena
+ * el barrido de documentos; el chequeo definitivo sigue siendo el del envío.
+ */
+const verificarDocumentoLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Demasiadas consultas desde esta conexión. Probá más tarde." },
+})
+
+app.post("/api/inscripciones/verificar-documento", verificarDocumentoLimiter, async (req, res) => {
+  const doc = String(req.body?.numeroDocumento ?? "").trim()
+  if (!/^\d{6,8}$/.test(doc)) return res.status(400).json({ error: "Número de documento inválido" })
+  const existente = await findByDocumento(doc)
+  res.json({ inscripto: Boolean(existente) })
+})
+
 app.post("/api/inscripciones/upload-urls", uploadUrlsLimiter, async (req, res) => {
   if (!directUploadsEnabled) return res.json({ direct: false })
   const tickets = await createUploadTickets(req.body?.files)
@@ -485,6 +512,11 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
 
   const extrasResult = await resolverExtras(body.extras)
   if (extrasResult.error) return rechazar(400, extrasResult.error)
+
+  // Un front anterior a la ficha médica no la manda: se acepta sin ficha
+  // para no romper inscripciones mientras se despliega el cambio.
+  const fichaResult = body.fichaMedica === undefined ? { ficha: null } : resolverFichaMedica(body.fichaMedica)
+  if (fichaResult.error) return rechazar(400, fichaResult.error)
 
   if (esDirecta && !directUploadsEnabled) {
     return rechazar(400, "Faltan adjuntar las fotos del DNI y del certificado.")
@@ -573,6 +605,7 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
       c_pueblo_indigena: body.c_pueblo_indigena ? String(body.c_pueblo_indigena).trim() : "",
       problematicaIntegrado: body.problematicaIntegrado ? String(body.problematicaIntegrado).trim() : "",
       ...(Object.keys(extrasResult.extras).length ? { extras: extrasResult.extras } : {}),
+      ...(fichaResult.ficha ? { fichaMedica: fichaResult.ficha } : {}),
       fotoDni,
       fotoCertificado,
     })
@@ -665,7 +698,8 @@ app.get("/api/inscripciones/:id/ficha", requireAdmin, async (req, res) => {
   const alumno = await getById(req.params.id)
   if (!alumno) return res.status(404).json({ error: "No existe la inscripción" })
   try {
-    const bytes = await generarFichaPdf(alumno)
+    const { campos } = await getFormOptions()
+    const bytes = await generarFichaPdf(alumno, campos)
     const nombre = `${(alumno.apellido || "alumno").replace(/[^a-zA-Z0-9]+/g, "_")}_ficha.pdf`
     await sendPdf(res, bytes, nombre)
   } catch (err) {

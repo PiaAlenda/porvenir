@@ -40,3 +40,25 @@
 @media (prefers-reduced-motion: reduce) {
     .reveal { animation: none; }
 }
+
+/*
+ * Campo de fecha del formulario: el ícono de calendario lo dibuja el
+ * componente (a la derecha, con el tilde a su izquierda). El indicador nativo
+ * se vuelve invisible y se ubica encima de ese ícono para que tocarlo siga
+ * abriendo el selector de fecha.
+ */
+.date-input {
+    position: relative;
+}
+.date-input::-webkit-calendar-picker-indicator {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.75rem;
+    height: 1.75rem;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
+}
