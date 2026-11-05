@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer"
-import { getContractContent, type ContractContent } from "./contractContent"
+import { BLANK_LINE, MARKER_SPLIT_RE, MARKER_TOKEN_RE, getContractContent, type ContractContent } from "./contractContent"
 import { LOGO_OBREROS_PORVENIR, LOGO_SOCORROS_MUTUOS, FIRMA_REPRESENTANTE_LEGAL } from "./contractAssets"
 
 export interface ContractPDFProps {
@@ -14,6 +14,11 @@ export interface ContractPDFProps {
     email: string
     courseName: string
     currentDate: string
+    /**
+     * Valores de los demás marcadores (APELLIDO, SEXO, x_abc123...), por nombre
+     * de marcador. Los que falten salen como línea en blanco.
+     */
+    values?: Record<string, string>
     /** Contrato a dibujar. Si falta, se usa el vigente (el subido por el admin o el de fábrica). */
     content?: ContractContent
 }
@@ -162,7 +167,11 @@ interface IntroSegment {
 }
 
 function valuesFor(data: ContractPDFProps): Record<string, string> {
+    const extra = Object.fromEntries(Object.entries(data.values ?? {}).filter(([, v]) => v?.trim()))
     return {
+        ...extra,
+        FECHA_HOY: data.currentDate,
+        BLANCO: BLANK_LINE,
         ALUMNO: data.fullName || "________________________",
         DNI: data.dni || "__________",
         EDAD: data.edad || "______",
@@ -179,13 +188,13 @@ function valuesFor(data: ContractPDFProps): Record<string, string> {
 function introSegments(data: ContractPDFProps, content: ContractContent): IntroSegment[] {
     const values = valuesFor(data)
     return content.intro
-        .split(/(<[A-Z_]+>)/)
+        .split(MARKER_SPLIT_RE)
         .filter((token) => token.length > 0)
         .map((token) => {
-            const match = /^<([A-Z_]+)>$/.exec(token)
+            const match = MARKER_TOKEN_RE.exec(token)
             if (!match) return { text: token, isVariable: false }
             const key = match[1]
-            return { text: values[key] ?? "", isVariable: true }
+            return { text: values[key] ?? BLANK_LINE, isVariable: true }
         })
 }
 

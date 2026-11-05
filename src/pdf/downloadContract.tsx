@@ -1,6 +1,9 @@
 import type { Alumno } from "@/api"
 import type { InscriptionFormValues } from "@/components/features/home/form/validation"
+import { separarMultiple } from "@/components/features/home/form/formSchema"
+import { SEXO_LABELS } from "@/components/features/home/form/options"
 import type { ContractPDFProps } from "./ContractPDFDocument"
+import { getContractFormFields } from "./contractContent"
 
 function pad(n: number): string {
     return String(n).padStart(2, "0")
@@ -30,8 +33,45 @@ function todayFormatted(): string {
     return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`
 }
 
+interface ExtraSource {
+    apellido?: string
+    nombre?: string
+    c_sexo?: string
+    c_nacionalidad?: string
+    lugar_nacimiento?: string
+    celularUrgencia?: string
+    anioDivision?: string
+    extras?: Record<string, string>
+}
+
+/** Valores de los marcadores que no son los 10 de siempre: otros datos y preguntas del formulario. */
+function extraValues(src: ExtraSource): Record<string, string> {
+    const values: Record<string, string> = {
+        APELLIDO: src.apellido || "",
+        NOMBRE: src.nombre || "",
+        SEXO: src.c_sexo ? (SEXO_LABELS[src.c_sexo] ?? src.c_sexo) : "",
+        NACIONALIDAD: src.c_nacionalidad || "",
+        LUGAR_NACIMIENTO: src.lugar_nacimiento || "",
+        CELULAR_URGENCIA: src.celularUrgencia || "",
+        ANIO_DIVISION: src.anioDivision || "",
+    }
+    for (const field of getContractFormFields()) {
+        const raw = (src.extras?.[field.id] ?? "").trim()
+        if (!raw) continue
+        const label = (v: string) => field.options?.find((o) => o.value === v)?.label ?? v
+        values[field.id] =
+            field.kind === "checkbox"
+                ? separarMultiple(raw).map(label).join(", ")
+                : field.kind === "date"
+                  ? formatDate(raw)
+                  : label(raw)
+    }
+    return values
+}
+
 export function mapAlumnoToContractProps(alumno: Alumno): ContractPDFProps {
     return {
+        values: extraValues(alumno),
         fullName: `${alumno.apellido} ${alumno.nombre}`.trim(),
         dni: alumno.numeroDocumento || "",
         cuil: alumno.cuil || "",
@@ -51,6 +91,7 @@ export function mapFormValuesToContractProps(
     courseTitleFallback?: string
 ): ContractPDFProps {
     return {
+        values: extraValues(values),
         fullName: `${values.apellido || ""} ${values.nombre || ""}`.trim(),
         dni: values.numeroDocumento || "",
         cuil: values.cuil || "",

@@ -26,6 +26,81 @@ export const CONTRACT_MARKERS = [
     "CURSO",
 ] as const
 
+/** Otros datos de la inscripción que también se pueden poner en el contrato. */
+export const EXTRA_STUDENT_MARKERS = [
+    "APELLIDO",
+    "NOMBRE",
+    "SEXO",
+    "NACIONALIDAD",
+    "LUGAR_NACIMIENTO",
+    "CELULAR_URGENCIA",
+    "ANIO_DIVISION",
+] as const
+
+/** Marcadores que no salen de la ficha del alumno. */
+export const SPECIAL_MARKERS = ["FECHA_HOY", "BLANCO"] as const
+
+export type ContractMarker =
+    | (typeof CONTRACT_MARKERS)[number]
+    | (typeof EXTRA_STUDENT_MARKERS)[number]
+    | (typeof SPECIAL_MARKERS)[number]
+
+/** Nombre que ve el admin para cada dato del alumno. */
+export const CONTRACT_MARKER_LABELS: Record<ContractMarker, string> = {
+    ALUMNO: "Nombre completo",
+    DNI: "DNI",
+    EDAD: "Edad",
+    CUIL: "CUIL",
+    DOMICILIO: "Domicilio",
+    DEPARTAMENTO: "Departamento",
+    CELULAR: "Celular",
+    FECHA_NACIMIENTO: "Fecha de nacimiento",
+    EMAIL: "Email",
+    CURSO: "Curso o carrera",
+    APELLIDO: "Apellido",
+    NOMBRE: "Nombre",
+    SEXO: "Sexo",
+    NACIONALIDAD: "Nacionalidad",
+    LUGAR_NACIMIENTO: "Ciudad de nacimiento",
+    CELULAR_URGENCIA: "Celular de urgencia",
+    ANIO_DIVISION: "Año / División",
+    FECHA_HOY: "Fecha de hoy",
+    BLANCO: "Espacio para completar a mano",
+}
+
+/**
+ * Un marcador es <NOMBRE_EN_MAYUSCULAS> (datos fijos) o <x_abc123> (una
+ * pregunta agregada por el admin en el formulario de inscripción).
+ */
+export const MARKER_SPLIT_RE = /(<(?:[A-Z_]+|x_[a-z0-9]+)>)/
+export const MARKER_TOKEN_RE = /^<([A-Z_]+|x_[a-z0-9]+)>$/
+
+export const isCustomFieldMarker = (key: string): boolean => key.startsWith("x_")
+
+/** Línea que se imprime en lugar de un dato vacío (o del espacio para completar a mano). */
+export const BLANK_LINE = "____________________"
+
+/*
+ * Preguntas personalizadas del formulario. Igual que el contrato, viven fuera de
+ * React porque las usa el generador del PDF. `SiteConfigProvider` las actualiza.
+ */
+export interface ContractFormField {
+    id: string
+    label: string
+    kind: string
+    options?: { value: string; label: string }[]
+}
+
+let formFields: ContractFormField[] = []
+
+export function setContractFormFields(fields: ContractFormField[]): void {
+    formFields = fields.filter((f) => isCustomFieldMarker(f.id))
+}
+
+export function getContractFormFields(): ContractFormField[] {
+    return formFields
+}
+
 export const CONTRACT_CONTENT: ContractContent = {
     header: [
         'Escuela de Capacitación Laboral "Obreros del Porvenir"',

@@ -22,7 +22,67 @@ const SIN_ASIGNAR = "__sin_asignar__"
 /** Inscripciones por página. */
 const PAGE_SIZE = 10
 
-function RotatableImage({ src, alt }: { src: string; alt: string }) {
+/** El formulario acepta PDF: un `<img>` no los puede mostrar. */
+function esPdf(src: string) {
+    try {
+        return new URL(src, window.location.origin).pathname.toLowerCase().endsWith(".pdf")
+    } catch {
+        return /\.pdf(\?|#|$)/i.test(src)
+    }
+}
+
+/**
+ * Vista previa de un adjunto. Las URLs firmadas vencen a los 10 minutos: si la
+ * imagen no carga se pide una vez la lista de nuevo (`onExpired`) para obtener
+ * URLs frescas, y si sigue fallando se muestra el aviso con el link directo.
+ */
+function Adjunto({ src, alt, onExpired }: { src: string; alt: string; onExpired: () => void }) {
+    const [failed, setFailed] = useState(false)
+    const retried = useRef(false)
+
+    // Llegó una URL nueva (recarga): se vuelve a intentar.
+    useEffect(() => setFailed(false), [src])
+
+    const handleError = () => {
+        if (!retried.current) {
+            retried.current = true
+            onExpired()
+            return
+        }
+        setFailed(true)
+    }
+
+    if (esPdf(src)) {
+        return (
+            <div className="space-y-2">
+                <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                    <iframe src={src} title={alt} className="h-full w-full pointer-events-none" />
+                </div>
+                <a href={src} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#4d0706] hover:underline">
+                    <FileText className="w-3.5 h-3.5" />
+                    Abrir PDF
+                </a>
+            </div>
+        )
+    }
+
+    if (failed) {
+        return (
+            <div className="mx-auto aspect-square w-full max-w-xs rounded-lg border border-dashed border-gray-300 bg-gray-50 grid place-items-center p-4 text-center">
+                <div className="space-y-2">
+                    <p className="text-xs font-medium text-gray-500">No se pudo cargar la imagen.</p>
+                    <a href={src} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#4d0706] hover:underline">
+                        Abrir archivo
+                    </a>
+                </div>
+            </div>
+        )
+    }
+
+    return <RotatableImage src={src} alt={alt} onError={handleError} />
+}
+
+function RotatableImage({ src, alt, onError }: { src: string; alt: string; onError?: () => void }) {
     const [deg, setDeg] = useState(0)
     const [open, setOpen] = useState(false)
     const [zoom, setZoom] = useState(1)
@@ -119,6 +179,7 @@ function RotatableImage({ src, alt }: { src: string; alt: string }) {
                 <img
                     src={src}
                     alt={alt}
+                    onError={onError}
                     className="h-full w-full object-contain transition-transform duration-300"
                     style={{ transform: `rotate(${deg}deg)` }}
                 />
@@ -234,6 +295,11 @@ export default function AlumnosPanel({ token }: Props) {
             cancelled = true
         }
     }, [token, page, debouncedSearch, careerFilter, reloadKey])
+
+    /* Al recargar, el detalle abierto toma el registro nuevo (URLs firmadas frescas). */
+    useEffect(() => {
+        setDetailAlumno((d) => (d ? alumnos.find((a) => a.id === d.id) ?? d : d))
+    }, [alumnos])
 
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
@@ -927,11 +993,11 @@ export default function AlumnosPanel({ token }: Props) {
                                     </div>
                                 )}
 
-                                <div className="mt-8 pt-8 border-t-2 border-[#4d0706]/15 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="mt-8 pt-8 border-t-2 border-[#4d0706]/15 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     <div className="min-w-0">
                                         <p className="text-xs font-medium text-gray-500 mb-2">Foto DNI</p>
                                         {detailAlumno.fotoDni ? (
-                                            <RotatableImage key={detailAlumno.id + "-fotoDni"} src={detailAlumno.fotoDni} alt="Foto DNI" />
+                                            <Adjunto key={detailAlumno.id + "-fotoDni"} src={detailAlumno.fotoDni} alt="Foto DNI" onExpired={load} />
                                         ) : (
                                             <p className="text-xs font-medium text-gray-400">Sin foto de DNI</p>
                                         )}
@@ -940,7 +1006,7 @@ export default function AlumnosPanel({ token }: Props) {
                                     <div className="min-w-0">
                                         <p className="text-xs font-medium text-gray-500 mb-2">Foto Certificado</p>
                                         {detailAlumno.fotoCertificado ? (
-                                            <RotatableImage key={detailAlumno.id + "-fotoCertificado"} src={detailAlumno.fotoCertificado} alt="Foto Certificado" />
+                                            <Adjunto key={detailAlumno.id + "-fotoCertificado"} src={detailAlumno.fotoCertificado} alt="Foto Certificado" onExpired={load} />
                                         ) : (
                                             <p className="text-xs font-medium text-gray-400">Sin foto de certificado</p>
                                         )}
@@ -949,7 +1015,7 @@ export default function AlumnosPanel({ token }: Props) {
                                     <div className="min-w-0">
                                         <p className="text-xs font-medium text-gray-500 mb-2">Foto CUIL</p>
                                         {detailAlumno.fotoCuil ? (
-                                            <RotatableImage key={detailAlumno.id + "-fotoCuil"} src={detailAlumno.fotoCuil} alt="Foto CUIL" />
+                                            <Adjunto key={detailAlumno.id + "-fotoCuil"} src={detailAlumno.fotoCuil} alt="Foto CUIL" onExpired={load} />
                                         ) : (
                                             <p className="text-xs font-medium text-gray-400">Sin foto de CUIL</p>
                                         )}

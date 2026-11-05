@@ -94,7 +94,8 @@ const assetFileFilter = (_req, file, cb) => {
  */
 export const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: MAX_UPLOAD_BYTES, files: 2 },
+    // Tres adjuntos: DNI, certificado y CUIL.
+    limits: { fileSize: MAX_UPLOAD_BYTES, files: 3 },
     fileFilter: assetFileFilter,
 })
 

@@ -1,5 +1,5 @@
 import JSZip from "jszip"
-import { CONTRACT_MARKERS, type ContractContent } from "./contractContent"
+import { CONTRACT_MARKERS, CONTRACT_MARKER_LABELS as MARKER_LABELS, type ContractContent } from "./contractContent"
 
 const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 const MAX_DOCX_BYTES = 5 * 1024 * 1024
@@ -283,19 +283,6 @@ function structure(paragraphs: RawParagraph[]): ContractContent {
     if (!clauses.length) throw new Error("No encontré las cláusulas del contrato en el documento.")
 
     return { header: header as ContractContent["header"], intro, clauses, firmaLines }
-}
-
-const MARKER_LABELS: Record<(typeof CONTRACT_MARKERS)[number], string> = {
-    ALUMNO: "Nombre del alumno",
-    DNI: "DNI",
-    EDAD: "Edad",
-    CUIL: "CUIL",
-    DOMICILIO: "Domicilio",
-    DEPARTAMENTO: "Departamento",
-    CELULAR: "Celular",
-    FECHA_NACIMIENTO: "Fecha de nacimiento",
-    EMAIL: "Email",
-    CURSO: "Curso / carrera",
 }
 
 export async function parseContractDocx(file: File): Promise<ParsedContract> {

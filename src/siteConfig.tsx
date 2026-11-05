@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
 import { api, type CursoConfig, type SiteConfigMap } from "./api"
-import { setCustomContract, type ContractContent } from "@/pdf/contractContent"
+import { setContractFormFields, setCustomContract, type ContractContent } from "@/pdf/contractContent"
 import { CAREER_DATA, type Career, type CareerSubject, type Teacher } from "./config/careerData"
 import { CAREER_VIDEOS } from "./config/careerVideos"
 import { DEFAULT_FORM_OPTIONS, mergeFormOptions, type FormOptions } from "@/components/features/home/form/formSchema"
@@ -45,7 +45,9 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
                 .getConfig()
                 .then((r) => {
                     setConfig(r.cursos)
-                    setFormOptions(mergeFormOptions(r.formOptions))
+                    const merged = mergeFormOptions(r.formOptions)
+                    setFormOptions(merged)
+                    setContractFormFields(merged.campos)
                     setCustomContract(r.contract)
                     setContract(r.contract ?? null)
                 })
