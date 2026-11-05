@@ -501,6 +501,22 @@ export const api = {
         return authedRequest<{ inscripciones: Alumno[] }>("/api/inscripciones", { headers: auth(token) })
     },
 
+    async listInscripcionesPage(
+        token: string,
+        params: { page: number; pageSize: number; q?: string; career?: string },
+    ) {
+        const qs = new URLSearchParams({ page: String(params.page), pageSize: String(params.pageSize) })
+        if (params.q) qs.set("q", params.q)
+        if (params.career) qs.set("career", params.career)
+        return authedRequest<{
+            items: Alumno[]
+            total: number
+            totalAll: number
+            unassigned: number
+            careers: string[]
+        }>(`/api/inscripciones?${qs}`, { headers: auth(token) })
+    },
+
     async updateInscripcion(token: string, id: string, patch: Partial<Alumno>) {
         return authedRequest<{ inscripcion: Alumno }>(`/api/inscripciones/${id}`, {
             method: "PUT",

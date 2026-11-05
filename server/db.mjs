@@ -145,6 +145,92 @@ export async function getAll() {
   return records
 }
 
+export const SIN_ASIGNAR = "__sin_asignar__"
+
+/** Quita caracteres que rompen la sintaxis de filtros `or()` de PostgREST. */
+function sanitizeSearch(q) {
+  return String(q || "").replace(/[,()*%\\]/g, " ").trim()
+}
+
+/**
+ * Página de inscripciones para el panel. Filtra y pagina en la base y firma
+ * las URLs de los adjuntos solo de las filas que se devuelven. Además entrega
+ * los totales y las carreras con inscriptos, que el panel muestra aparte.
+ */
+export async function getPage({ page = 1, pageSize = 10, q = "", career = "" } = {}) {
+  const size = Math.min(Math.max(parseInt(pageSize, 10) || 10, 1), 100)
+  const pageNum = Math.max(parseInt(page, 10) || 1, 1)
+  const from = (pageNum - 1) * size
+  const search = String(q || "").toLowerCase().trim()
+
+  if (!supabaseEnabled) {
+    const all = await getAll()
+    const filtered = all.filter((a) => {
+      const titulo = String(a.courseTitle || "").trim()
+      if (career === SIN_ASIGNAR && titulo) return false
+      if (career && career !== SIN_ASIGNAR && titulo !== career) return false
+      if (!search) return true
+      return [a.apellido, a.nombre, a.numeroDocumento, a.cuil, titulo].some((v) =>
+        String(v || "").toLowerCase().includes(search),
+      )
+    })
+    const titles = all.map((a) => String(a.courseTitle || "").trim())
+    return {
+      items: filtered.slice(from, from + size),
+      total: filtered.length,
+      totalAll: all.length,
+      unassigned: titles.filter((t) => !t).length,
+      careers: [...new Set(titles.filter(Boolean))],
+    }
+  }
+
+  // Resumen liviano: una sola columna por fila, sin adjuntos.
+  const { data: light, error: lightError } = await supabase
+    .from(TABLE)
+    .select("title:data->>courseTitle")
+  if (lightError) fail("no se pudo leer el resumen de inscripciones", lightError)
+  const titles = (light || []).map((r) => String(r.title || "").trim())
+
+  let query = supabase
+    .from(TABLE)
+    .select("id, data, created_at, updated_at", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, from + size - 1)
+
+  if (career === SIN_ASIGNAR) {
+    query = query.or("data->>courseTitle.is.null,data->>courseTitle.eq.")
+  } else if (career) {
+    query = query.eq("data->>courseTitle", career)
+  }
+  const clean = sanitizeSearch(search)
+  if (clean) {
+    const like = `%${clean}%`
+    query = query.or(
+      ["apellido", "nombre", "numeroDocumento", "cuil", "courseTitle"]
+        .map((f) => `data->>${f}.ilike.${like}`)
+        .join(","),
+    )
+  }
+
+  const { data, count, error } = await query
+  if (error) fail("no se pudieron leer las inscripciones", error)
+
+  const records = (data || []).map(toRawRecord)
+  const urls = await resolveMediaUrls(records.flatMap((r) => [r.fotoDni, r.fotoCertificado]))
+  for (const r of records) {
+    if (r.fotoDni) r.fotoDni = urls.get(r.fotoDni) ?? ""
+    if (r.fotoCertificado) r.fotoCertificado = urls.get(r.fotoCertificado) ?? ""
+  }
+
+  return {
+    items: records,
+    total: count ?? records.length,
+    totalAll: titles.length,
+    unassigned: titles.filter((t) => !t).length,
+    careers: [...new Set(titles.filter(Boolean))],
+  }
+}
+
 /** Lectura interna: devuelve las claves crudas, sin firmar URLs. */
 async function getRawById(id) {
   if (!supabaseEnabled) return readFile().find((r) => r.id === id) || null

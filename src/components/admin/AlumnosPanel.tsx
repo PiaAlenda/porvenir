@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { CalendarDays, ChevronDown, FileText, FileSpreadsheet, Mail, MoreVertical, Pencil, Phone, Trash2, RefreshCw, Loader2, Users, Search, GraduationCap, X } from "lucide-react"
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, FileText, FileSpreadsheet, Mail, MoreVertical, Pencil, Phone, Trash2, RefreshCw, Loader2, Users, Search, GraduationCap, X } from "lucide-react"
 import { api, type Alumno } from "@/api"
 import { sexoLabel } from "@/components/features/home/form/options"
 import { extrasConEtiqueta } from "@/components/features/home/form/formSchema"
@@ -19,8 +19,19 @@ type StatId = "total" | "mostrando" | "sinAsignar"
 /** Valor del filtro de carrera para "lo que no tiene nada asignado". */
 const SIN_ASIGNAR = "__sin_asignar__"
 
+/** Inscripciones por página. */
+const PAGE_SIZE = 10
+
 export default function AlumnosPanel({ token }: Props) {
+    /** Inscripciones de la página actual (el filtrado y la paginación son del servidor). */
     const [alumnos, setAlumnos] = useState<Alumno[]>([])
+    const [total, setTotal] = useState(0)
+    const [totalAll, setTotalAll] = useState(0)
+    const [unassigned, setUnassigned] = useState(0)
+    const [careerTitles, setCareerTitles] = useState<string[]>([])
+    const [page, setPage] = useState(1)
+    const [debouncedSearch, setDebouncedSearch] = useState("")
+    const [reloadKey, setReloadKey] = useState(0)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
     const [editing, setEditing] = useState<Alumno | null>(null)
@@ -65,41 +76,54 @@ export default function AlumnosPanel({ token }: Props) {
         return () => document.removeEventListener("keydown", onKey)
     }, [detailAlumno])
 
-    const load = useCallback(async () => {
-        setLoading(true)
-        setError("")
-        try {
-            const res = await api.listInscripciones(token)
-            setAlumnos(res.inscripciones)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Error al cargar las inscripciones")
-        } finally {
-            setLoading(false)
-        }
-    }, [token])
+    /* La búsqueda espera a que se deje de tipear antes de consultar al servidor. */
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(search.trim()), 350)
+        return () => clearTimeout(t)
+    }, [search])
+
+    useEffect(() => {
+        setPage(1)
+    }, [debouncedSearch, careerFilter])
+
+    const load = useCallback(() => setReloadKey((k) => k + 1), [])
 
     useEffect(() => {
         let cancelled = false
-        api.listInscripciones(token)
+        setLoading(true)
+        setError("")
+        api.listInscripcionesPage(token, { page, pageSize: PAGE_SIZE, q: debouncedSearch, career: careerFilter })
             .then((res) => {
-                if (!cancelled) setAlumnos(res.inscripciones)
+                if (cancelled) return
+                const pages = Math.max(1, Math.ceil(res.total / PAGE_SIZE))
+                if (page > pages) {
+                    setPage(pages)
+                    return
+                }
+                setAlumnos(res.items)
+                setTotal(res.total)
+                setTotalAll(res.totalAll)
+                setUnassigned(res.unassigned)
+                setCareerTitles(res.careers)
+                setLoading(false)
             })
             .catch((err) => {
-                if (!cancelled) setError(err instanceof Error ? err.message : "Error al cargar las inscripciones")
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false)
+                if (cancelled) return
+                setError(err instanceof Error ? err.message : "Error al cargar las inscripciones")
+                setLoading(false)
             })
         return () => {
             cancelled = true
         }
-    }, [token])
+    }, [token, page, debouncedSearch, careerFilter, reloadKey])
+
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
     const handleDelete = async () => {
         if (!confirmDelete) return
         try {
             await api.deleteInscripcion(token, confirmDelete.id)
-            setAlumnos((prev) => prev.filter((a) => a.id !== confirmDelete.id))
+            load()
         } catch (err) {
             setError(err instanceof Error ? err.message : "Error al eliminar")
         } finally {
@@ -145,12 +169,9 @@ export default function AlumnosPanel({ token }: Props) {
             const title = (config[id]?.title || "").trim()
             if (title) titulos.add(title)
         })
-        alumnos.forEach((a) => {
-            const title = (a.courseTitle || "").trim()
-            if (title) titulos.add(title)
-        })
+        careerTitles.forEach((title) => titulos.add(title))
         return [...titulos].sort((a, b) => a.localeCompare(b, "es"))
-    }, [config, alumnos])
+    }, [config, careerTitles])
 
     /** Título de la carrera filtrada, o vacío si no hay filtro. */
     const careerLabel = careerFilter === SIN_ASIGNAR ? "Sin asignar" : careerFilter
@@ -160,24 +181,27 @@ export default function AlumnosPanel({ token }: Props) {
      * texto busca dentro de ese subconjunto (apellido, nombre, documento,
      * CUIL o el nombre de la carrera).
      */
-    const filtered = useMemo(() => {
-        const q = search.toLowerCase().trim()
-        return alumnos.filter((a) => {
-            const titulo = (a.courseTitle ?? "").trim()
+    const filterAlumnos = useCallback(
+        (lista: Alumno[]) => {
+            const q = search.toLowerCase().trim()
+            return lista.filter((a) => {
+                const titulo = (a.courseTitle ?? "").trim()
 
-            if (careerFilter === SIN_ASIGNAR && titulo) return false
-            if (careerFilter && careerFilter !== SIN_ASIGNAR && titulo !== careerFilter) return false
+                if (careerFilter === SIN_ASIGNAR && titulo) return false
+                if (careerFilter && careerFilter !== SIN_ASIGNAR && titulo !== careerFilter) return false
 
-            if (!q) return true
-            return (
-                a.apellido.toLowerCase().includes(q) ||
-                a.nombre.toLowerCase().includes(q) ||
-                a.numeroDocumento.toLowerCase().includes(q) ||
-                a.cuil.toLowerCase().includes(q) ||
-                titulo.toLowerCase().includes(q)
-            )
-        })
-    }, [alumnos, search, careerFilter])
+                if (!q) return true
+                return (
+                    a.apellido.toLowerCase().includes(q) ||
+                    a.nombre.toLowerCase().includes(q) ||
+                    a.numeroDocumento.toLowerCase().includes(q) ||
+                    a.cuil.toLowerCase().includes(q) ||
+                    titulo.toLowerCase().includes(q)
+                )
+            })
+        },
+        [search, careerFilter],
+    )
 
     /**
      * Vuelca lo que se está viendo a un .xlsx: con una carrera elegida eso es
@@ -185,10 +209,13 @@ export default function AlumnosPanel({ token }: Props) {
      * de texto, el recorte más chico que se le pidió).
      */
     const handleDownloadExcel = async () => {
-        if (exporting || loading || !filtered.length) return
+        if (exporting || loading || !total) return
         setExporting(true)
         setError("")
         try {
+            // La exportación sí necesita todo el recorte, no solo la página visible.
+            const { inscripciones } = await api.listInscripciones(token)
+            const filtered = filterAlumnos(inscripciones)
             await downloadInscripcionXlsx({
                 careerTitle: careerFilter ? careerLabel : "Todas las carreras",
                 registros: filtered.map((a) => ({
@@ -217,12 +244,9 @@ export default function AlumnosPanel({ token }: Props) {
         setCareerFilter("")
     }
 
-    const unassigned = useMemo(() => alumnos.filter((a) => !a.courseTitle).length, [alumnos])
-    const unassignedAlumnos = useMemo(() => alumnos.filter((a) => !a.courseTitle), [alumnos])
-
     const statItems = [
-        { id: "total" as const, label: "Total inscriptos", value: alumnos.length, icon: Users, boxClass: "bg-[#4d0706]/5 text-[#4d0706]" },
-        { id: "mostrando" as const, label: "Mostrando", value: filtered.length, icon: Search, boxClass: "bg-emerald-50 text-emerald-700" },
+        { id: "total" as const, label: "Total inscriptos", value: totalAll, icon: Users, boxClass: "bg-[#4d0706]/5 text-[#4d0706]" },
+        { id: "mostrando" as const, label: "Mostrando", value: total, icon: Search, boxClass: "bg-emerald-50 text-emerald-700" },
         { id: "sinAsignar" as const, label: "Sin asignar", value: unassigned, icon: GraduationCap, boxClass: "bg-amber-50 text-amber-700" },
     ]
 
@@ -236,7 +260,7 @@ export default function AlumnosPanel({ token }: Props) {
                         </p>
                         <div className="flex flex-wrap gap-2">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black text-[#4d0706] bg-[#4d0706]/5">
-                                Con curso asignado: {alumnos.length - unassigned}
+                                Con curso asignado: {totalAll - unassigned}
                             </span>
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black text-amber-700 bg-amber-50">
                                 Sin asignar: {unassigned}
@@ -248,7 +272,7 @@ export default function AlumnosPanel({ token }: Props) {
                 return (
                     <div className="space-y-3">
                         <p className="text-sm text-gray-600 font-medium">
-                            Estás viendo <strong>{filtered.length}</strong> de <strong>{alumnos.length}</strong> inscripciones.
+                            Hay <strong>{total}</strong> de <strong>{totalAll}</strong> inscripciones que coinciden.
                         </p>
                         {search.trim() || careerFilter ? (
                             <div className="flex flex-wrap items-center gap-2">
@@ -277,22 +301,19 @@ export default function AlumnosPanel({ token }: Props) {
             case "sinAsignar":
                 return (
                     <div className="space-y-3">
-                        {unassignedAlumnos.length === 0 ? (
+                        {unassigned === 0 ? (
                             <p className="text-sm text-gray-600 font-medium">Todos los inscriptos tienen curso o carrera asignada.</p>
                         ) : (
                             <>
-                                <p className="text-sm text-gray-600 font-medium">Inscriptos que todavía no tienen curso o carrera asignada:</p>
-                                <ul className="space-y-1.5">
-                                    {unassignedAlumnos.slice(0, 5).map((a) => (
-                                        <li key={a.id} className="flex items-center gap-2 text-xs font-bold text-gray-700">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                                            {a.apellido}, {a.nombre}
-                                        </li>
-                                    ))}
-                                </ul>
-                                {unassignedAlumnos.length > 5 && (
-                                    <p className="text-xs text-gray-400 font-medium">y {unassignedAlumnos.length - 5} más...</p>
-                                )}
+                                <p className="text-sm text-gray-600 font-medium">
+                                    <strong>{unassigned}</strong> inscriptos todavía no tienen curso o carrera asignada.
+                                </p>
+                                <button
+                                    onClick={() => setCareerFilter(SIN_ASIGNAR)}
+                                    className="text-xs font-bold text-[#4d0706] cursor-pointer underline underline-offset-2"
+                                >
+                                    Ver solo los sin asignar
+                                </button>
                             </>
                         )}
                     </div>
@@ -509,7 +530,7 @@ export default function AlumnosPanel({ token }: Props) {
                                     {titulo}
                                 </option>
                             ))}
-                            {unassigned > 0 && <option value={SIN_ASIGNAR}>Sin asignar</option>}
+                            {(unassigned > 0 || careerFilter === SIN_ASIGNAR) && <option value={SIN_ASIGNAR}>Sin asignar</option>}
                         </select>
                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     </div>
@@ -518,11 +539,11 @@ export default function AlumnosPanel({ token }: Props) {
                 <div className="flex flex-col sm:flex-row gap-2">
                     <button
                         onClick={handleDownloadExcel}
-                        disabled={exporting || loading || filtered.length === 0}
+                        disabled={exporting || loading || total === 0}
                         title={
-                            filtered.length === 0
+                            total === 0
                                 ? "No hay inscripciones para exportar con estos filtros"
-                                : `Descargar en Excel los ${filtered.length} inscriptos que se están mostrando`
+                                : `Descargar en Excel los ${total} inscriptos que coinciden con los filtros`
                         }
                         className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
                     >
@@ -531,7 +552,7 @@ export default function AlumnosPanel({ token }: Props) {
                         ) : (
                             <FileSpreadsheet className="w-4 h-4" />
                         )}
-                        {exporting ? "Generando..." : `Descargar Excel (${filtered.length})`}
+                        {exporting ? "Generando..." : `Descargar Excel (${total})`}
                     </button>
                     <button
                         onClick={load}
@@ -549,17 +570,45 @@ export default function AlumnosPanel({ token }: Props) {
                 <div className="flex items-center justify-center py-20 text-gray-400">
                     <Loader2 className="w-6 h-6 animate-spin" />
                 </div>
-            ) : filtered.length === 0 ? (
+            ) : total === 0 ? (
                 <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-14 text-center">
                     <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                     <p className="text-sm font-bold text-gray-500">
-                        {alumnos.length === 0 ? "Todavía no hay inscripciones." : "No se encontraron resultados."}
+                        {totalAll === 0 ? "Todavía no hay inscripciones." : "No se encontraron resultados."}
                     </p>
                 </div>
             ) : (
-                <div className="divide-y divide-gray-100">
-                    {filtered.map(renderRow)}
-                </div>
+                <>
+                    <div className="divide-y divide-gray-100">{alumnos.map(renderRow)}</div>
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between gap-3 pt-2">
+                            <p className="text-xs font-bold text-gray-500">
+                                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total}
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                    disabled={page <= 1}
+                                    aria-label="Página anterior"
+                                    className="w-10 h-10 grid place-items-center rounded-xl text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </button>
+                                <span className="text-xs font-black text-gray-700 min-w-[4.5rem] text-center">
+                                    {page} / {totalPages}
+                                </span>
+                                <button
+                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={page >= totalPages}
+                                    aria-label="Página siguiente"
+                                    className="w-10 h-10 grid place-items-center rounded-xl text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
 
             {detailAlumno && (

@@ -8,6 +8,7 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import {
   getAll,
+  getPage,
   getById,
   createAlumno,
   updateAlumno,
@@ -634,7 +635,19 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
   })
 })
 
-app.get("/api/inscripciones", requireAdmin, async (_req, res) => {
+app.get("/api/inscripciones", requireAdmin, async (req, res) => {
+  // Con `page` responde paginado (panel de inscripciones); sin él, la lista completa.
+  if (req.query.page !== undefined) {
+    const { page, pageSize, q, career } = req.query
+    return res.json(
+      await getPage({
+        page,
+        pageSize,
+        q: typeof q === "string" ? q.slice(0, 100) : "",
+        career: typeof career === "string" ? career.slice(0, 200) : "",
+      }),
+    )
+  }
   res.json({ inscripciones: await getAll() })
 })
 
