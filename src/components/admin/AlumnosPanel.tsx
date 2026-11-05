@@ -22,6 +22,22 @@ const SIN_ASIGNAR = "__sin_asignar__"
 /** Inscripciones por página. */
 const PAGE_SIZE = 10
 
+const VISTA_KEY = "admin:inscripciones:vista"
+
+/** Página, búsqueda y filtro guardados en la sesión (sobreviven a la recarga). */
+function leerVista(): { page: number; search: string; career: string } {
+    try {
+        const v = JSON.parse(sessionStorage.getItem(VISTA_KEY) || "{}")
+        return {
+            page: Number.isInteger(v.page) && v.page > 0 ? v.page : 1,
+            search: typeof v.search === "string" ? v.search : "",
+            career: typeof v.career === "string" ? v.career : "",
+        }
+    } catch {
+        return { page: 1, search: "", career: "" }
+    }
+}
+
 /** El formulario acepta PDF: un `<img>` no los puede mostrar. */
 function esPdf(src: string) {
     try {
@@ -208,16 +224,16 @@ export default function AlumnosPanel({ token }: Props) {
     const [totalAll, setTotalAll] = useState(0)
     const [unassigned, setUnassigned] = useState(0)
     const [careerTitles, setCareerTitles] = useState<string[]>([])
-    const [page, setPage] = useState(1)
-    const [debouncedSearch, setDebouncedSearch] = useState("")
+    const [page, setPage] = useState(() => leerVista().page)
+    const [debouncedSearch, setDebouncedSearch] = useState(() => leerVista().search)
     const [reloadKey, setReloadKey] = useState(0)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
     const [editing, setEditing] = useState<Alumno | null>(null)
     const [confirmDelete, setConfirmDelete] = useState<Alumno | null>(null)
-    const [search, setSearch] = useState("")
+    const [search, setSearch] = useState(() => leerVista().search)
     /** Carrera/curso elegido en el desplegable. Vacío = todas. */
-    const [careerFilter, setCareerFilter] = useState("")
+    const [careerFilter, setCareerFilter] = useState(() => leerVista().career)
     const [exporting, setExporting] = useState(false)
     const [downloadingId, setDownloadingId] = useState<string | null>(null)
     const [fichaId, setFichaId] = useState<string | null>(null)
@@ -261,9 +277,23 @@ export default function AlumnosPanel({ token }: Props) {
         return () => clearTimeout(t)
     }, [search])
 
+    /*
+     * Cambiar la búsqueda o el filtro vuelve a la página 1. Se compara contra
+     * los valores anteriores (y no "saltear el primer render") para no pisar la
+     * página restaurada al recargar.
+     */
+    const filtrosPrevios = useRef({ q: debouncedSearch, career: careerFilter })
     useEffect(() => {
+        const prev = filtrosPrevios.current
+        if (prev.q === debouncedSearch && prev.career === careerFilter) return
+        filtrosPrevios.current = { q: debouncedSearch, career: careerFilter }
         setPage(1)
     }, [debouncedSearch, careerFilter])
+
+    /* Página, búsqueda y filtro se recuerdan para volver al mismo lugar al recargar. */
+    useEffect(() => {
+        sessionStorage.setItem(VISTA_KEY, JSON.stringify({ page, search: debouncedSearch, career: careerFilter }))
+    }, [page, debouncedSearch, careerFilter])
 
     const load = useCallback(() => setReloadKey((k) => k + 1), [])
 

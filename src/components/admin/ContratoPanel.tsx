@@ -730,7 +730,7 @@ export default function ContratoPanel({ token }: Props) {
             <Sheet
                 open={clauseOpen && Boolean(openClause)}
                 onClose={closeClauseSheet}
-                size="lg"
+                size="full"
                 title={openClause ? `Cláusula ${openIndex + 1} de ${draft.clauses.length}` : "Cláusula"}
                 subtitle={newClauseId && newClauseId === openId ? "Nueva cláusula. Si la dejás vacía, no se agrega." : "Lo que cambies se guarda al tocar «Guardar cambios»."}
                 footer={

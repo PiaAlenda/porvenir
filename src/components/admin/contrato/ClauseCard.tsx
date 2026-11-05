@@ -49,6 +49,10 @@ export function AutoTextarea({
 export const INPUT =
     "rounded-xl bg-white px-3 py-2.5 text-base sm:text-sm text-gray-800 leading-relaxed outline-none ring-1 ring-gray-300 hover:ring-gray-400 focus:ring-2 focus:ring-[#4d0706] placeholder:text-gray-400"
 
+/** Igual que INPUT pero con letra más grande: en la ventana de edición se lee texto largo. */
+const READ_INPUT =
+    "rounded-xl bg-white px-3.5 py-3 text-base sm:text-[15px] text-gray-800 leading-relaxed outline-none ring-1 ring-gray-300 hover:ring-gray-400 focus:ring-2 focus:ring-[#4d0706] placeholder:text-gray-400"
+
 /* ---------- Fila de la lista ---------- */
 
 interface RowProps {
@@ -144,19 +148,29 @@ export function ClauseEditor({ clause, onChange, autoFocusTitle }: EditorProps) 
                     onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
                     placeholder="Ej.: 4) Vigencia del contrato"
                     maxLength={6000}
-                    className={`${INPUT} font-bold`}
+                    className={`${READ_INPUT} font-bold`}
                 />
             </div>
 
             <div>
                 <FieldLabel title="Puntos (opcional)" hint="Se imprimen como una lista. Con Enter pasás al punto siguiente." />
                 {clause.items.length > 0 && (
-                    <ol className="space-y-2 mb-2">
+                    <ol className="space-y-3 mb-3">
                         {clause.items.map((item, i) => (
-                            <li key={i} className="flex items-start gap-2">
-                                <span className="mt-2.5 w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-[11px] font-black flex items-center justify-center shrink-0">
-                                    {i + 1}
-                                </span>
+                            <li key={i}>
+                                {/* Número y "Quitar" arriba: así el texto usa todo el ancho. */}
+                                <div className="flex items-center justify-between mb-1 px-1">
+                                    <span className="text-xs font-black text-gray-400">Punto {i + 1}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeItem(i)}
+                                        className="inline-flex items-center gap-1 h-7 px-2 -mr-2 rounded-lg text-xs font-bold text-gray-400 hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                                        aria-label={`Quitar el punto ${i + 1}`}
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                        Quitar
+                                    </button>
+                                </div>
                                 <AutoTextarea
                                     value={item}
                                     autoFocus={focusItem === i}
@@ -175,16 +189,8 @@ export function ClauseEditor({ clause, onChange, autoFocusTitle }: EditorProps) 
                                     placeholder="Escribí este punto"
                                     maxLength={6000}
                                     aria-label={`Punto ${i + 1}`}
-                                    className={INPUT}
+                                    className={READ_INPUT}
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => removeItem(i)}
-                                    className="mt-1.5 w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 cursor-pointer shrink-0"
-                                    aria-label={`Quitar el punto ${i + 1}`}
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
                             </li>
                         ))}
                     </ol>
@@ -207,7 +213,7 @@ export function ClauseEditor({ clause, onChange, autoFocusTitle }: EditorProps) 
                     onChange={(e) => onChange({ ...clause, body: e.target.value })}
                     placeholder="Escribí acá si la cláusula necesita más explicación"
                     maxLength={12000}
-                    className={`${INPUT} min-h-[88px]`}
+                    className={`${READ_INPUT} min-h-[120px]`}
                 />
             </div>
         </div>

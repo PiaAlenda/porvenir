@@ -50,11 +50,20 @@ const tabs = {
     },
 } as const
 
-const navOrder: TabId[] = ["alumnos", "cursos", "carreras", "formulario", "contrato"]
+const TAB_KEY = "admin:tab"
+
+const navOrder: TabId[] =["alumnos", "cursos", "carreras", "formulario", "contrato"]
 
 export default function Admin({ onExit }: AdminProps) {
     const [token, setToken] = useState(() => getAdminToken())
-    const [tab, setTab] = useState<TabId>("alumnos")
+    // La pestaña se recuerda en la sesión: al recargar se vuelve a la misma.
+    const [tab, setTab] = useState<TabId>(() => {
+        const saved = sessionStorage.getItem(TAB_KEY)
+        return saved && saved in tabs ? (saved as TabId) : "alumnos"
+    })
+    useEffect(() => {
+        sessionStorage.setItem(TAB_KEY, tab)
+    }, [tab])
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [profileOpen, setProfileOpen] = useState(false)
     const [inscripcionesCount, setInscripcionesCount] = useState(0)
