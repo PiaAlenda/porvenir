@@ -28,6 +28,7 @@ export interface InscriptionFormValues {
     problematicaIntegrado: string
     fotoDni: File | null
     fotoCertificado: File | null
+    fotoCuil: File | null
 }
 
 /** Errores por campo; las claves `x_…` son campos personalizados. */
@@ -86,6 +87,7 @@ export const STEP4_FIELDS: (keyof InscriptionFormValues)[] = [
     "problematicaIntegrado",
     "fotoDni",
     "fotoCertificado",
+    "fotoCuil",
 ]
 
 const NAME_RE = /^[a-zA-ZÁÉÍÓÚÜÑáéíóúüñ' .-]{2,60}$/
@@ -116,6 +118,7 @@ function defaultRequired(name: keyof InscriptionFormValues): boolean {
         case "problematicaIntegrado":
         case "fotoDni":
         case "fotoCertificado":
+        case "fotoCuil":
             return false
         default:
             return true
@@ -186,11 +189,11 @@ export function validateField(
 ): string | undefined {
     const req = requiredOf(name, campos)
 
-    if (name === "fotoDni" || name === "fotoCertificado") {
+    if (name === "fotoDni" || name === "fotoCertificado" || name === "fotoCuil") {
         if (req && !value) {
-            return name === "fotoDni"
-                ? "Falta adjuntar la foto del DNI"
-                : "Falta adjuntar la foto del certificado de estudios"
+            if (name === "fotoDni") return "Falta adjuntar la foto del DNI"
+            if (name === "fotoCuil") return "Falta adjuntar la foto del CUIL"
+            return "Falta adjuntar la foto del certificado de estudios"
         }
         return undefined
     }

@@ -335,6 +335,7 @@ const INTERNAL_FIELDS = [
   "problematicaIntegrado",
   "fotoDni",
   "fotoCertificado",
+  "fotoCuil",
 ]
 
 function validateRequeridos(body) {
@@ -389,6 +390,7 @@ async function resolverExtras(raw) {
 const uploader = upload.fields([
   { name: "fotoDni", maxCount: 1 },
   { name: "fotoCertificado", maxCount: 1 },
+  { name: "fotoCuil", maxCount: 1 },
 ])
 
 const inscripcionUpload = (req, res, next) => {
@@ -498,7 +500,10 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
    *  - directa: el navegador ya las subió a `pending/` y manda las claves;
    *  - multipart: vienen en el request (modo local, o un front viejo en caché).
    */
-  const directKeys = [body.fotoDniKey, body.fotoCertificadoKey]
+  // La foto del CUIL es opcional para el servidor: un front en caché que
+  // todavía no la manda no debe romper la inscripción.
+  const cuilKey = typeof body.fotoCuilKey === "string" && body.fotoCuilKey ? body.fotoCuilKey : ""
+  const directKeys = [body.fotoDniKey, body.fotoCertificadoKey, ...(cuilKey ? [cuilKey] : [])]
   const esDirecta = !req.files?.fotoDni?.[0] && !req.files?.fotoCertificado?.[0] &&
     directKeys.some((k) => typeof k === "string" && k)
   // Si el envío se rechaza antes de reclamar las fotos, se borran ya: la
@@ -527,8 +532,9 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
     if (!isPendingKey(body.fotoCertificadoKey)) {
       return rechazar(400, "Falta adjuntar la foto del certificado de estudios")
     }
-    if (body.fotoDniKey === body.fotoCertificadoKey) {
-      return rechazar(400, "El DNI y el certificado tienen que ser dos archivos distintos.")
+    if (cuilKey && !isPendingKey(cuilKey)) return rechazar(400, "Falta adjuntar la foto del CUIL")
+    if (new Set(directKeys).size !== directKeys.length) {
+      return rechazar(400, "El DNI, el certificado y el CUIL tienen que ser archivos distintos.")
     }
   } else {
     if (!req.files?.fotoDni?.[0]) {
@@ -562,7 +568,11 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
   const subidas = await Promise.allSettled(
     esDirecta
       ? directKeys.map((key) => claimDirectUpload(key))
-      : [saveUpload(req.files.fotoDni[0]), saveUpload(req.files.fotoCertificado[0])],
+      : [
+          saveUpload(req.files.fotoDni[0]),
+          saveUpload(req.files.fotoCertificado[0]),
+          ...(req.files.fotoCuil?.[0] ? [saveUpload(req.files.fotoCuil[0])] : []),
+        ],
   )
   const subidasOk = subidas.filter((s) => s.status === "fulfilled").map((s) => s.value)
   const limpiarSubidas = async () => {
@@ -576,7 +586,7 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
     await limpiarSubidas()
     throw fallida.reason
   }
-  const [fotoDni, fotoCertificado] = subidasOk
+  const [fotoDni, fotoCertificado, fotoCuil = ""] = subidasOk
 
   let record
   try {
@@ -609,6 +619,7 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
       ...(fichaResult.ficha ? { fichaMedica: fichaResult.ficha } : {}),
       fotoDni,
       fotoCertificado,
+      fotoCuil,
     })
   } catch (err) {
     await limpiarSubidas()
@@ -683,6 +694,14 @@ app.post("/api/inscripciones/:id/archivos", requireAdmin, inscripcionUpload, asy
     await deleteUpload(alumno.fotoCertificado)
   }
 
+  if (req.files?.fotoCuil?.[0]) {
+    patch.fotoCuil = await saveUpload(req.files.fotoCuil[0])
+    await deleteUpload(alumno.fotoCuil)
+  } else if (req.body?.removeFotoCuil === "true") {
+    patch.fotoCuil = ""
+    await deleteUpload(alumno.fotoCuil)
+  }
+
   const updated = await updateAlumno(req.params.id, patch)
   res.json({ inscripcion: updated })
 })
@@ -692,6 +711,7 @@ app.delete("/api/inscripciones/:id", requireAdmin, async (req, res) => {
   if (alumno) {
     await deleteUpload(alumno.fotoDni)
     await deleteUpload(alumno.fotoCertificado)
+    await deleteUpload(alumno.fotoCuil)
   }
   if (!(await deleteAlumno(req.params.id))) {
     return res.status(404).json({ error: "No existe la inscripción" })

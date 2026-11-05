@@ -79,6 +79,7 @@ export interface Alumno {
     fichaMedica?: Record<string, string>
     fotoDni?: string
     fotoCertificado?: string
+    fotoCuil?: string
     createdAt?: string
     updatedAt?: string
 }
@@ -383,12 +384,14 @@ function armarMultipart(campos: InscripcionPayload, fotos: InscripcionFotos): Fo
     }
     data.append("fotoDni", fotos.fotoDni)
     data.append("fotoCertificado", fotos.fotoCertificado)
+    data.append("fotoCuil", fotos.fotoCuil)
     return data
 }
 
 export interface InscripcionFotos {
     fotoDni: File
     fotoCertificado: File
+    fotoCuil: File
 }
 
 export const api = {
@@ -419,7 +422,7 @@ export const api = {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        files: [fotos.fotoDni, fotos.fotoCertificado].map((f) => ({ type: f.type, size: f.size })),
+                        files: [fotos.fotoDni, fotos.fotoCertificado, fotos.fotoCuil].map((f) => ({ type: f.type, size: f.size })),
                     }),
                 })
             } catch (err) {
@@ -427,20 +430,24 @@ export const api = {
                 if (!(err instanceof HttpError && err.status === 404)) throw err
             }
 
-            if (!permisos?.direct || permisos.uploads?.length !== 2) {
+            if (!permisos?.direct || permisos.uploads?.length !== 3) {
                 return request<InscripcionResult>("/api/inscripciones", {
                     method: "POST",
                     body: armarMultipart(campos, fotos),
                 })
             }
 
-            const [dni, certificado] = permisos.uploads
-            await Promise.all([subirConPermiso(dni, fotos.fotoDni), subirConPermiso(certificado, fotos.fotoCertificado)])
+            const [dni, certificado, cuil] = permisos.uploads
+            await Promise.all([
+                subirConPermiso(dni, fotos.fotoDni),
+                subirConPermiso(certificado, fotos.fotoCertificado),
+                subirConPermiso(cuil, fotos.fotoCuil),
+            ])
 
             return request<InscripcionResult>("/api/inscripciones", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...campos, fotoDniKey: dni.key, fotoCertificadoKey: certificado.key }),
+                body: JSON.stringify({ ...campos, fotoDniKey: dni.key, fotoCertificadoKey: certificado.key, fotoCuilKey: cuil.key }),
             })
         })
     },

@@ -44,6 +44,7 @@ const CAMPOS = [
   "problematicaIntegrado",
   "fotoDni",
   "fotoCertificado",
+  "fotoCuil",
 ]
 
 /* ---------- almacenamiento local (respaldo para desarrollo) ---------- */
@@ -109,6 +110,7 @@ async function toRecord(row) {
   const record = toRawRecord(row)
   record.fotoDni = await resolveMediaUrl(record.fotoDni)
   record.fotoCertificado = await resolveMediaUrl(record.fotoCertificado)
+  record.fotoCuil = await resolveMediaUrl(record.fotoCuil)
   return record
 }
 
@@ -137,10 +139,11 @@ export async function getAll() {
    * pedidos cada vez que se abría.
    */
   const records = (data || []).map(toRawRecord)
-  const urls = await resolveMediaUrls(records.flatMap((r) => [r.fotoDni, r.fotoCertificado]))
+  const urls = await resolveMediaUrls(records.flatMap((r) => [r.fotoDni, r.fotoCertificado, r.fotoCuil]))
   for (const r of records) {
     if (r.fotoDni) r.fotoDni = urls.get(r.fotoDni) ?? ""
     if (r.fotoCertificado) r.fotoCertificado = urls.get(r.fotoCertificado) ?? ""
+    if (r.fotoCuil) r.fotoCuil = urls.get(r.fotoCuil) ?? ""
   }
   return records
 }
@@ -216,10 +219,11 @@ export async function getPage({ page = 1, pageSize = 10, q = "", career = "" } =
   if (error) fail("no se pudieron leer las inscripciones", error)
 
   const records = (data || []).map(toRawRecord)
-  const urls = await resolveMediaUrls(records.flatMap((r) => [r.fotoDni, r.fotoCertificado]))
+  const urls = await resolveMediaUrls(records.flatMap((r) => [r.fotoDni, r.fotoCertificado, r.fotoCuil]))
   for (const r of records) {
     if (r.fotoDni) r.fotoDni = urls.get(r.fotoDni) ?? ""
     if (r.fotoCertificado) r.fotoCertificado = urls.get(r.fotoCertificado) ?? ""
+    if (r.fotoCuil) r.fotoCuil = urls.get(r.fotoCuil) ?? ""
   }
 
   return {

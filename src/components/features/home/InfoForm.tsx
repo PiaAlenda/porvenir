@@ -99,6 +99,7 @@ const initialForm = (careerId?: string | null): InscriptionFormValues => ({
     problematicaIntegrado: "",
     fotoDni: null,
     fotoCertificado: null,
+    fotoCuil: null,
 })
 
 type Grupo = "tipo" | 1 | 2 | 3 | 4 | "medica"
@@ -238,7 +239,7 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
         )
     }
 
-    const handleFileChange = (name: "fotoDni" | "fotoCertificado", file: File | null) => {
+    const handleFileChange = (name: "fotoDni" | "fotoCertificado" | "fotoCuil", file: File | null) => {
         setFormData((prev) => ({ ...prev, [name]: file }))
         setTouched((prev) => {
             const next = new Set(prev)
@@ -394,17 +395,18 @@ const InfoForm = ({ careerId, embedded }: InfoFormProps) => {
             campos.fichaMedica = JSON.stringify(fichaParaEnviar(ficha))
 
             let result: InscripcionResult
-            if (formData.fotoDni && formData.fotoCertificado) {
+            if (formData.fotoDni && formData.fotoCertificado && formData.fotoCuil) {
                 // Las fotos de celular se achican antes de salir: bajan de varios
                 // MB a unos cientos de KB. Después van directo a Storage, sin
                 // pasar por el servidor (ver `api.enviarInscripcion`).
-                const [fotoDni, fotoCertificado] = await Promise.all([
+                const [fotoDni, fotoCertificado, fotoCuil] = await Promise.all([
                     compressImage(formData.fotoDni),
                     compressImage(formData.fotoCertificado),
+                    compressImage(formData.fotoCuil),
                 ])
-                result = await api.enviarInscripcion(campos, { fotoDni, fotoCertificado })
+                result = await api.enviarInscripcion(campos, { fotoDni, fotoCertificado, fotoCuil })
             } else {
-                // Sin las dos fotos la API lo rechaza con el mensaje de qué falta.
+                // Sin las tres fotos la API lo rechaza con el mensaje de qué falta.
                 result = await api.postInscripcion(campos)
             }
 

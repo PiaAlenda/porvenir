@@ -57,12 +57,15 @@ export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Pro
         problematicaIntegrado: alumno.problematicaIntegrado ?? "",
         fotoDni: alumno.fotoDni ?? "",
         fotoCertificado: alumno.fotoCertificado ?? "",
+        fotoCuil: alumno.fotoCuil ?? "",
     })
 
     const [fileDni, setFileDni] = useState<File | null>(null)
     const [fileCertificado, setFileCertificado] = useState<File | null>(null)
+    const [fileCuil, setFileCuil] = useState<File | null>(null)
     const [removeDni, setRemoveDni] = useState(false)
     const [removeCert, setRemoveCert] = useState(false)
+    const [removeCuil, setRemoveCuil] = useState(false)
 
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState("")
@@ -83,13 +86,16 @@ export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Pro
                 careerId: form.careerId || "",
             })).inscripcion
 
-            if (fileDni || fileCertificado || removeDni || removeCert) {
+            if (fileDni || fileCertificado || fileCuil || removeDni || removeCert || removeCuil) {
                 const data = new FormData()
                 if (fileDni) data.append("fotoDni", fileDni)
                 else if (removeDni) data.append("removeFotoDni", "true")
 
                 if (fileCertificado) data.append("fotoCertificado", fileCertificado)
                 else if (removeCert) data.append("removeFotoCertificado", "true")
+
+                if (fileCuil) data.append("fotoCuil", fileCuil)
+                else if (removeCuil) data.append("removeFotoCuil", "true")
 
                 const archRes = await api.uploadArchivos(token, alumno.id, data)
                 updated = archRes.inscripcion
@@ -341,6 +347,37 @@ export default function AlumnoEditModal({ token, alumno, onClose, onSaved }: Pro
                                         onChange={(e) => {
                                             setFileCertificado(e.target.files?.[0] || null)
                                             setRemoveCert(false)
+                                        }}
+                                        className="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#4d0706]/10 file:text-[#4d0706]"
+                                    />
+                                </div>
+
+                                <div className="p-3 border border-gray-200 rounded-2xl bg-gray-50/50 space-y-2">
+                                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Foto CUIL</p>
+                                    {form.fotoCuil && !removeCuil && (
+                                        <div className="flex items-center justify-between gap-2">
+                                            <a href={form.fotoCuil} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#4d0706] underline truncate">
+                                                Ver foto actual
+                                            </a>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setRemoveCuil(true)
+                                                    setFileCuil(null)
+                                                }}
+                                                className="text-xs font-bold text-red-600 flex items-center gap-1 cursor-pointer hover:bg-red-50 p-1 rounded-lg"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                                Quitar
+                                            </button>
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        accept="image/*,.pdf"
+                                        onChange={(e) => {
+                                            setFileCuil(e.target.files?.[0] || null)
+                                            setRemoveCuil(false)
                                         }}
                                         className="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#4d0706]/10 file:text-[#4d0706]"
                                     />

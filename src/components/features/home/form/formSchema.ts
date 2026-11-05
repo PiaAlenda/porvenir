@@ -124,6 +124,7 @@ export const DEFAULT_FORM_OPTIONS: FormOptions = {
         { id: "problematicaIntegrado", kind: "textarea", step: 4, label: "Problemática integrado / Observaciones (opcional)", placeholder: "Detallá cualquier observación o necesidad específica...", required: false, visible: true, span: 2 },
         { id: "fotoDni", kind: "file", step: 4, label: "Foto de DNI", required: true, visible: true, span: 1 },
         { id: "fotoCertificado", kind: "file", step: 4, label: "Foto Certificado Estudios", required: true, visible: true, span: 1 },
+        { id: "fotoCuil", kind: "file", step: 4, label: "Foto de CUIL", required: true, visible: true, span: 1 },
     ],
 }
 
@@ -184,7 +185,7 @@ export function mergeFormOptions(saved?: ApiFormOptions | null): FormOptions {
         }
         // Las fotos (DNI y certificado) son siempre obligatorias, aunque la
         // config guardada las tenga como opcionales.
-        const esFoto = def.id === "fotoDni" || def.id === "fotoCertificado"
+        const esFoto = def.id === "fotoDni" || def.id === "fotoCertificado" || def.id === "fotoCuil"
         if (esFoto) label = label.replace(/\s*\(opcional\)\s*/i, "").trim() || def.label
 
         campos.push({

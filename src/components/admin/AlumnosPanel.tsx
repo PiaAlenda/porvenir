@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, FileText, FileSpreadsheet, Mail, MoreVertical, Pencil, Phone, Trash2, RefreshCw, Loader2, Users, Search, GraduationCap, X } from "lucide-react"
+import { CalendarDays, ZoomIn, ZoomOut, ChevronDown, ChevronLeft, ChevronRight, FileText, FileSpreadsheet, Mail, MoreVertical, Pencil, Phone, Trash2, RotateCw, RefreshCw, Loader2, Users, Search, GraduationCap, X } from "lucide-react"
 import { api, type Alumno } from "@/api"
 import { sexoLabel } from "@/components/features/home/form/options"
 import { extrasConEtiqueta } from "@/components/features/home/form/formSchema"
@@ -21,6 +21,124 @@ const SIN_ASIGNAR = "__sin_asignar__"
 
 /** Inscripciones por página. */
 const PAGE_SIZE = 10
+
+function RotatableImage({ src, alt }: { src: string; alt: string }) {
+    const [deg, setDeg] = useState(0)
+    const [open, setOpen] = useState(false)
+    const [zoom, setZoom] = useState(1)
+    const [pan, setPan] = useState({ x: 0, y: 0 })
+    const [dragging, setDragging] = useState(false)
+    const dragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null)
+    const changeZoom = (z: number) => {
+        const nz = Math.min(5, Math.max(1, z))
+        setZoom(nz)
+        if (nz === 1) setPan({ x: 0, y: 0 })
+    }
+    const closeViewer = () => {
+        setOpen(false)
+        setZoom(1)
+        setPan({ x: 0, y: 0 })
+    }
+    const sideways = Math.abs(deg / 90) % 2 === 1
+    return (
+        <div className="space-y-2">
+            {open && (
+                <div className="fixed inset-0 z-[120] bg-black/90 flex flex-col" onClick={closeViewer}>
+                    <div className="shrink-0 flex items-center justify-end gap-2 p-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            onClick={() => changeZoom(zoom - 0.5)}
+                            disabled={zoom <= 1}
+                            title="Alejar"
+                            className="p-2 rounded-lg text-white bg-white/15 hover:bg-white/25 disabled:opacity-40 cursor-pointer transition-colors"
+                        >
+                            <ZoomOut className="w-5 h-5" />
+                        </button>
+                        <span className="text-xs font-bold text-white/80 w-10 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
+                        <button
+                            type="button"
+                            onClick={() => changeZoom(zoom + 0.5)}
+                            disabled={zoom >= 5}
+                            title="Acercar"
+                            className="p-2 rounded-lg text-white bg-white/15 hover:bg-white/25 disabled:opacity-40 cursor-pointer transition-colors"
+                        >
+                            <ZoomIn className="w-5 h-5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setDeg((d) => d + 90)}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-white/15 hover:bg-white/25 cursor-pointer transition-colors"
+                        >
+                            <RotateCw className="w-4 h-4" />
+                            Girar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={closeViewer}
+                            title="Cerrar"
+                            className="p-2 rounded-lg text-white bg-white/15 hover:bg-white/25 cursor-pointer transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div
+                        className="flex-1 min-h-0 grid place-items-center overflow-hidden p-2"
+                        onWheel={(e) => changeZoom(zoom + (e.deltaY < 0 ? 0.25 : -0.25))}
+                    >
+                        <img
+                            src={src}
+                            alt={alt}
+                            draggable={false}
+                            onClick={(e) => e.stopPropagation()}
+                            onDoubleClick={() => changeZoom(zoom > 1 ? 1 : 2)}
+                            onPointerDown={(e) => {
+                                if (zoom <= 1) return
+                                e.currentTarget.setPointerCapture(e.pointerId)
+                                dragRef.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y }
+                                setDragging(true)
+                            }}
+                            onPointerMove={(e) => {
+                                const d = dragRef.current
+                                if (d) setPan({ x: d.px + e.clientX - d.x, y: d.py + e.clientY - d.y })
+                            }}
+                            onPointerUp={() => {
+                                dragRef.current = null
+                                setDragging(false)
+                            }}
+                            className={`object-contain select-none touch-none ${dragging ? "" : "transition-transform duration-300"} ${zoom > 1 ? (dragging ? "cursor-grabbing" : "cursor-grab") : "cursor-zoom-in"}`}
+                            style={{
+                                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${deg}deg)`,
+                                maxWidth: sideways ? "calc(100vh - 5rem)" : "calc(100vw - 1rem)",
+                                maxHeight: sideways ? "calc(100vw - 1rem)" : "calc(100vh - 5rem)",
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+            <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-lg border border-gray-200 bg-white">
+                <img
+                    src={src}
+                    alt={alt}
+                    className="h-full w-full object-contain transition-transform duration-300"
+                    style={{ transform: `rotate(${deg}deg)` }}
+                />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+                <button type="button" onClick={() => setOpen(true)} className="text-xs font-bold text-[#4d0706] hover:underline cursor-pointer">
+                    Ver imagen completa
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setDeg((d) => d + 90)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 cursor-pointer transition-colors"
+                >
+                    <RotateCw className="w-3.5 h-3.5" />
+                    Girar
+                </button>
+            </div>
+        </div>
+    )
+}
 
 export default function AlumnosPanel({ token }: Props) {
     /** Inscripciones de la página actual (el filtrado y la paginación son del servidor). */
@@ -104,7 +222,7 @@ export default function AlumnosPanel({ token }: Props) {
                 setTotal(res.total)
                 setTotalAll(res.totalAll)
                 setUnassigned(res.unassigned)
-                setCareerTitles(res.careers)
+                setCareerTitles(res.careers ?? [])
                 setLoading(false)
             })
             .catch((err) => {
@@ -246,7 +364,7 @@ export default function AlumnosPanel({ token }: Props) {
 
     const statItems = [
         { id: "total" as const, label: "Total inscriptos", value: totalAll, icon: Users, boxClass: "bg-[#4d0706]/5 text-[#4d0706]" },
-        { id: "mostrando" as const, label: "Mostrando", value: total, icon: Search, boxClass: "bg-emerald-50 text-emerald-700" },
+        { id: "mostrando" as const, label: "Mostrando", value: alumnos.length, icon: Search, boxClass: "bg-emerald-50 text-emerald-700" },
         { id: "sinAsignar" as const, label: "Sin asignar", value: unassigned, icon: GraduationCap, boxClass: "bg-amber-50 text-amber-700" },
     ]
 
@@ -272,7 +390,7 @@ export default function AlumnosPanel({ token }: Props) {
                 return (
                     <div className="space-y-3">
                         <p className="text-sm text-gray-600 font-medium">
-                            Hay <strong>{total}</strong> de <strong>{totalAll}</strong> inscripciones que coinciden.
+                            Se muestran <strong>{alumnos.length}</strong> en esta página. En total hay <strong>{total}</strong> de <strong>{totalAll}</strong> inscripciones que coinciden.
                         </p>
                         {search.trim() || careerFilter ? (
                             <div className="flex flex-wrap items-center gap-2">
@@ -536,7 +654,7 @@ export default function AlumnosPanel({ token }: Props) {
                     </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-row gap-2">
                     <button
                         onClick={handleDownloadExcel}
                         disabled={exporting || loading || total === 0}
@@ -545,7 +663,7 @@ export default function AlumnosPanel({ token }: Props) {
                                 ? "No hay inscripciones para exportar con estos filtros"
                                 : `Descargar en Excel los ${total} inscriptos que coinciden con los filtros`
                         }
-                        className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
                     >
                         {exporting ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -556,10 +674,12 @@ export default function AlumnosPanel({ token }: Props) {
                     </button>
                     <button
                         onClick={load}
-                        className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 cursor-pointer"
+                        title="Actualizar"
+                        aria-label="Actualizar"
+                        className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-xl text-sm font-bold text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 cursor-pointer"
                     >
                         <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-                        Actualizar
+                        <span className="hidden sm:inline">Actualizar</span>
                     </button>
                 </div>
             </div>
@@ -613,17 +733,16 @@ export default function AlumnosPanel({ token }: Props) {
 
             {detailAlumno && (
                 <div
-                    className="fixed inset-0 z-[100] overflow-hidden bg-transparent sm:bg-black/60"
-                    onClick={() => setDetailAlumno(null)}
+                    className="fixed inset-0 z-[100] overflow-hidden bg-white"
                 >
-                    <div className="flex h-full items-center justify-center sm:p-4">
+                    <div className="flex h-full">
                     <div
-                        className="w-full h-full sm:h-auto sm:max-h-full sm:max-w-3xl bg-white flex flex-col my-auto overflow-hidden sm:rounded-3xl sm:shadow-2xl sm:border sm:border-gray-100"
+                        className="w-full h-full bg-white flex flex-col overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
                     >
                     <div className="shrink-0 bg-[#4d0706] text-white shadow-lg shadow-[#4d0706]/20">
-                        <div className="flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-3.5">
-                            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-sm font-black text-[#ffcc00] shrink-0">
+                        <div className="flex items-center gap-3 px-4 sm:px-6 py-1.5">
+                            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-sm font-black text-[#ffcc00] shrink-0">
                                 {`${(detailAlumno.nombre || "").charAt(0)}${(detailAlumno.apellido || "").charAt(0)}`.toUpperCase() || "?"}
                             </div>
                             <div className="min-w-0 flex-1">
@@ -635,15 +754,15 @@ export default function AlumnosPanel({ token }: Props) {
                             <button
                                 onClick={() => setDetailAlumno(null)}
                                 title="Cerrar"
-                                className="p-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 cursor-pointer transition-colors shrink-0"
+                                className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer transition-colors shrink-0"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
 
-                    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 pt-6 sm:pt-8 pb-8">
-                        <div className="bg-[#fcfaf7] border border-gray-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 pt-4 pb-4">
+                        <div className="px-1 pb-2 flex flex-col sm:flex-row sm:items-center gap-4">
                             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#4d0706] text-[#ffcc00] flex items-center justify-center text-lg font-black shrink-0">
                                 {`${(detailAlumno.nombre || "").charAt(0)}${(detailAlumno.apellido || "").charAt(0)}`.toUpperCase() || "?"}
                             </div>
@@ -680,164 +799,159 @@ export default function AlumnosPanel({ token }: Props) {
                             </div>
                         </div>
 
-                        <div className="mt-4 bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 space-y-6">
+                        <div className="mt-6 px-1 space-y-8">
                             <div>
-                                <h4 className="text-xs font-black uppercase tracking-widest text-[#4d0706] mb-3">Datos personales</h4>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                                <h4 className="inline-block px-3 py-1 rounded-lg bg-[#ffcc00] text-[#4d0706] text-xs font-black uppercase tracking-wide leading-tight mb-5">Datos personales</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-6">
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Tipo documento</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_documento}</p>
+                                        <p className="text-xs font-medium text-gray-500">Tipo documento</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.c_documento}</p>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Número documento</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.numeroDocumento}</p>
+                                        <p className="text-xs font-medium text-gray-500">Número documento</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.numeroDocumento}</p>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">CUIL</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.cuil}</p>
+                                        <p className="text-xs font-medium text-gray-500">CUIL</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.cuil}</p>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Fecha de nacimiento</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">
+                                        <p className="text-xs font-medium text-gray-500">Fecha de nacimiento</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">
                                             {detailAlumno.fechaNacimiento ? formatDate(detailAlumno.fechaNacimiento) : "—"}
                                         </p>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Sexo</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{sexoLabel(detailAlumno.c_sexo)}</p>
+                                        <p className="text-xs font-medium text-gray-500">Sexo</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{sexoLabel(detailAlumno.c_sexo)}</p>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Edad</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">
+                                        <p className="text-xs font-medium text-gray-500">Edad</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">
                                             {detailAlumno.fechaNacimiento ? `${calcAge(detailAlumno.fechaNacimiento)} años` : "—"}
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-gray-100">
-                                <h4 className="text-xs font-black uppercase tracking-widest text-[#4d0706] mb-3">Lugar de nacimiento</h4>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4">
+                            <div className="pt-8 border-t-2 border-[#4d0706]/15">
+                                <h4 className="inline-block px-3 py-1 rounded-lg bg-[#ffcc00] text-[#4d0706] text-xs font-black uppercase tracking-wide leading-tight mb-5">Lugar de nacimiento</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-6">
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">País</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_pais_nacimiento || "—"}</p>
+                                        <p className="text-xs font-medium text-gray-500">País</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.c_pais_nacimiento || "—"}</p>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Provincia</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_provincia_nacimiento || "—"}</p>
+                                        <p className="text-xs font-medium text-gray-500">Provincia</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.c_provincia_nacimiento || "—"}</p>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Lugar/Localidad</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.lugar_nacimiento || "—"}</p>
+                                        <p className="text-xs font-medium text-gray-500">Lugar/Localidad</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.lugar_nacimiento || "—"}</p>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Nacionalidad</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_nacionalidad || "—"}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="pt-4 border-t border-gray-100">
-                                <h4 className="text-xs font-black uppercase tracking-widest text-[#4d0706] mb-3">Contacto completo</h4>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
-                                    <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Celular particular</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.celular || "—"}</p>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Celular urgencia</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.celularUrgencia || "—"}</p>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Email</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.email || "—"}</p>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Domicilio</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.domicilio || "—"}</p>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Departamento</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.departamento || "—"}</p>
+                                        <p className="text-xs font-medium text-gray-500">Nacionalidad</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.c_nacionalidad || "—"}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-gray-100">
-                                <h4 className="text-xs font-black uppercase tracking-widest text-[#4d0706] mb-3">Datos complementarios y documentación</h4>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                            <div className="pt-8 border-t-2 border-[#4d0706]/15">
+                                <h4 className="inline-block px-3 py-1 rounded-lg bg-[#ffcc00] text-[#4d0706] text-xs font-black uppercase tracking-wide leading-tight mb-5">Contacto completo</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-6">
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Año / División</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.anioDivision || "—"}</p>
+                                        <p className="text-xs font-medium text-gray-500">Celular particular</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.celular || "—"}</p>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Discapacidad</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_discapacidad || "—"}</p>
+                                        <p className="text-xs font-medium text-gray-500">Celular urgencia</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.celularUrgencia || "—"}</p>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">N° CUD</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.cud || "—"}</p>
+                                        <p className="text-xs font-medium text-gray-500">Email</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.email || "—"}</p>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Pueblo indígena</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.c_pueblo_indigena || "—"}</p>
+                                        <p className="text-xs font-medium text-gray-500">Domicilio</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.domicilio || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-medium text-gray-500">Departamento</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.departamento || "—"}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-8 border-t-2 border-[#4d0706]/15">
+                                <h4 className="inline-block px-3 py-1 rounded-lg bg-[#ffcc00] text-[#4d0706] text-xs font-black uppercase tracking-wide leading-tight mb-5">Datos complementarios y documentación</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-6">
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-medium text-gray-500">Año / División</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.anioDivision || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-medium text-gray-500">Discapacidad</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.c_discapacidad || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-medium text-gray-500">N° CUD</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.cud || "—"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-medium text-gray-500">Pueblo indígena</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.c_pueblo_indigena || "—"}</p>
                                     </div>
                                     <div className="col-span-2 sm:col-span-2 min-w-0">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Problemática integrado</p>
-                                        <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{detailAlumno.problematicaIntegrado || "—"}</p>
+                                        <p className="text-xs font-medium text-gray-500">Problemática integrado</p>
+                                        <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words">{detailAlumno.problematicaIntegrado || "—"}</p>
                                     </div>
                                     {extrasConEtiqueta(formOptions.campos, detailAlumno.extras).map((e) => (
                                         <div key={e.id} className="min-w-0">
-                                            <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">{e.label}</p>
-                                            <p className="text-sm font-bold text-gray-800 mt-0.5 break-words whitespace-pre-wrap">{e.value}</p>
+                                            <p className="text-xs font-medium text-gray-500">{e.label}</p>
+                                            <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words whitespace-pre-wrap">{e.value}</p>
                                         </div>
                                     ))}
                                 </div>
 
                                 {detailAlumno.fichaMedica && Object.keys(detailAlumno.fichaMedica).length > 0 && (
-                                    <div className="mt-4 border border-gray-200 rounded-xl p-3">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-[#4d0706] mb-2">Ficha médica (DDJJ)</p>
-                                        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                                    <div className="mt-8 pt-8 border-t-2 border-[#4d0706]/15">
+                                        <p className="inline-block px-3 py-1 rounded-lg bg-[#ffcc00] text-[#4d0706] text-xs font-black uppercase tracking-wide leading-tight mb-5">Ficha médica (DDJJ)</p>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-5">
                                             {PREGUNTAS_FICHA.filter((p) => detailAlumno.fichaMedica?.[p.id]).map((p) => (
                                                 <div key={p.id} className="min-w-0">
-                                                    <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">{ETIQUETAS_CORTAS[p.id] ?? p.id}</p>
-                                                    <p className="text-sm font-bold text-gray-800 mt-0.5 break-words whitespace-pre-wrap">{textoRespuesta(p.id, detailAlumno.fichaMedica?.[p.id])}</p>
+                                                    <p className="text-xs font-medium text-gray-500">{ETIQUETAS_CORTAS[p.id] ?? p.id}</p>
+                                                    <p className="text-[15px] font-semibold text-gray-900 mt-1 leading-snug break-words whitespace-pre-wrap">{textoRespuesta(p.id, detailAlumno.fichaMedica?.[p.id])}</p>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
                                 )}
 
-                                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="border border-gray-200 rounded-xl p-3 bg-gray-50/50">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-2">Foto DNI</p>
+                                <div className="mt-8 pt-8 border-t-2 border-[#4d0706]/15 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-medium text-gray-500 mb-2">Foto DNI</p>
                                         {detailAlumno.fotoDni ? (
-                                            <div className="space-y-2">
-                                                <a href={detailAlumno.fotoDni} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-gray-200 bg-white max-h-40">
-                                                    <img src={detailAlumno.fotoDni} alt="Foto DNI" className="w-full h-32 object-contain" />
-                                                </a>
-                                                <a href={detailAlumno.fotoDni} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#4d0706] hover:underline">
-                                                    Ver imagen completa
-                                                </a>
-                                            </div>
+                                            <RotatableImage key={detailAlumno.id + "-fotoDni"} src={detailAlumno.fotoDni} alt="Foto DNI" />
                                         ) : (
                                             <p className="text-xs font-medium text-gray-400">Sin foto de DNI</p>
                                         )}
                                     </div>
 
-                                    <div className="border border-gray-200 rounded-xl p-3 bg-gray-50/50">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-2">Foto Certificado</p>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-medium text-gray-500 mb-2">Foto Certificado</p>
                                         {detailAlumno.fotoCertificado ? (
-                                            <div className="space-y-2">
-                                                <a href={detailAlumno.fotoCertificado} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-gray-200 bg-white max-h-40">
-                                                    <img src={detailAlumno.fotoCertificado} alt="Foto Certificado" className="w-full h-32 object-contain" />
-                                                </a>
-                                                <a href={detailAlumno.fotoCertificado} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#4d0706] hover:underline">
-                                                    Ver imagen completa
-                                                </a>
-                                            </div>
+                                            <RotatableImage key={detailAlumno.id + "-fotoCertificado"} src={detailAlumno.fotoCertificado} alt="Foto Certificado" />
                                         ) : (
                                             <p className="text-xs font-medium text-gray-400">Sin foto de certificado</p>
+                                        )}
+                                    </div>
+
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-medium text-gray-500 mb-2">Foto CUIL</p>
+                                        {detailAlumno.fotoCuil ? (
+                                            <RotatableImage key={detailAlumno.id + "-fotoCuil"} src={detailAlumno.fotoCuil} alt="Foto CUIL" />
+                                        ) : (
+                                            <p className="text-xs font-medium text-gray-400">Sin foto de CUIL</p>
                                         )}
                                     </div>
                                 </div>
@@ -845,11 +959,11 @@ export default function AlumnosPanel({ token }: Props) {
                         </div>
                     </div>
 
-                    <div className="shrink-0 bg-white border-t border-gray-100 px-4 sm:px-6 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex flex-wrap items-center justify-center gap-2">
+                    <div className="shrink-0 bg-white border-t border-gray-100 px-4 sm:px-6 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] flex flex-wrap items-center justify-center gap-2">
                             <button
                                 onClick={() => handleDownloadContrato(detailAlumno)}
                                 disabled={downloadingId === detailAlumno.id}
-                                className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#4d0706] hover:bg-[#300404] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                                className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-[#4d0706] hover:bg-[#300404] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer transition-colors"
                             >
                                 {downloadingId === detailAlumno.id ? (
                                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -861,7 +975,7 @@ export default function AlumnosPanel({ token }: Props) {
                             <button
                                 onClick={() => handleDownloadFicha(detailAlumno)}
                                 disabled={fichaId === detailAlumno.id}
-                                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-60 cursor-pointer transition-colors"
+                                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-60 cursor-pointer transition-colors"
                             >
                                 {fichaId === detailAlumno.id ? (
                                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -876,7 +990,7 @@ export default function AlumnosPanel({ token }: Props) {
                                     setDetailAlumno(null)
                                     setEditing(a)
                                 }}
-                                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 cursor-pointer transition-colors"
+                                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 cursor-pointer transition-colors"
                             >
                                 <Pencil className="w-3.5 h-3.5" />
                                 Editar
@@ -887,7 +1001,7 @@ export default function AlumnosPanel({ token }: Props) {
                                     setDetailAlumno(null)
                                     setConfirmDelete(a)
                                 }}
-                                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 cursor-pointer transition-colors"
+                                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 cursor-pointer transition-colors"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 Eliminar

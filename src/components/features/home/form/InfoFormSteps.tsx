@@ -17,7 +17,7 @@ export interface StepsProps {
     onFieldChange: (name: keyof InscriptionFormValues, value: string) => void
     onExtraChange: (id: string, value: string) => void
     onExtraBlur: (id: string) => void
-    onFileChange: (name: "fotoDni" | "fotoCertificado", file: File | null) => void
+    onFileChange: (name: "fotoDni" | "fotoCertificado" | "fotoCuil", file: File | null) => void
     onBlur: (name: keyof InscriptionFormValues) => void
     campos: FormFieldConfig[]
     config: SiteConfigMap
@@ -51,7 +51,7 @@ function FileField({ campo, ctx }: { campo: FormFieldConfig; ctx: StepsProps }) 
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? `${fieldId}-error` : undefined}
                 onChange={(e) => {
-                    ctx.onFileChange(campo.id as "fotoDni" | "fotoCertificado", e.target.files?.[0] || null)
+                    ctx.onFileChange(campo.id as "fotoDni" | "fotoCertificado" | "fotoCuil", e.target.files?.[0] || null)
                 }}
                 className={`block w-full text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#4d0706]/10 file:text-[#4d0706] hover:file:bg-[#4d0706]/20 cursor-pointer border rounded-2xl p-2 bg-white ${error ? "border-red-400" : "border-gray-200"}`}
             />

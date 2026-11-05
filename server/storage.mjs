@@ -213,7 +213,7 @@ export const directUploadsEnabled = supabaseEnabled
  * vuelve a imponer tipo y tamaño, y `claimDirectUpload` verifica el contenido.
  */
 export async function createUploadTickets(files) {
-    if (!Array.isArray(files) || files.length === 0 || files.length > 2) {
+    if (!Array.isArray(files) || files.length === 0 || files.length > 3) {
         throw new PublicError("Solicitud de subida inválida.")
     }
     return Promise.all(
