@@ -80,6 +80,10 @@ export interface Alumno {
     fotoDni?: string
     fotoCertificado?: string
     fotoCuil?: string
+    /** La escuela confirmó la inscripción (pagó). Sin marcar = preinscripto. */
+    inscripto?: boolean
+    /** Se inscribió con la carrera marcada "Sin cupo": queda suplente sin importar la posición. */
+    sinCupoAlInscribirse?: boolean
     createdAt?: string
     updatedAt?: string
 }

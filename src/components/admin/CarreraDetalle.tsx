@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react"
-import { AlertCircle, ArrowLeft, ChevronRight, Loader2, RefreshCw, Users } from "lucide-react"
+import { AlertCircle, ArrowLeft, Check, ChevronRight, Loader2, RefreshCw, Users } from "lucide-react"
 import { api, type Alumno } from "@/api"
 import { CAREER_DATA } from "@/config/careerData"
 import { getCantidadTitularesFor, useSiteConfig } from "@/siteConfig"
@@ -51,6 +51,33 @@ export default function CarreraDetalle({ token, careerId, section = "carreras", 
 
     const clasificados = useMemo(() => clasificarParticipantes(participantes, cupo), [participantes, cupo])
 
+    const [guardando, setGuardando] = useState<Set<string>>(() => new Set())
+    const [toggleError, setToggleError] = useState("")
+
+    /** Marca o desmarca la inscripción confirmada (pagó). Optimista: revierte si falla. */
+    const toggleInscripto = async (alumno: Alumno) => {
+        if (guardando.has(alumno.id)) return
+        const nuevo = !alumno.inscripto
+        const aplicar = (valor: boolean) =>
+            setParticipantes((prev) => prev.map((a) => (a.id === alumno.id ? { ...a, inscripto: valor } : a)))
+
+        setToggleError("")
+        setGuardando((prev) => new Set(prev).add(alumno.id))
+        aplicar(nuevo)
+        try {
+            await api.updateInscripcion(token, alumno.id, { inscripto: nuevo })
+        } catch (err) {
+            aplicar(!nuevo)
+            setToggleError(err instanceof Error ? err.message : "No se pudo actualizar la inscripción")
+        } finally {
+            setGuardando((prev) => {
+                const next = new Set(prev)
+                next.delete(alumno.id)
+                return next
+            })
+        }
+    }
+
     const fila = ({ alumno, posicion, titular }: ParticipanteClasificado) => (
         <li key={alumno.id} className="flex items-center gap-3 sm:gap-4 py-2.5">
             <span className="w-6 shrink-0 text-center text-xs font-black tabular-nums text-gray-400">
@@ -66,10 +93,26 @@ export default function CarreraDetalle({ token, careerId, section = "carreras", 
             >
                 {titular ? "Titular" : "Suplente"}
             </span>
+            <button
+                type="button"
+                onClick={() => void toggleInscripto(alumno)}
+                disabled={guardando.has(alumno.id)}
+                aria-pressed={alumno.inscripto === true}
+                title={alumno.inscripto ? "Inscripción confirmada. Tocá para desmarcar." : "Marcar como inscripto (pagó)"}
+                className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black cursor-pointer transition-colors disabled:cursor-wait disabled:opacity-60 ${
+                    alumno.inscripto
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-500"
+                }`}
+            >
+                <Check className="w-3 h-3" />
+                Inscripto
+            </button>
         </li>
     )
 
     const total = participantes.length
+    const inscriptos = participantes.filter((a) => a.inscripto === true).length
     const titulares = clasificados.filter((p) => p.titular).length
     const suplentes = total - titulares
 
@@ -94,6 +137,15 @@ export default function CarreraDetalle({ token, careerId, section = "carreras", 
                     <Users className="w-4 h-4 shrink-0 text-gray-400" />
                     {loading ? "Cargando participantes..." : `${total} ${total === 1 ? "participante" : "participantes"}`}
                 </p>
+                {!loading && total > 0 && (
+                    <p className="mt-1 text-xs font-bold text-gray-500">
+                        <span className="text-green-700">
+                            {inscriptos} {inscriptos === 1 ? "inscripto" : "inscriptos"}
+                        </span>
+                        {" · "}
+                        {total - inscriptos} {total - inscriptos === 1 ? "preinscripto" : "preinscriptos"}
+                    </p>
+                )}
                 <p className="mt-3 max-w-xl text-sm font-medium leading-relaxed text-gray-500">
                     Revisá cómo se distribuyen los participantes entre titulares y suplentes.
                 </p>
@@ -122,6 +174,12 @@ export default function CarreraDetalle({ token, careerId, section = "carreras", 
                 </div>
 
                 <div className="mt-4">
+                    {toggleError && (
+                        <div className="mb-3 flex items-start gap-2.5 text-sm text-red-600 font-medium bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                            <span>{toggleError}</span>
+                        </div>
+                    )}
                     {loadError ? (
                         <div className="flex items-start gap-2.5 text-sm text-red-600 font-medium bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
                             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -142,9 +200,9 @@ export default function CarreraDetalle({ token, careerId, section = "carreras", 
                         </div>
                     ) : (
                         <ol className="divide-y divide-gray-100/80">
-                            {clasificados.map((p) => (
+                            {clasificados.map((p, i) => (
                                 <Fragment key={p.alumno.id}>
-                                    {!p.titular && p.posicion > 1 && (
+                                    {!p.titular && i > 0 && clasificados[i - 1].titular && (
                                         <li
                                             aria-hidden="true"
                                             className="flex items-center gap-3 py-1.5"

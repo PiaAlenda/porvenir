@@ -421,14 +421,27 @@ const inscripcionUpload = (req, res, next) => {
  * se contara antes de insertar, varias inscripciones simultáneas verían el
  * mismo último lugar libre y todas se creerían titulares.
  */
+/**
+ * La carrera estaba marcada "Sin cupo" al momento de inscribirse. Se guarda en
+ * el registro (`sinCupoAlInscribirse`) porque el panel no puede deducirlo de la
+ * config actual: si después se cierra la carrera, los que entraron cuando
+ * estaba abierta siguen siendo titulares.
+ */
+async function carreraCerrada(careerId) {
+  const id = String(careerId || "").trim()
+  if (!id) return false
+  const config = await getConfig()
+  return config[id]?.available === false
+}
+
 async function resolverHayCupo(record) {
   const id = String(record.careerId || "").trim()
   if (!id) return true
+  if (record.sinCupoAlInscribirse === true) return false
   const config = await getConfig()
   const item = config[id]
   // Sin config para ese id no hay límite conocido: se registra con normalidad.
   if (!item) return true
-  if (item.available === false) return false
   const cupo = parseCantidadTitulares(item.cantidadTitulares) ?? 0
   if (cupo <= 0) return true
   const posicion = await positionInCareer(id, record.createdAt)
@@ -590,7 +603,9 @@ app.post("/api/inscripciones", inscriptionLimiter, inscripcionUpload, async (req
 
   let record
   try {
+    const sinCupo = await carreraCerrada(body.careerId)
     record = await createAlumno({
+      ...(sinCupo ? { sinCupoAlInscribirse: true } : {}),
       apellido: String(body.apellido).trim(),
       nombre: String(body.nombre).trim(),
       c_documento: String(body.c_documento).trim(),
@@ -668,6 +683,9 @@ app.put("/api/inscripciones/:id", requireAdmin, async (req, res) => {
   for (const f of [...FIELDS_7, ...INTERNAL_FIELDS]) {
     if (body[f] !== undefined) patch[f] = typeof body[f] === "string" ? body[f].trim() : body[f]
   }
+  // Confirmación manual de la inscripción (el alumno pagó). Solo el admin la
+  // marca; el formulario público nunca la envía.
+  if (body.inscripto !== undefined) patch.inscripto = body.inscripto === true || body.inscripto === "true"
   const updated = await updateAlumno(req.params.id, patch)
   if (!updated) return res.status(404).json({ error: "No existe la inscripción" })
   res.json({ inscripcion: updated })

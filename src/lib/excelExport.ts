@@ -110,6 +110,8 @@ export interface RegistroExportable {
     fichaMedica?: Record<string, string> | null
     fotoDni?: ValorExportable
     fotoCertificado?: ValorExportable
+    /** `true` cuando la escuela confirmó la inscripción (pagó). */
+    inscripto?: ValorExportable
     fechaInscripcion?: ValorExportable
     createdAt?: ValorExportable
     updatedAt?: ValorExportable
@@ -456,6 +458,14 @@ const COLUMNAS: Columna[] = [
 
     // ── Inscripción ──
     {
+        campo: "inscripto",
+        titulo: "Estado",
+        grupo: GRUPOS.inscripcion,
+        ancho: 14,
+        alineacion: "center",
+        valor: (r) => estadoInscripcion(r),
+    },
+    {
         campo: "fechaInscripcion",
         titulo: "Fecha de inscripción",
         grupo: GRUPOS.inscripcion,
@@ -471,6 +481,20 @@ const COLUMNAS: Columna[] = [
 function tituloCarrera(r: RegistroExportable): string {
     const humano = texto(r.careerTitle)
     return humano !== SIN_DATO ? humano : texto(r.courseTitle)
+}
+
+const ESTADO_INSCRIPTO = "Inscripto"
+const ESTADO_PREINSCRIPTO = "Preinscripto"
+const INSCRIPTO_FILL = "DCFCE7"
+const INSCRIPTO_INK = "166534"
+
+/** Sin confirmación manual de la escuela, la persona sigue preinscripta. */
+function esInscripto(r: RegistroExportable): boolean {
+    return r.inscripto === true || r.inscripto === "true"
+}
+
+function estadoInscripcion(r: RegistroExportable): string {
+    return esInscripto(r) ? ESTADO_INSCRIPTO : ESTADO_PREINSCRIPTO
 }
 
 function celdaDocumento(value: ValorExportable): ValorCelda {
@@ -521,6 +545,7 @@ const COLUMNAS_TECNICAS: ColumnaTecnica[] = [
     { campo: "fichaMedica", titulo: "fichaMedica (JSON)", ancho: 60 },
     { campo: "fotoDni", titulo: "fotoDni (URL / archivo)", ancho: 52 },
     { campo: "fotoCertificado", titulo: "fotoCertificado (URL / archivo)", ancho: 52 },
+    { campo: "inscripto", titulo: "inscripto", ancho: 12 },
     { campo: "fechaInscripcion", titulo: "fechaInscripcion (ISO)", ancho: 26 },
     { campo: "createdAt", titulo: "createdAt", ancho: 26 },
     { campo: "updatedAt", titulo: "updatedAt", ancho: 26 },
@@ -675,6 +700,11 @@ function escribirInscriptos(wb: ExcelWorkbook, registros: RegistroExportable[], 
             if (esHipervinculo(celda.value)) {
                 celda.font = { name: FUENTE, size: 10, color: { argb: BRAND }, underline: true }
             }
+            // Mismo verde que el botón del panel: se distingue de un vistazo.
+            if (columna.campo === "inscripto" && esInscripto(registro)) {
+                pintarFondo(celda, INSCRIPTO_FILL)
+                celda.font = { name: FUENTE, size: 10, bold: true, color: { argb: INSCRIPTO_INK } }
+            }
         })
     })
 
@@ -737,6 +767,7 @@ function contarPorConDato(registros: RegistroExportable[], leer: (r: RegistroExp
 
 function bloquesResumen(registros: RegistroExportable[], carrera: string, generado: Date): BloqueResumen[] {
     const conDiscapacidad = registros.filter((r) => texto(r.c_discapacidad) === "Sí").length
+    const inscriptos = registros.filter(esInscripto).length
 
     const archivos: BloqueResumen[] = [
         {
@@ -750,6 +781,8 @@ function bloquesResumen(registros: RegistroExportable[], carrera: string, genera
         {
             titulo: "INDICADORES",
             filas: [
+                { etiqueta: "Inscriptos (pago confirmado)", valor: String(inscriptos), destacado: true },
+                { etiqueta: "Preinscriptos", valor: String(registros.length - inscriptos) },
                 { etiqueta: "Inscriptos con discapacidad", valor: String(conDiscapacidad), destacado: true },
                 { etiqueta: "Inscriptos sin discapacidad", valor: String(registros.length - conDiscapacidad) },
                 { etiqueta: "Con documentación adjunta (DNI)", valor: `${registros.filter((r) => documentacion(r.fotoDni).etiqueta !== DOC_NO).length} de ${registros.length}` },
@@ -954,6 +987,7 @@ function valorTecnico(value: ValorExportable | Record<string, string>): string {
         return limpio && !/^(null|undefined|NaN)$/i.test(limpio) ? limpio : SIN_DATO
     }
     if (typeof value === "number") return Number.isFinite(value) ? String(value) : SIN_DATO
+    if (typeof value === "boolean") return String(value)
     if (typeof value === "object" && Object.keys(value).length) return JSON.stringify(value)
     return SIN_DATO
 }

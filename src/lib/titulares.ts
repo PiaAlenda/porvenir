@@ -15,6 +15,16 @@ export interface ResumenCupo {
     suplentes: number
 }
 
+/** Copia ordenada por `createdAt` ascendente; los registros sin fecha van al final. */
+function porOrdenDeLlegada(participantes: Alumno[]): Alumno[] {
+    return [...participantes].sort((a, b) => {
+        const fa = a.createdAt || ""
+        const fb = b.createdAt || ""
+        if (!fa || !fb) return fa ? -1 : fb ? 1 : 0
+        return fa < fb ? -1 : fa > fb ? 1 : 0
+    })
+}
+
 function normalizarCupo(cupo: number): number {
     if (!Number.isFinite(cupo)) return MIN_CUPO_TITULARES
     return Math.min(MAX_CUPO_TITULARES, Math.max(MIN_CUPO_TITULARES, Math.trunc(cupo)))
@@ -23,12 +33,23 @@ function normalizarCupo(cupo: number): number {
 /**
  * Deriva la condición de titular/suplente a partir de la posición del participante
  * y del cupo configurado para la carrera. No se guarda estado por participante.
+ *
+ * La posición es por orden de llegada (el más viejo primero), el mismo criterio
+ * que usa el servidor (`positionInCareer`) para avisarle a la persona si quedó
+ * titular o suplente. La API devuelve la lista del más nuevo al más viejo, así
+ * que se ordena acá en vez de confiar en el orden recibido.
+ *
+ * Los que se inscribieron con la carrera "Sin cupo" ocupan su posición (el
+ * servidor también los cuenta) pero nunca son titulares.
  */
 export function clasificarParticipantes(participantes: Alumno[], cupo: number): ParticipanteClasificado[] {
     const limite = normalizarCupo(cupo)
-    return participantes.map((alumno, i) => {
+    return porOrdenDeLlegada(participantes).map((alumno, i) => {
         const posicion = i + 1
-        return { alumno, posicion, titular: posicion <= limite }
+        // Igual que el servidor: quien se inscribió con la carrera cerrada
+        // ("Sin cupo") recibió el aviso de suplente y sigue siéndolo.
+        const titular = posicion <= limite && alumno.sinCupoAlInscribirse !== true
+        return { alumno, posicion, titular }
     })
 }
 
