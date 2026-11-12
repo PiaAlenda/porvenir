@@ -1,10 +1,30 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react"
-import { AlertCircle, ArrowLeft, Check, ChevronRight, Loader2, RefreshCw, Users } from "lucide-react"
+import { AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Loader2, RefreshCw, Users } from "lucide-react"
 import { api, type Alumno } from "@/api"
 import { CAREER_DATA } from "@/config/careerData"
 import { getCantidadTitularesFor, useSiteConfig } from "@/siteConfig"
 import { clasificarParticipantes, type ParticipanteClasificado } from "@/lib/titulares"
 import CupoTitularesField from "./CupoTitularesField"
+
+/** Participantes por página: 20 en desktop, 10 en mobile. */
+const PAGE_SIZE_DESKTOP = 20
+const PAGE_SIZE_MOBILE = 10
+/** Mismo corte que el breakpoint `sm` de Tailwind. */
+const MOBILE_QUERY = "(max-width: 639px)"
+
+function useEsMobile() {
+    const [esMobile, setEsMobile] = useState(() =>
+        typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches,
+    )
+    useEffect(() => {
+        const mq = window.matchMedia(MOBILE_QUERY)
+        const onChange = () => setEsMobile(mq.matches)
+        onChange()
+        mq.addEventListener("change", onChange)
+        return () => mq.removeEventListener("change", onChange)
+    }, [])
+    return esMobile
+}
 
 interface Props {
     token: string
@@ -51,32 +71,17 @@ export default function CarreraDetalle({ token, careerId, section = "carreras", 
 
     const clasificados = useMemo(() => clasificarParticipantes(participantes, cupo), [participantes, cupo])
 
-    const [guardando, setGuardando] = useState<Set<string>>(() => new Set())
-    const [toggleError, setToggleError] = useState("")
+    /* Se pagina solo lo que se dibuja: la clasificación titular/suplente necesita la lista completa. */
+    const esMobile = useEsMobile()
+    const pageSize = esMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP
+    const [page, setPage] = useState(1)
+    const totalPages = Math.max(1, Math.ceil(clasificados.length / pageSize))
+    const paginaActual = Math.min(page, totalPages)
+    const inicio = (paginaActual - 1) * pageSize
+    const visibles = clasificados.slice(inicio, inicio + pageSize)
 
-    /** Marca o desmarca la inscripción confirmada (pagó). Optimista: revierte si falla. */
-    const toggleInscripto = async (alumno: Alumno) => {
-        if (guardando.has(alumno.id)) return
-        const nuevo = !alumno.inscripto
-        const aplicar = (valor: boolean) =>
-            setParticipantes((prev) => prev.map((a) => (a.id === alumno.id ? { ...a, inscripto: valor } : a)))
-
-        setToggleError("")
-        setGuardando((prev) => new Set(prev).add(alumno.id))
-        aplicar(nuevo)
-        try {
-            await api.updateInscripcion(token, alumno.id, { inscripto: nuevo })
-        } catch (err) {
-            aplicar(!nuevo)
-            setToggleError(err instanceof Error ? err.message : "No se pudo actualizar la inscripción")
-        } finally {
-            setGuardando((prev) => {
-                const next = new Set(prev)
-                next.delete(alumno.id)
-                return next
-            })
-        }
-    }
+    // Al cambiar de tamaño de página se vuelve al principio para no quedar en una página vacía.
+    useEffect(() => setPage(1), [pageSize])
 
     const fila = ({ alumno, posicion, titular }: ParticipanteClasificado) => (
         <li key={alumno.id} className="flex items-center gap-3 sm:gap-4 py-2.5">
@@ -93,21 +98,6 @@ export default function CarreraDetalle({ token, careerId, section = "carreras", 
             >
                 {titular ? "Titular" : "Suplente"}
             </span>
-            <button
-                type="button"
-                onClick={() => void toggleInscripto(alumno)}
-                disabled={guardando.has(alumno.id)}
-                aria-pressed={alumno.inscripto === true}
-                title={alumno.inscripto ? "Inscripción confirmada. Tocá para desmarcar." : "Marcar como inscripto (pagó)"}
-                className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black cursor-pointer transition-colors disabled:cursor-wait disabled:opacity-60 ${
-                    alumno.inscripto
-                        ? "bg-green-600 text-white hover:bg-green-700"
-                        : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-500"
-                }`}
-            >
-                <Check className="w-3 h-3" />
-                Inscripto
-            </button>
         </li>
     )
 
@@ -174,12 +164,6 @@ export default function CarreraDetalle({ token, careerId, section = "carreras", 
                 </div>
 
                 <div className="mt-4">
-                    {toggleError && (
-                        <div className="mb-3 flex items-start gap-2.5 text-sm text-red-600 font-medium bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
-                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                            <span>{toggleError}</span>
-                        </div>
-                    )}
                     {loadError ? (
                         <div className="flex items-start gap-2.5 text-sm text-red-600 font-medium bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
                             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -199,8 +183,11 @@ export default function CarreraDetalle({ token, careerId, section = "carreras", 
                             </p>
                         </div>
                     ) : (
+                        <>
                         <ol className="divide-y divide-gray-100/80">
-                            {clasificados.map((p, i) => (
+                            {visibles.map((p, j) => {
+                                const i = inicio + j
+                                return (
                                 <Fragment key={p.alumno.id}>
                                     {!p.titular && i > 0 && clasificados[i - 1].titular && (
                                         <li
@@ -216,8 +203,40 @@ export default function CarreraDetalle({ token, careerId, section = "carreras", 
                                     )}
                                     {fila(p)}
                                 </Fragment>
-                            ))}
+                                )
+                            })}
                         </ol>
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between gap-3 pt-4">
+                                <p className="text-xs font-bold text-gray-500">
+                                    {inicio + 1}–{Math.min(inicio + pageSize, total)} de {total}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                        disabled={paginaActual <= 1}
+                                        aria-label="Página anterior"
+                                        className="w-10 h-10 grid place-items-center rounded-xl text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    <span className="text-xs font-black text-gray-700 min-w-[4.5rem] text-center">
+                                        {paginaActual} / {totalPages}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                        disabled={paginaActual >= totalPages}
+                                        aria-label="Página siguiente"
+                                        className="w-10 h-10 grid place-items-center rounded-xl text-[#4d0706] bg-[#4d0706]/5 hover:bg-[#4d0706]/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        </>
                     )}
                 </div>
             </section>

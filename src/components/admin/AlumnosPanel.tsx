@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { CalendarDays, ZoomIn, ZoomOut, ChevronDown, ChevronLeft, ChevronRight, FileText, FileSpreadsheet, Mail, MoreVertical, Pencil, Phone, Trash2, RotateCw, RefreshCw, Loader2, Users, Search, GraduationCap, X } from "lucide-react"
+import { CalendarDays, Check, ZoomIn, ZoomOut, ChevronDown, ChevronLeft, ChevronRight, FileText, FileSpreadsheet, Mail, MoreVertical, Pencil, Phone, Trash2, RotateCw, RefreshCw, Loader2, Users, Search, GraduationCap, X } from "lucide-react"
 import { api, type Alumno } from "@/api"
 import { sexoLabel } from "@/components/features/home/form/options"
 import { extrasConEtiqueta } from "@/components/features/home/form/formSchema"
@@ -345,6 +345,32 @@ export default function AlumnosPanel({ token }: Props) {
         }
     }
 
+    const [guardandoInscripto, setGuardandoInscripto] = useState<Set<string>>(() => new Set())
+
+    /** Marca o desmarca la inscripción confirmada (pagó). Optimista: revierte si falla. */
+    const toggleInscripto = async (alumno: Alumno) => {
+        if (guardandoInscripto.has(alumno.id)) return
+        const nuevo = !alumno.inscripto
+        const aplicar = (valor: boolean) =>
+            setAlumnos((prev) => prev.map((a) => (a.id === alumno.id ? { ...a, inscripto: valor } : a)))
+
+        setError("")
+        setGuardandoInscripto((prev) => new Set(prev).add(alumno.id))
+        aplicar(nuevo)
+        try {
+            await api.updateInscripcion(token, alumno.id, { inscripto: nuevo })
+        } catch (err) {
+            aplicar(!nuevo)
+            setError(err instanceof Error ? err.message : "No se pudo actualizar la inscripción")
+        } finally {
+            setGuardandoInscripto((prev) => {
+                const next = new Set(prev)
+                next.delete(alumno.id)
+                return next
+            })
+        }
+    }
+
     const handleDownloadContrato = async (alumno: Alumno) => {
         if (downloadingId) return
         setDownloadingId(alumno.id)
@@ -600,6 +626,21 @@ export default function AlumnosPanel({ token }: Props) {
                     </div>
 
                     <div ref={(el) => { actionsRefs.current[a.id] = el }} className="relative flex items-center shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => void toggleInscripto(a)}
+                            disabled={guardandoInscripto.has(a.id)}
+                            aria-pressed={a.inscripto === true}
+                            title={a.inscripto ? "Inscripción confirmada. Tocá para desmarcar." : "Marcar como inscripto (pagó)"}
+                            className={`mr-1 sm:mr-2 shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-1 sm:px-2.5 text-[10px] sm:text-[11px] font-black cursor-pointer transition-colors disabled:cursor-wait disabled:opacity-60 ${
+                                a.inscripto
+                                    ? "bg-green-600 text-white hover:bg-green-700"
+                                    : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-500"
+                            }`}
+                        >
+                            <Check className="w-3 h-3" />
+                            Inscripto
+                        </button>
                         <button
                             onClick={() => {
                                 setMenuOpen(null)
